@@ -1,0 +1,29 @@
+package dn.questenginev2.auth.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class RegisterRequest {
+
+    @Email(message = "Email should be valid")
+    private String email;
+
+    @NotBlank(message = "Username is required")
+    @Size(min = 3, max = 64, message = "Username must be between 3 and 64 characters")
+    private String username;
+
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters")
+    private String password;
+
+    @Size(max = 128, message = "Public name must be at most 128 characters")
+    private String publicName;
+
+}

@@ -1,0 +1,32 @@
+spring:
+  ## Common ##
+  application:
+    name: QuestEngineV2
+
+  ## Database ##
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: admin
+    password: admin
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        format_sql: true
+        ddl-auto: validate
+
+  # Spring Security
+  security:
+    user:
+      name: admin
+      password: admin
+
+  # Load environment variables from .env file
+  config:
+    import: optional:file:.env
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000
