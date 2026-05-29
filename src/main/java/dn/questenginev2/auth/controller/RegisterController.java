@@ -1,7 +1,7 @@
 package dn.questenginev2.auth.controller;
 
+import dn.questenginev2.auth.dto.LoginResponse;
 import dn.questenginev2.auth.dto.RegisterRequest;
-import dn.questenginev2.auth.dto.RegisterResponse;
 import dn.questenginev2.auth.service.RegisterService;
 import dn.questenginev2.common.constants.Routes;
 import jakarta.validation.Valid;
@@ -21,9 +21,9 @@ public class RegisterController {
     private final RegisterService registerService;
 
     @PostMapping(Routes.REGISTER)
-    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
         try {
-            RegisterResponse created = registerService.register(request);
+            LoginResponse created = registerService.register(request);
             return ResponseEntity
                     .status(HttpStatus.CREATED)
                     .body(created);

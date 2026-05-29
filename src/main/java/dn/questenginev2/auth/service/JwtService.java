@@ -10,6 +10,7 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,6 +24,12 @@ public class JwtService {
 
     @Getter
     private SecretKey key;
+
+    private final PasswordEncoder passwordEncoder;
+
+    public JwtService(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @PostConstruct
     public void init() {
@@ -42,4 +49,7 @@ public class JwtService {
                 .compact();
     }
 
+    public boolean validatePassword(String rawPassword, String passwordHash) {
+        return passwordEncoder.matches(rawPassword, passwordHash);
+    }
 }

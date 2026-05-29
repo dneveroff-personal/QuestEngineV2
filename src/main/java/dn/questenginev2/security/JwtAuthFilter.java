@@ -1,4 +1,4 @@
-package dn.questenginev2.config.security;
+package dn.questenginev2.security;
 
 import dn.questenginev2.auth.service.JwtService;
 import io.jsonwebtoken.Claims;

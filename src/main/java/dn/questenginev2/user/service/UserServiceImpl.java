@@ -16,16 +16,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void validateUserForRegistration(String username, String email) {
-        if (existsByUsername(username)) {
-            throw new RuntimeException("Username already exists");
-        }
-        if (email != null && !email.isBlank() && existsByEmail(email)) {
-            throw new RuntimeException("Email already exists");
-        }
-    }
-
-    @Override
     public User saveUser(User user) {
         return userRepository.save(user);
     }
@@ -35,11 +25,11 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByUsername(username);
     }
 
-    private boolean existsByUsername(String username) {
+    public boolean existsByUsername(String username) {
         return userRepository.findByUsername(username).isPresent();
     }
 
-    private boolean existsByEmail(String email) {
+    public boolean existsByEmail(String email) {
         return userRepository.findByEmail(email).isPresent();
     }
 }

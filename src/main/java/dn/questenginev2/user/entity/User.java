@@ -7,19 +7,20 @@ import java.time.Instant;
 
 @Entity
 @Data
+@Table(name = "users")
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 64)
+    @Column(nullable = false, length = 64, unique = true)
     private String username;
 
     @Column(length = 128)
     private String publicName;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)

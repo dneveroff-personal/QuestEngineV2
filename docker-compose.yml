@@ -24,6 +24,25 @@ services:
         reservations:
           memory: 128M
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qe-v2-app
+    ports:
+      - "8080:8080"
+      - "5004:5004"   # Debug port
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - qe-v2-network
+    restart: unless-stopped
+
 # ======================
 # Volumes
 # ======================

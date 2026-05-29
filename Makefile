@@ -1,4 +1,4 @@
-.PHONY: build clean up-clean up down
+.PHONY: build clean up-clean up down run-local
 GREEN  := \033[32m
 YELLOW := \033[33m
 
@@ -6,8 +6,12 @@ down:
 	docker compose down --remove-orphans
 
 clean:
-	@$(MAKE) down
-	./gradlew clean build -x test
+	@echo "$(YELLOW)Полная очистка..."
+	./gradlew clean
+	rm -rf */build/ .gradle/ build/
+	docker compose -f docker-compose.yml down -v --remove-orphans
+	docker rmi $$(docker images "dn-quest/*:dev" -q) 2>/dev/null || true
+	@echo "$(GREEN)Очистка завершена!$(RESET)"
 
 up-clean: clean up
 

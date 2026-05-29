@@ -1,4 +1,4 @@
-package dn.questenginev2.config.security;
+package dn.questenginev2.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

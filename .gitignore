@@ -37,4 +37,4 @@ out/
 .vscode/
 
 ### DN ###
-.env
+.tree.txt

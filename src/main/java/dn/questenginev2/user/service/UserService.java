@@ -6,10 +6,12 @@ import dn.questenginev2.user.entity.User;
 
 public interface UserService {
 
-    void validateUserForRegistration(String username, String email);
-
     User saveUser(User user);
 
     Optional<User> findByUsername(String username);
+
+    boolean existsByUsername(String username);
+
+    boolean existsByEmail(String email);
 
 }

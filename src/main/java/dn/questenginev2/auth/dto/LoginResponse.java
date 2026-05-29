@@ -6,7 +6,8 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class LoginResponse {
+
     private String publicName;
-    private Boolean verified;
     private String token;
+
 }
