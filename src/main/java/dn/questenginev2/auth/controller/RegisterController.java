@@ -22,16 +22,10 @@ public class RegisterController {
 
     @PostMapping(Routes.REGISTER)
     public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
-        try {
-            LoginResponse created = registerService.register(request);
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(created);
-        } catch (RuntimeException e) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .build();
-        }
+        LoginResponse created = registerService.register(request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(created);
     }
 
 }

@@ -2,6 +2,7 @@ package dn.questenginev2.auth.service;
 
 import dn.questenginev2.auth.dto.LoginResponse;
 import dn.questenginev2.auth.dto.RegisterRequest;
+import dn.questenginev2.common.exceptions.UserAlreadyExistsException;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.service.UserService;
@@ -42,10 +43,10 @@ public class RegisterServiceImpl implements RegisterService {
     @Override
     public void validateUserForRegistration(String username, String email) {
         if (userService.existsByUsername(username)) {
-            throw new RuntimeException("Username already exists");
+            throw new UserAlreadyExistsException("Username already exists");
         }
         if (email != null && !email.isBlank() && userService.existsByEmail(email)) {
-            throw new RuntimeException("Email already exists");
+            throw new UserAlreadyExistsException("Email already exists");
         }
     }
 
