@@ -27,3 +27,13 @@ up:
 status:
 	@echo "$(YELLOW)Containers Status"
 	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+## SHow last 100 rows of set CONTAINER (C)
+logs:
+	docker logs $(C) --tail=100
+
+rebuild-app:
+	@echo "$(GREEN)Rebuilding and ReStarting Project..."
+	docker compose stop app
+	@$(MAKE) build
+	docker compose up -d app --remove-orphans --build

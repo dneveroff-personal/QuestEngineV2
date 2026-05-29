@@ -1,5 +1,7 @@
 package dn.questenginev2.common.exceptions;
 
+import dn.questenginev2.QuestEngineV2Application;
+import org.springframework.boot.SpringApplication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -7,11 +9,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private final static int STACK_TAIL = 5;
 
     // ===== UsernameNotFoundException =====
     @ExceptionHandler(UsernameNotFoundException.class)
@@ -41,8 +46,20 @@ public class GlobalExceptionHandler {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        ex.printStackTrace();
-        body.put("error", "Internal Server Error, please check stack trace:");
+
+        StackTraceElement[] stackTraceElements = ex.getStackTrace();
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder
+                .append("Internal Server Error, please check stack trace: ")
+                .append("\n");
+        String packageName = (QuestEngineV2Application.class).getPackageName();
+
+        Arrays.stream(stackTraceElements)
+                .filter(stackTraceElement -> stackTraceElement
+                        .getClassName().startsWith(packageName))
+                .forEach(stackTraceElement -> stringBuilder.append(stackTraceElement.toString()).append(" \n "));
+
+        body.put("error", stringBuilder.toString());
         body.put("message", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
