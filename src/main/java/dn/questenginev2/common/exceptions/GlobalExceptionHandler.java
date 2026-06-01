@@ -37,6 +37,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // ===== RequestNotFoundException =====
+    @ExceptionHandler(RequestNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRequestNotFound(RequestNotFoundException ex) {
+        return buildResponseEntity(
+                HttpStatus.NOT_FOUND,
+                "Request Was Not Found In DB",
+                ex.getMessage()
+        );
+    }
+
     // ===== TeamNotFoundException =====
     @ExceptionHandler(TeamNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleTeamNotFound(TeamNotFoundException ex) {

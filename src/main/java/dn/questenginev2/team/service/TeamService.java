@@ -16,4 +16,6 @@ public interface TeamService {
     List<TeamJoinResponse> getJoinRequests(Authentication auth);
 
     Boolean approveRequest(Long requestId, Authentication auth);
+
+    Boolean rejectRequest(Long requestId, Authentication auth);
 }

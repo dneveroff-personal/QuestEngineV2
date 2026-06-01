@@ -133,7 +133,7 @@ public class TeamServiceImpl implements TeamService {
                 .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + userName));
 
         TeamJoinRequest request = joinRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+                .orElseThrow(() -> new RequestNotFoundException("Request not found"));
 
         if (!request.getTeam().getCaptain().equals(currentUser)) {
             throw new RuntimeException("Only captain can approve");
@@ -145,12 +145,31 @@ public class TeamServiceImpl implements TeamService {
         // Создаём TeamMember для пользователя
         TeamMember member = TeamMember.builder()
                 .team(request.getTeam())
-                .user(request.getUser()).
-                role(TeamRole.MEMBER)
+                .user(request.getUser())
+                .role(TeamRole.MEMBER)
                 .joinedAt(Instant.now())
                 .build();
 
         teamMemberRepository.save(member);
+        joinRequestRepository.deleteById(requestId);
+        return true;
+    }
+
+    @Override
+    public Boolean rejectRequest(Long requestId, Authentication auth) {
+        String userName = auth.getName();
+        User currentUser = userService.findByUsername(userName)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + userName));
+
+        TeamJoinRequest request = joinRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RequestNotFoundException("Request not found"));
+
+        if (!request.getTeam().getCaptain().equals(currentUser)) {
+            throw new RuntimeException("Only captain can reject");
+        }
+
+        request.setStatus(RequestStatus.REJECTED);
+        joinRequestRepository.save(request);
         joinRequestRepository.deleteById(requestId);
         return true;
     }

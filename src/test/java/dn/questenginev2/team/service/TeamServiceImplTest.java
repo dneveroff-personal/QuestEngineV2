@@ -217,4 +217,89 @@ class TeamServiceImplTest {
                 .isInstanceOf(TeamNotFoundException.class)
                 .hasMessage("Пользователь не является капитаном команды");
     }
+
+    @Test
+    void rejectRequest_rejectsRequest_whenUserIsCaptain() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(testUser)
+                .createdAt(Instant.now())
+                .build();
+
+        User requester = new User();
+        requester.setId(2L);
+        requester.setUsername("requester");
+        requester.setPublicName("Requester User");
+
+        TeamJoinRequest joinRequest = TeamJoinRequest.builder()
+                .id(1L)
+                .user(requester)
+                .team(team)
+                .status(RequestStatus.PENDING)
+                .createdAt(Instant.now())
+                .build();
+        when(joinRequestRepository.findById(1L)).thenReturn(Optional.of(joinRequest));
+
+        // Act
+        Boolean result = teamService.rejectRequest(1L, authentication);
+
+        // Assert
+        assertThat(result).isTrue();
+        verify(joinRequestRepository).deleteById(1L);
+    }
+
+    @Test
+    void rejectRequest_throwsRuntimeException_whenUserIsNotCaptain() {
+        // Arrange
+        User otherUser = new User();
+        otherUser.setId(2L);
+        otherUser.setUsername("otheruser");
+        otherUser.setPublicName("Other User");
+
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(otherUser)
+                .createdAt(Instant.now())
+                .build();
+
+        TeamJoinRequest joinRequest = TeamJoinRequest.builder()
+                .id(1L)
+                .user(testUser)
+                .team(team)
+                .status(RequestStatus.PENDING)
+                .createdAt(Instant.now())
+                .build();
+        when(joinRequestRepository.findById(1L)).thenReturn(Optional.of(joinRequest));
+
+        // Act & Assert
+        assertThatThrownBy(() -> teamService.rejectRequest(1L, authentication))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Only captain can reject");
+
+        verify(joinRequestRepository, never()).deleteById(anyLong());
+    }
+
+    @Test
+    void rejectRequest_throwsRequestNotFoundException_whenRequestNotFound() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(joinRequestRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> teamService.rejectRequest(999L, authentication))
+                .isInstanceOf(RequestNotFoundException.class)
+                .hasMessage("Request not found");
+
+        verify(joinRequestRepository, never()).deleteById(anyLong());
+    }
 }

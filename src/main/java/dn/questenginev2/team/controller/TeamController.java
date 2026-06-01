@@ -16,12 +16,12 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(Routes.API)
+@RequestMapping(Routes.TEAMS)
 public class TeamController {
 
     private final TeamService teamService;
 
-    @PostMapping(Routes.TEAMS)
+    @PostMapping
     public ResponseEntity<TeamResponse> create(@Valid @RequestBody CreateTeamRequest request, Authentication auth) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -47,5 +47,12 @@ public class TeamController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(teamService.approveRequest(requestId, auth));
+    }
+
+    @PostMapping(Routes.REJECT_JOIN_REQUEST)
+    public ResponseEntity<Boolean> rejectRequest(@PathVariable Long requestId, Authentication auth) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(teamService.rejectRequest(requestId, auth));
     }
 }
