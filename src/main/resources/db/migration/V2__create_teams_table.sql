@@ -1,7 +1,7 @@
 CREATE TABLE teams (
                        id              BIGSERIAL PRIMARY KEY,
-                       name            VARCHAR(255)    NOT NULL UNIQUE,
-                       captain_id      BIGSERIAL       NOT NULL,
+                       name            VARCHAR(255)     NOT NULL UNIQUE,
+                       captain_id      BIGINT           NOT NULL,
                        created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

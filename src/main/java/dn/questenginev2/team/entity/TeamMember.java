@@ -9,26 +9,29 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
+@Entity
 @Data
 @Builder
-@Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "teams")
-public class Team {
+@Table(name = "team_members")
+public class TeamMember {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
-
-    @Column(nullable = false, unique = true)
-    private String name;
+    private long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "captain_id", nullable = false)
-    private User captain;
+    @JoinColumn(name = "team_id")
+    private Team team;
 
-    private Instant createdAt;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", unique = true, nullable = false)
+    private User user;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private TeamRole role;
+
+    private Instant joinedAt;
 }

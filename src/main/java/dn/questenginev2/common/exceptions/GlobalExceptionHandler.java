@@ -40,6 +40,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // ===== UserAlreadyExistsException =====
+    @ExceptionHandler(UserAlreadyInTeamException.class)
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyInTeamException ex) {
+        return buildResponseEntity(
+                HttpStatus.CONFLICT,
+                "User Already In The Team",
+                ex.getMessage()
+        );
+    }
+
     // ===== TeamAlreadyExistsException =====
     @ExceptionHandler(TeamAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleTeamAlreadyExists(TeamAlreadyExistsException ex) {
