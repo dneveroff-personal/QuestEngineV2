@@ -4,14 +4,11 @@ import dn.questenginev2.QuestEngineV2Application;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
@@ -20,12 +17,32 @@ public class GlobalExceptionHandler {
     private final static int STACK_TAIL = 5;
     private static final String PACKAGE_NAME = QuestEngineV2Application.class.getPackageName();
 
+    // ===== RequestAlreadyExistsException =====
+    @ExceptionHandler(RequestAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleRequestAlreadyExists(RequestAlreadyExistsException ex) {
+        return buildResponseEntity(
+                HttpStatus.NOT_FOUND,
+                "Request Already Exists",
+                ex.getMessage()
+        );
+    }
+
     // ===== UserNotFoundException =====
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleEntityNotFound(UserNotFoundException ex) {
         return buildResponseEntity(
                 HttpStatus.NOT_FOUND,
                 "User Was Not Found In DB",
+                ex.getMessage()
+        );
+    }
+
+    // ===== TeamNotFoundException =====
+    @ExceptionHandler(TeamNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTeamNotFound(TeamNotFoundException ex) {
+        return buildResponseEntity(
+                HttpStatus.NOT_FOUND,
+                "Team Was Not Found In DB",
                 ex.getMessage()
         );
     }
@@ -42,7 +59,7 @@ public class GlobalExceptionHandler {
 
     // ===== UserAlreadyExistsException =====
     @ExceptionHandler(UserAlreadyInTeamException.class)
-    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyInTeamException ex) {
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExistsInTeam(UserAlreadyInTeamException ex) {
         return buildResponseEntity(
                 HttpStatus.CONFLICT,
                 "User Already In The Team",

@@ -1,9 +1,12 @@
 package dn.questenginev2.team.service;
 
-import dn.questenginev2.common.exceptions.TeamAlreadyExistsException;
+import dn.questenginev2.common.exceptions.*;
 import dn.questenginev2.team.dto.CreateTeamRequest;
+import dn.questenginev2.team.dto.TeamJoinResponse;
 import dn.questenginev2.team.dto.TeamResponse;
-import dn.questenginev2.team.entity.Team;
+import dn.questenginev2.team.entity.*;
+import dn.questenginev2.team.repository.TeamJoinRequestRepository;
+import dn.questenginev2.team.repository.TeamMemberRepository;
 import dn.questenginev2.team.repository.TeamRepository;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.service.UserService;
@@ -16,6 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +34,12 @@ class TeamServiceImplTest {
 
     @Mock
     private TeamRepository teamRepository;
+
+    @Mock
+    private TeamMemberRepository teamMemberRepository;
+
+    @Mock
+    private TeamJoinRequestRepository joinRequestRepository;
 
     @Mock
     private UserService userService;
@@ -61,6 +72,7 @@ class TeamServiceImplTest {
         when(authentication.getName()).thenReturn("testuser");
         when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(teamRepository.existsByName("Test Team")).thenReturn(false);
+        when(teamMemberRepository.existsByUser(testUser)).thenReturn(false);
         
         Team savedTeam = Team.builder()
                 .id(1L)
@@ -114,5 +126,95 @@ class TeamServiceImplTest {
 
         verify(teamRepository, never()).existsByName(anyString());
         verify(teamRepository, never()).save(any(Team.class));
+    }
+
+    @Test
+    void createJoinRequest_createsRequest_whenUserNotInTeamAndNoExistingRequest() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(teamMemberRepository.existsByUser(testUser)).thenReturn(false);
+        when(joinRequestRepository.existsByTeamAndUser(any(Team.class), eq(testUser))).thenReturn(false);
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(testUser)
+                .createdAt(Instant.now())
+                .build();
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+
+        // Act
+        Boolean result = teamService.createJoinRequest(authentication, 1L);
+
+        // Assert
+        assertThat(result).isTrue();
+        verify(joinRequestRepository).save(any(TeamJoinRequest.class));
+    }
+
+    @Test
+    void createJoinRequest_throwsUserAlreadyInTeamException_whenUserAlreadyInTeam() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(teamMemberRepository.existsByUser(testUser)).thenReturn(true);
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(Team.builder().id(1L).build()));
+
+        // Act & Assert
+        assertThatThrownBy(() -> teamService.createJoinRequest(authentication, 1L))
+                .isInstanceOf(UserAlreadyInTeamException.class)
+                .hasMessage("User already member of a team");
+
+        verify(joinRequestRepository, never()).save(any(TeamJoinRequest.class));
+    }
+
+    @Test
+    void getJoinRequests_returnsRequests_whenUserIsCaptain() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(testUser)
+                .createdAt(Instant.now())
+                .build();
+        when(teamRepository.findByCaptain(testUser)).thenReturn(Optional.of(team));
+
+        User requester = new User();
+        requester.setId(2L);
+        requester.setUsername("requester");
+        requester.setPublicName("Requester User");
+
+        TeamJoinRequest joinRequest = TeamJoinRequest.builder()
+                .id(1L)
+                .user(requester)
+                .team(team)
+                .status(RequestStatus.PENDING)
+                .createdAt(Instant.now())
+                .build();
+        when(joinRequestRepository.findByTeam(team)).thenReturn(Collections.singletonList(joinRequest));
+
+        // Act
+        List<TeamJoinResponse> response = teamService.getJoinRequests(authentication);
+
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).getUserName()).isEqualTo("Requester User");
+    }
+
+    @Test
+    void getJoinRequests_throwsTeamNotFoundException_whenUserIsNotCaptain() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(teamRepository.findByCaptain(testUser)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> teamService.getJoinRequests(authentication))
+                .isInstanceOf(TeamNotFoundException.class)
+                .hasMessage("Пользователь не является капитаном команды");
     }
 }
