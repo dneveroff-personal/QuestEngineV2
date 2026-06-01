@@ -4,16 +4,14 @@ import java.util.Optional;
 
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.repository.UserRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@AllArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-
-    public UserServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     @Override
     public User saveUser(User user) {

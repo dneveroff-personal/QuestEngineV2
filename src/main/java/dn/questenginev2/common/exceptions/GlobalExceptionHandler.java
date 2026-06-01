@@ -17,62 +17,76 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private final static int STACK_TAIL = 5;
+    private static final String PACKAGE_NAME = QuestEngineV2Application.class.getPackageName();
 
     // ===== UsernameNotFoundException =====
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleEntityNotFound(UsernameNotFoundException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.NOT_FOUND.value());
-        body.put("error", "User Was Not Found In DB");
-        body.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+        return buildResponseEntity(
+                HttpStatus.NOT_FOUND,
+                "User Was Not Found In DB",
+                ex.getMessage()
+        );
     }
 
     // ===== UserAlreadyExistsException =====
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<Map<String, Object>> handleUserAlreadyExists(UserAlreadyExistsException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.CONFLICT.value());
-        body.put("error", "User Already Exists");
-        body.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+        return buildResponseEntity(
+                HttpStatus.CONFLICT,
+                "User Already Exists",
+                ex.getMessage()
+        );
+    }
+
+    // ===== TeamAlreadyExistsException =====
+    @ExceptionHandler(TeamAlreadyExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleTeamAlreadyExists(TeamAlreadyExistsException ex) {
+        return buildResponseEntity(
+                HttpStatus.CONFLICT,
+                "Team Already Exists",
+                ex.getMessage()
+        );
     }
 
     // ===== Конфликты, недопустимые состояния =====
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ResponseEntity<Map<String, Object>> handleConflict(RuntimeException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.CONFLICT.value());
-        body.put("error", "Conflict");
-        body.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+        return buildResponseEntity(
+                HttpStatus.CONFLICT,
+                "Conflict",
+                ex.getMessage()
+        );
     }
 
     // ===== Все остальные исключения =====
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleAll(Exception ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-
         StackTraceElement[] stackTraceElements = ex.getStackTrace();
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder
                 .append("Internal Server Error, please check stack trace: ")
                 .append("\n");
-        String packageName = (QuestEngineV2Application.class).getPackageName();
 
         Arrays.stream(stackTraceElements)
                 .filter(stackTraceElement -> stackTraceElement
-                        .getClassName().startsWith(packageName))
+                        .getClassName().startsWith(PACKAGE_NAME))
+                .skip(Math.max(0, stackTraceElements.length - STACK_TAIL))
                 .forEach(stackTraceElement -> stringBuilder.append(stackTraceElement.toString()).append(" \n "));
 
-        body.put("error", stringBuilder.toString());
-        body.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        return buildResponseEntity(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                stringBuilder.toString(),
+                ex.getMessage()
+        );
     }
 
+    private ResponseEntity<Map<String, Object>> buildResponseEntity(HttpStatus status, String error, String message) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", status.value());
+        body.put("error", error);
+        body.put("message", message);
+        return ResponseEntity.status(status).body(body);
+    }
 }
