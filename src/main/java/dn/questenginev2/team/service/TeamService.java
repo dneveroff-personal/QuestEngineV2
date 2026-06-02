@@ -11,7 +11,7 @@ public interface TeamService {
 
     TeamResponse createTeam(CreateTeamRequest request, Authentication auth);
 
-    Boolean createJoinRequest(Authentication auth, Long teamId);
+    Boolean createJoinRequest(Authentication auth, Long teamId, String username);
 
     List<TeamJoinResponse> getJoinRequests(Authentication auth);
 

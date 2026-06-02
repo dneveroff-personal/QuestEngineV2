@@ -29,10 +29,10 @@ public class TeamController {
     }
 
     @PostMapping(Routes.TEAM_ID_JOIN_REQUEST)
-    public ResponseEntity<Boolean> sendJoinRequest(@PathVariable Long teamId, Authentication auth) {
+    public ResponseEntity<Boolean> sendJoinRequest(@PathVariable Long teamId, @RequestParam(required = false) String username, Authentication auth) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(teamService.createJoinRequest(auth, teamId));
+                .body(teamService.createJoinRequest(auth, teamId, username));
     }
 
     @GetMapping(Routes.JOIN_REQUESTS)

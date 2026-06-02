@@ -1,9 +1,7 @@
 package dn.questenginev2.team.service;
 
 import dn.questenginev2.common.exceptions.*;
-import dn.questenginev2.team.dto.CreateTeamRequest;
-import dn.questenginev2.team.dto.TeamJoinResponse;
-import dn.questenginev2.team.dto.TeamResponse;
+import dn.questenginev2.team.dto.*;
 import dn.questenginev2.team.entity.*;
 import dn.questenginev2.team.repository.TeamJoinRequestRepository;
 import dn.questenginev2.team.repository.TeamMemberRepository;
@@ -16,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 
 import java.time.Instant;
@@ -134,7 +133,7 @@ class TeamServiceImplTest {
         when(authentication.getName()).thenReturn("testuser");
         when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(teamMemberRepository.existsByUser(testUser)).thenReturn(false);
-        when(joinRequestRepository.existsByTeamAndUser(any(Team.class), eq(testUser))).thenReturn(false);
+        when(joinRequestRepository.existsByTeamAndUserAndType(any(Team.class), eq(testUser), eq(JoinRequestType.JOIN_REQUEST))).thenReturn(false);
 
         Team team = Team.builder()
                 .id(1L)
@@ -145,7 +144,7 @@ class TeamServiceImplTest {
         when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
 
         // Act
-        Boolean result = teamService.createJoinRequest(authentication, 1L);
+        Boolean result = teamService.createJoinRequest(authentication, 1L, null);
 
         // Assert
         assertThat(result).isTrue();
@@ -161,7 +160,7 @@ class TeamServiceImplTest {
         when(teamRepository.findById(1L)).thenReturn(Optional.of(Team.builder().id(1L).build()));
 
         // Act & Assert
-        assertThatThrownBy(() -> teamService.createJoinRequest(authentication, 1L))
+        assertThatThrownBy(() -> teamService.createJoinRequest(authentication, 1L, null))
                 .isInstanceOf(UserAlreadyInTeamException.class)
                 .hasMessage("User already member of a team");
 
@@ -191,10 +190,10 @@ class TeamServiceImplTest {
                 .id(1L)
                 .user(requester)
                 .team(team)
-                .status(RequestStatus.PENDING)
+                .type(JoinRequestType.JOIN_REQUEST)
                 .createdAt(Instant.now())
                 .build();
-        when(joinRequestRepository.findByTeam(team)).thenReturn(Collections.singletonList(joinRequest));
+        when(joinRequestRepository.findByTeamAndType(team, JoinRequestType.JOIN_REQUEST)).thenReturn(Collections.singletonList(joinRequest));
 
         // Act
         List<TeamJoinResponse> response = teamService.getJoinRequests(authentication);
@@ -206,16 +205,19 @@ class TeamServiceImplTest {
     }
 
     @Test
-    void getJoinRequests_throwsTeamNotFoundException_whenUserIsNotCaptain() {
+    void getJoinRequests_returnsEmptyList_whenUserIsNotCaptainAndHasNoInvites() {
         // Arrange
         when(authentication.getName()).thenReturn("testuser");
         when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(teamRepository.findByCaptain(testUser)).thenReturn(Optional.empty());
+        when(joinRequestRepository.findByUserAndType(testUser, JoinRequestType.CAPTAIN_INVITE)).thenReturn(Collections.emptyList());
 
-        // Act & Assert
-        assertThatThrownBy(() -> teamService.getJoinRequests(authentication))
-                .isInstanceOf(TeamNotFoundException.class)
-                .hasMessage("Пользователь не является капитаном команды");
+        // Act
+        List<TeamJoinResponse> response = teamService.getJoinRequests(authentication);
+
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response).isEmpty();
     }
 
     @Test
@@ -240,7 +242,7 @@ class TeamServiceImplTest {
                 .id(1L)
                 .user(requester)
                 .team(team)
-                .status(RequestStatus.PENDING)
+                .type(JoinRequestType.JOIN_REQUEST)
                 .createdAt(Instant.now())
                 .build();
         when(joinRequestRepository.findById(1L)).thenReturn(Optional.of(joinRequest));
@@ -250,7 +252,7 @@ class TeamServiceImplTest {
 
         // Assert
         assertThat(result).isTrue();
-        verify(joinRequestRepository).deleteById(1L);
+        verify(joinRequestRepository).delete(joinRequest);
     }
 
     @Test
@@ -275,17 +277,17 @@ class TeamServiceImplTest {
                 .id(1L)
                 .user(testUser)
                 .team(team)
-                .status(RequestStatus.PENDING)
+                .type(JoinRequestType.JOIN_REQUEST)
                 .createdAt(Instant.now())
                 .build();
         when(joinRequestRepository.findById(1L)).thenReturn(Optional.of(joinRequest));
 
         // Act & Assert
         assertThatThrownBy(() -> teamService.rejectRequest(1L, authentication))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Only captain can reject");
 
-        verify(joinRequestRepository, never()).deleteById(anyLong());
+        verify(joinRequestRepository, never()).delete(any(TeamJoinRequest.class));
     }
 
     @Test
@@ -300,6 +302,324 @@ class TeamServiceImplTest {
                 .isInstanceOf(RequestNotFoundException.class)
                 .hasMessage("Request not found");
 
-        verify(joinRequestRepository, never()).deleteById(anyLong());
+        verify(joinRequestRepository, never()).delete(any(TeamJoinRequest.class));
+    }
+
+    @Test
+    void createJoinRequest_createsInvite_whenCaptainInvitesUser() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(testUser)
+                .createdAt(Instant.now())
+                .build();
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+
+        User invitedUser = new User();
+        invitedUser.setId(2L);
+        invitedUser.setUsername("inviteduser");
+        invitedUser.setPublicName("Invited User");
+        when(userService.findByUsername("inviteduser")).thenReturn(Optional.of(invitedUser));
+
+        when(teamMemberRepository.existsByUser(invitedUser)).thenReturn(false);
+        when(joinRequestRepository.existsByTeamAndUserAndType(team, invitedUser, JoinRequestType.CAPTAIN_INVITE)).thenReturn(false);
+
+        // Act
+        Boolean result = teamService.createJoinRequest(authentication, 1L, "inviteduser");
+
+        // Assert
+        assertThat(result).isTrue();
+        verify(joinRequestRepository).save(any(TeamJoinRequest.class));
+    }
+
+    @Test
+    void createJoinRequest_throwsAccessDeniedException_whenNonCaptainTriesToInvite() {
+        // Arrange
+        User captainUser = new User();
+        captainUser.setId(2L);
+        captainUser.setUsername("captain");
+        captainUser.setPublicName("Captain User");
+
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(captainUser)
+                .createdAt(Instant.now())
+                .build();
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+
+        // Act & Assert
+        assertThatThrownBy(() -> teamService.createJoinRequest(authentication, 1L, "inviteduser"))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only captain can invite users");
+
+        verify(joinRequestRepository, never()).save(any(TeamJoinRequest.class));
+    }
+
+    @Test
+    void createJoinRequest_throwsUserNotFoundException_whenInvitedUserNotFound() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(testUser)
+                .createdAt(Instant.now())
+                .build();
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+
+        when(userService.findByUsername("nonexistent")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> teamService.createJoinRequest(authentication, 1L, "nonexistent"))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessage("Приглашаемый пользователь не найден: nonexistent");
+
+        verify(joinRequestRepository, never()).save(any(TeamJoinRequest.class));
+    }
+
+    @Test
+    void getJoinRequests_returnsInvites_whenUserIsNotCaptain() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(teamRepository.findByCaptain(testUser)).thenReturn(Optional.empty());
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(testUser)
+                .createdAt(Instant.now())
+                .build();
+
+        TeamJoinRequest invite = TeamJoinRequest.builder()
+                .id(1L)
+                .team(team)
+                .user(testUser)
+                .type(JoinRequestType.CAPTAIN_INVITE)
+                .createdAt(Instant.now())
+                .build();
+        when(joinRequestRepository.findByUserAndType(testUser, JoinRequestType.CAPTAIN_INVITE)).thenReturn(Collections.singletonList(invite));
+
+        // Act
+        List<TeamJoinResponse> response = teamService.getJoinRequests(authentication);
+
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).getType()).isEqualTo(JoinRequestType.CAPTAIN_INVITE);
+    }
+
+    @Test
+    void approveRequest_approvesJoinRequest_whenUserIsCaptain() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(testUser)
+                .createdAt(Instant.now())
+                .build();
+
+        User requester = new User();
+        requester.setId(2L);
+        requester.setUsername("requester");
+        requester.setPublicName("Requester User");
+
+        TeamJoinRequest joinRequest = TeamJoinRequest.builder()
+                .id(1L)
+                .user(requester)
+                .team(team)
+                .type(JoinRequestType.JOIN_REQUEST)
+                .createdAt(Instant.now())
+                .build();
+        when(joinRequestRepository.findById(1L)).thenReturn(Optional.of(joinRequest));
+
+        // Act
+        Boolean result = teamService.approveRequest(1L, authentication);
+
+        // Assert
+        assertThat(result).isTrue();
+        verify(teamMemberRepository).save(any(TeamMember.class));
+        verify(joinRequestRepository).delete(joinRequest);
+    }
+
+    @Test
+    void approveRequest_approvesInvite_whenUserIsInvited() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(testUser)
+                .createdAt(Instant.now())
+                .build();
+
+        TeamJoinRequest invite = TeamJoinRequest.builder()
+                .id(1L)
+                .team(team)
+                .user(testUser)
+                .type(JoinRequestType.CAPTAIN_INVITE)
+                .createdAt(Instant.now())
+                .build();
+        when(joinRequestRepository.findById(1L)).thenReturn(Optional.of(invite));
+
+        // Act
+        Boolean result = teamService.approveRequest(1L, authentication);
+
+        // Assert
+        assertThat(result).isTrue();
+        verify(teamMemberRepository).save(any(TeamMember.class));
+        verify(joinRequestRepository).delete(invite);
+    }
+
+    @Test
+    void approveRequest_throwsAccessDeniedException_whenNonCaptainApprovesJoinRequest() {
+        // Arrange
+        User otherUser = new User();
+        otherUser.setId(2L);
+        otherUser.setUsername("otheruser");
+        otherUser.setPublicName("Other User");
+
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(otherUser)
+                .createdAt(Instant.now())
+                .build();
+
+        TeamJoinRequest joinRequest = TeamJoinRequest.builder()
+                .id(1L)
+                .user(testUser)
+                .team(team)
+                .type(JoinRequestType.JOIN_REQUEST)
+                .createdAt(Instant.now())
+                .build();
+        when(joinRequestRepository.findById(1L)).thenReturn(Optional.of(joinRequest));
+
+        // Act & Assert
+        assertThatThrownBy(() -> teamService.approveRequest(1L, authentication))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only captain can approve");
+
+        verify(teamMemberRepository, never()).save(any(TeamMember.class));
+        verify(joinRequestRepository, never()).delete(any(TeamJoinRequest.class));
+    }
+
+    @Test
+    void approveRequest_throwsAccessDeniedException_whenNonInvitedUserApprovesInvite() {
+        // Arrange
+        User otherUser = new User();
+        otherUser.setId(2L);
+        otherUser.setUsername("otheruser");
+        otherUser.setPublicName("Other User");
+
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(otherUser)
+                .createdAt(Instant.now())
+                .build();
+
+        TeamJoinRequest invite = TeamJoinRequest.builder()
+                .id(1L)
+                .team(team)
+                .user(otherUser)
+                .type(JoinRequestType.CAPTAIN_INVITE)
+                .createdAt(Instant.now())
+                .build();
+        when(joinRequestRepository.findById(1L)).thenReturn(Optional.of(invite));
+
+        // Act & Assert
+        assertThatThrownBy(() -> teamService.approveRequest(1L, authentication))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only invited user can accept");
+
+        verify(teamMemberRepository, never()).save(any(TeamMember.class));
+        verify(joinRequestRepository, never()).delete(any(TeamJoinRequest.class));
+    }
+
+    @Test
+    void rejectRequest_rejectsInvite_whenUserIsInvited() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(testUser)
+                .createdAt(Instant.now())
+                .build();
+
+        TeamJoinRequest invite = TeamJoinRequest.builder()
+                .id(1L)
+                .team(team)
+                .user(testUser)
+                .type(JoinRequestType.CAPTAIN_INVITE)
+                .createdAt(Instant.now())
+                .build();
+        when(joinRequestRepository.findById(1L)).thenReturn(Optional.of(invite));
+
+        // Act
+        Boolean result = teamService.rejectRequest(1L, authentication);
+
+        // Assert
+        assertThat(result).isTrue();
+        verify(joinRequestRepository).delete(invite);
+    }
+
+    @Test
+    void rejectRequest_throwsAccessDeniedException_whenNonInvitedUserRejectsInvite() {
+        // Arrange
+        User otherUser = new User();
+        otherUser.setId(2L);
+        otherUser.setUsername("otheruser");
+        otherUser.setPublicName("Other User");
+
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+        Team team = Team.builder()
+                .id(1L)
+                .name("Test Team")
+                .captain(otherUser)
+                .createdAt(Instant.now())
+                .build();
+
+        TeamJoinRequest invite = TeamJoinRequest.builder()
+                .id(1L)
+                .team(team)
+                .user(otherUser)
+                .type(JoinRequestType.CAPTAIN_INVITE)
+                .createdAt(Instant.now())
+                .build();
+        when(joinRequestRepository.findById(1L)).thenReturn(Optional.of(invite));
+
+        // Act & Assert
+        assertThatThrownBy(() -> teamService.rejectRequest(1L, authentication))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only invited user can reject");
+
+        verify(joinRequestRepository, never()).delete(any(TeamJoinRequest.class));
     }
 }

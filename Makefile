@@ -19,6 +19,10 @@ build:
 	@echo "$(GREEN)Building Project..."
 	./gradlew clean build -x test
 
+tests:
+	@echo "$(GREEN)Building Project And Testing ..."
+	./gradlew clean build
+
 up:
 	@echo "$(GREEN)Starting Project..."
 	@$(MAKE) build

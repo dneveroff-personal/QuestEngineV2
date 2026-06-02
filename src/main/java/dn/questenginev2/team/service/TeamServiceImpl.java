@@ -12,11 +12,13 @@ import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,36 +33,181 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public TeamResponse createTeam(CreateTeamRequest request, Authentication auth) {
-        String userName = auth.getName();
-        User currentUser = userService.findByUsername(userName)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + userName));
+        User currentUser = getCurrentUser(auth);
 
         String teamName = request.getName();
-        if (teamRepository.existsByName(teamName)) {
-            throw new TeamAlreadyExistsException("Team with name " + teamName + " already exists");
-        }
+        validateTeamNameUnique(teamName);
+        validateUserNotInTeam(currentUser);
 
-        if (teamMemberRepository.existsByUser(currentUser)) {
-            throw new UserAlreadyInTeamException("User with name " + userName + " already member of team");
-        }
-
-        Team team = Team.builder()
-                .name(teamName)
-                .captain(currentUser)
-                .createdAt(Instant.now())
-                .build();
-
+        Team team = buildTeam(teamName, currentUser);
         Team savedTeam = teamRepository.save(team);
 
-        TeamMember teamMember = TeamMember.builder()
-                .team(savedTeam)
-                .user(currentUser)
-                .role(TeamRole.CAPTAIN)
-                .joinedAt(Instant.now())
-                .build();
+        TeamMember teamMember = buildTeamMember(savedTeam, currentUser);
         teamMemberRepository.save(teamMember);
 
         return buildTeamResponse(savedTeam);
+    }
+
+    @Override
+    public Boolean createJoinRequest(Authentication auth, Long teamId, String username) {
+        User currentUser = getCurrentUser(auth);
+        Team team = getTeam(teamId);
+
+        JoinRequestType requestType = JoinRequestType.of(username);
+
+        if (requestType == JoinRequestType.CAPTAIN_INVITE) {
+            validateCaptainForInvite(team, currentUser);
+        }
+
+        User targetUser = requestType.resolveUser(userService, username, currentUser);
+
+        validateNoDuplicateRequest(team, targetUser, requestType);
+        validateRequest(requestType, team, currentUser, targetUser);
+
+        TeamJoinRequest request = new TeamJoinRequest(team, targetUser, requestType);
+        joinRequestRepository.save(request);
+        return true;
+    }
+
+    @Override
+    public List<TeamJoinResponse> getJoinRequests(Authentication auth) {
+        User currentUser = getCurrentUser(auth);
+
+        return teamRepository.findByCaptain(currentUser)
+                .map(this::getCaptainJoinRequests)
+                .orElseGet(() -> getUserInvites(currentUser));
+    }
+
+    @Override
+    public Boolean approveRequest(Long requestId, Authentication auth) {
+        User currentUser = getCurrentUser(auth);
+        TeamJoinRequest request = getJoinRequest(requestId);
+
+        validateApprovalPermission(request, currentUser);
+
+        TeamMember member = buildTeamMember(request.getTeam(), request.getUser());
+        teamMemberRepository.save(member);
+        joinRequestRepository.delete(request);
+
+        return true;
+    }
+
+    @Override
+    public Boolean rejectRequest(Long requestId, Authentication auth) {
+        User currentUser = getCurrentUser(auth);
+        TeamJoinRequest request = getJoinRequest(requestId);
+
+        validateRejectionPermission(request, currentUser);
+
+        joinRequestRepository.delete(request);
+        return true;
+    }
+
+    private User getCurrentUser(Authentication auth) {
+        String userName = auth.getName();
+        return userService.findByUsername(userName)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + userName));
+    }
+
+    private Team getTeam(Long teamId) {
+        return teamRepository.findById(teamId)
+                .orElseThrow(() -> new TeamNotFoundException("Команда не найдена"));
+    }
+
+    private TeamJoinRequest getJoinRequest(Long requestId) {
+        return joinRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RequestNotFoundException("Request not found"));
+    }
+
+    private void validateTeamNameUnique(String teamName) {
+        if (teamRepository.existsByName(teamName)) {
+            throw new TeamAlreadyExistsException("Team with name " + teamName + " already exists");
+        }
+    }
+
+    private void validateUserNotInTeam(User user) {
+        if (teamMemberRepository.existsByUser(user)) {
+            throw new UserAlreadyInTeamException("User already member of a team");
+        }
+    }
+
+    private void validateNoDuplicateRequest(Team team, User user, JoinRequestType requestType) {
+        if (joinRequestRepository.existsByTeamAndUserAndType(team, user, requestType)) {
+            throw new RequestAlreadyExistsException("Request already exists");
+        }
+    }
+
+    private void validateRequest(JoinRequestType requestType, Team team, User currentUser, User targetUser) {
+        if (requestType == JoinRequestType.JOIN_REQUEST) {
+            validateJoinRequest(targetUser);
+        } else {
+            validateInvite(team, currentUser, targetUser);
+        }
+    }
+
+    private void validateJoinRequest(User user) {
+        if (teamMemberRepository.existsByUser(user)) {
+            throw new UserAlreadyInTeamException("User already member of a team");
+        }
+    }
+
+    private void validateInvite(Team team, User captain, User invitedUser) {
+        validateCaptainForInvite(team, captain);
+
+        if (teamMemberRepository.existsByUser(invitedUser)) {
+            throw new UserAlreadyInTeamException("Пользователь уже состоит в команде");
+        }
+    }
+
+    private void validateCaptainForInvite(Team team, User currentUser) {
+        if (!team.getCaptain().equals(currentUser)) {
+            throw new AccessDeniedException("Only captain can invite users");
+        }
+    }
+
+    private void validateCaptainForApproval(Team team, User currentUser) {
+        if (!team.getCaptain().equals(currentUser)) {
+            throw new AccessDeniedException("Only captain can approve");
+        }
+    }
+
+    private void validateCaptainForRejection(Team team, User currentUser) {
+        if (!team.getCaptain().equals(currentUser)) {
+            throw new AccessDeniedException("Only captain can reject");
+        }
+    }
+
+    private void validateApprovalPermission(TeamJoinRequest request, User currentUser) {
+        if (request.getType() == JoinRequestType.JOIN_REQUEST) {
+            validateCaptainForApproval(request.getTeam(), currentUser);
+        } else if (!request.getUser().equals(currentUser)) {
+            throw new AccessDeniedException("Only invited user can accept");
+        }
+    }
+
+    private void validateRejectionPermission(TeamJoinRequest request, User currentUser) {
+        if (request.getType() == JoinRequestType.JOIN_REQUEST) {
+            validateCaptainForRejection(request.getTeam(), currentUser);
+        } else if (!request.getUser().equals(currentUser)) {
+            throw new AccessDeniedException("Only invited user can reject");
+        }
+    }
+
+    private Team buildTeam(String name, User captain) {
+        return Team.builder()
+                .name(name)
+                .captain(captain)
+                .createdAt(Instant.now())
+                .build();
+    }
+
+    private TeamMember buildTeamMember(Team team, User user) {
+        return TeamMember.builder()
+                .team(team)
+                .user(user)
+                .role(TeamRole.CAPTAIN)
+                .joinedAt(Instant.now())
+                .build();
     }
 
     private TeamResponse buildTeamResponse(Team team) {
@@ -72,47 +219,14 @@ public class TeamServiceImpl implements TeamService {
         );
     }
 
-    @Override
-    public Boolean createJoinRequest(Authentication auth, Long teamId) {
-        String userName = auth.getName();
-        User currentUser = userService.findByUsername(userName)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + userName));
-
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new TeamNotFoundException("Команда не найдена"));
-
-        if (teamMemberRepository.existsByUser(currentUser)) {
-            throw new UserAlreadyInTeamException("User already member of a team");
-        }
-
-        if (joinRequestRepository.existsByTeamAndUser(team, currentUser)) {
-            throw new RequestAlreadyExistsException("Request already exists");
-        }
-
-        TeamJoinRequest request = TeamJoinRequest.builder()
-                .user(currentUser)
-                .team(team)
-                .status(RequestStatus.PENDING)
-                .createdAt(Instant.now())
-                .build();
-
-        joinRequestRepository.save(request);
-
-        return true;
+    private List<TeamJoinResponse> getCaptainJoinRequests(Team team) {
+        return joinRequestRepository.findByTeamAndType(team, JoinRequestType.JOIN_REQUEST).stream()
+                .map(this::buildTeamJoinResponse)
+                .collect(Collectors.toList());
     }
 
-    @Override
-    public List<TeamJoinResponse> getJoinRequests(Authentication auth) {
-        String userName = auth.getName();
-        User currentUser = userService.findByUsername(userName)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + userName));
-
-        Team team = teamRepository.findByCaptain(currentUser)
-                .orElseThrow(() -> new TeamNotFoundException("Пользователь не является капитаном команды"));
-
-        List<TeamJoinRequest> joinRequests = joinRequestRepository.findByTeam(team);
-
-        return joinRequests.stream()
+    private List<TeamJoinResponse> getUserInvites(User user) {
+        return joinRequestRepository.findByUserAndType(user, JoinRequestType.CAPTAIN_INVITE).stream()
                 .map(this::buildTeamJoinResponse)
                 .collect(Collectors.toList());
     }
@@ -121,57 +235,8 @@ public class TeamServiceImpl implements TeamService {
         return new TeamJoinResponse(
                 request.getId(),
                 request.getUser().getPublicName(),
-                request.getStatus(),
+                request.getType(),
                 request.getCreatedAt()
         );
     }
-
-    @Override
-    public Boolean approveRequest(Long requestId, Authentication auth) {
-        String userName = auth.getName();
-        User currentUser = userService.findByUsername(userName)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + userName));
-
-        TeamJoinRequest request = joinRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RequestNotFoundException("Request not found"));
-
-        if (!request.getTeam().getCaptain().equals(currentUser)) {
-            throw new RuntimeException("Only captain can approve");
-        }
-
-        request.setStatus(RequestStatus.APPROVED);
-        joinRequestRepository.save(request);
-
-        // Создаём TeamMember для пользователя
-        TeamMember member = TeamMember.builder()
-                .team(request.getTeam())
-                .user(request.getUser())
-                .role(TeamRole.MEMBER)
-                .joinedAt(Instant.now())
-                .build();
-
-        teamMemberRepository.save(member);
-        joinRequestRepository.deleteById(requestId);
-        return true;
-    }
-
-    @Override
-    public Boolean rejectRequest(Long requestId, Authentication auth) {
-        String userName = auth.getName();
-        User currentUser = userService.findByUsername(userName)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + userName));
-
-        TeamJoinRequest request = joinRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RequestNotFoundException("Request not found"));
-
-        if (!request.getTeam().getCaptain().equals(currentUser)) {
-            throw new RuntimeException("Only captain can reject");
-        }
-
-        request.setStatus(RequestStatus.REJECTED);
-        joinRequestRepository.save(request);
-        joinRequestRepository.deleteById(requestId);
-        return true;
-    }
-
 }

@@ -4,6 +4,7 @@ import dn.questenginev2.QuestEngineV2Application;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -17,11 +18,21 @@ public class GlobalExceptionHandler {
     private final static int STACK_TAIL = 5;
     private static final String PACKAGE_NAME = QuestEngineV2Application.class.getPackageName();
 
+    // ===== AccessDeniedException =====
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        return buildResponseEntity(
+                HttpStatus.NOT_FOUND,
+                "Requested Access Denied",
+                ex.getMessage()
+        );
+    }
+
     // ===== RequestAlreadyExistsException =====
     @ExceptionHandler(RequestAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleRequestAlreadyExists(RequestAlreadyExistsException ex) {
         return buildResponseEntity(
-                HttpStatus.NOT_FOUND,
+                HttpStatus.CONFLICT,
                 "Request Already Exists",
                 ex.getMessage()
         );

@@ -31,7 +31,14 @@ public class TeamJoinRequest {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
-    private RequestStatus status;
+    private JoinRequestType type;
 
     private Instant createdAt;
+
+    public TeamJoinRequest(Team team, User user, JoinRequestType type) {
+        this.team = team;
+        this.user = user;
+        this.type = type;
+        this.createdAt = Instant.now();
+    }
 }
