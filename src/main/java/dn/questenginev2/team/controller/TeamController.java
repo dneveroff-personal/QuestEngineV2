@@ -1,9 +1,7 @@
 package dn.questenginev2.team.controller;
 
 import dn.questenginev2.common.constants.Routes;
-import dn.questenginev2.team.dto.CreateTeamRequest;
-import dn.questenginev2.team.dto.TeamJoinResponse;
-import dn.questenginev2.team.dto.TeamResponse;
+import dn.questenginev2.team.dto.*;
 import dn.questenginev2.team.service.TeamService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,13 +33,6 @@ public class TeamController {
                 .body(teamService.createJoinRequest(auth, teamId, username));
     }
 
-    @GetMapping(Routes.JOIN_REQUESTS)
-    public ResponseEntity<List<TeamJoinResponse>> getJoinRequests(Authentication auth) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(teamService.getJoinRequests(auth));
-    }
-
     @PostMapping(Routes.APPROVE_JOIN_REQUEST)
     public ResponseEntity<Boolean> approveRequest(@PathVariable Long requestId, Authentication auth) {
         return ResponseEntity
@@ -49,10 +40,38 @@ public class TeamController {
                 .body(teamService.approveRequest(requestId, auth));
     }
 
+    @PostMapping(Routes.LEAVE)
+    public ResponseEntity<Boolean> leaveRequest(Authentication auth) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(teamService.leaveRequest(auth));
+    }
+
     @PostMapping(Routes.REJECT_JOIN_REQUEST)
     public ResponseEntity<Boolean> rejectRequest(@PathVariable Long requestId, Authentication auth) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(teamService.rejectRequest(requestId, auth));
+    }
+
+    @GetMapping(Routes.JOIN_REQUESTS)
+    public ResponseEntity<List<TeamJoinResponse>> getJoinRequests(Authentication auth) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(teamService.getJoinRequests(auth));
+    }
+
+    @GetMapping(Routes.MY)
+    public ResponseEntity<MyTeamResponse> getMyTeam(Authentication auth) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(teamService.getMyTeam(auth));
+    }
+
+    @GetMapping(Routes.MEMBERS)
+    public ResponseEntity<List<TeamMemberDto>> getTeamMembers(@PathVariable Long teamId) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(teamService.getTeamMembers(teamId));
     }
 }

@@ -38,6 +38,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // ===== ForbiddenOperationException =====
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenOperation(ForbiddenOperationException ex) {
+        return buildResponseEntity(
+                HttpStatus.CONFLICT,
+                "Forbidden Operation",
+                ex.getMessage()
+        );
+    }
+
     // ===== UserNotFoundException =====
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleEntityNotFound(UserNotFoundException ex) {

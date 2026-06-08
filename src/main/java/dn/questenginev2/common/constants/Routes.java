@@ -17,5 +17,7 @@ public final class Routes {
     public static final String JOIN_REQUESTS = "/requests";
     public static final String APPROVE_JOIN_REQUEST = JOIN_REQUESTS + "/{requestId}/approve";
     public static final String REJECT_JOIN_REQUEST = JOIN_REQUESTS + "/{requestId}/reject";
-
+    public static final String MY = "/my";
+    public static final String MEMBERS = TEAM_ID + "/members";
+    public static final String LEAVE = "/leave";
 }

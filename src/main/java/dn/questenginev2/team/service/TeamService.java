@@ -1,8 +1,6 @@
 package dn.questenginev2.team.service;
 
-import dn.questenginev2.team.dto.CreateTeamRequest;
-import dn.questenginev2.team.dto.TeamJoinResponse;
-import dn.questenginev2.team.dto.TeamResponse;
+import dn.questenginev2.team.dto.*;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;
@@ -18,4 +16,10 @@ public interface TeamService {
     Boolean approveRequest(Long requestId, Authentication auth);
 
     Boolean rejectRequest(Long requestId, Authentication auth);
+
+    MyTeamResponse getMyTeam(Authentication auth);
+
+    List<TeamMemberDto> getTeamMembers(Long teamId);
+
+    Boolean leaveRequest(Authentication auth);
 }

@@ -1,9 +1,7 @@
 package dn.questenginev2.team.service;
 
 import dn.questenginev2.common.exceptions.*;
-import dn.questenginev2.team.dto.CreateTeamRequest;
-import dn.questenginev2.team.dto.TeamJoinResponse;
-import dn.questenginev2.team.dto.TeamResponse;
+import dn.questenginev2.team.dto.*;
 import dn.questenginev2.team.entity.*;
 import dn.questenginev2.team.repository.TeamJoinRequestRepository;
 import dn.questenginev2.team.repository.TeamMemberRepository;
@@ -101,6 +99,56 @@ public class TeamServiceImpl implements TeamService {
 
         joinRequestRepository.delete(request);
         return true;
+    }
+
+    @Override
+    public MyTeamResponse getMyTeam(Authentication auth) {
+        User currentUser = getCurrentUser(auth);
+        TeamMember teamMember = teamMemberRepository.findByUser(currentUser)
+                .orElseThrow(() -> new TeamNotFoundException("Команда пользователя не найдена"));
+
+        Team team = teamMember.getTeam();
+        List<TeamMember> teamMembers = teamMemberRepository.findAllByTeam(team);
+
+        return new MyTeamResponse(
+                team.getId(),
+                team.getName(),
+                team.getCaptain().getUsername(),
+                teamMemberstoDto(teamMembers)
+        );
+    }
+
+    @Override
+    public List<TeamMemberDto> getTeamMembers(Long teamId) {
+        Team team = getTeam(teamId);
+        return teamMemberstoDto(teamMemberRepository.findAllByTeam(team));
+    }
+
+    @Override
+    public Boolean leaveRequest(Authentication auth) {
+        User currentUser = getCurrentUser(auth);
+
+        TeamMember teamMember = teamMemberRepository.findByUser(currentUser)
+                .orElseThrow(() -> new TeamNotFoundException("Команда пользователя не найдена"));
+
+        if (teamMember.getRole().equals(TeamRole.CAPTAIN)) {
+            throw new ForbiddenOperationException("Капитану запрещено покидать команду");
+        }
+
+        teamMemberRepository.delete(teamMember);
+
+        return true;
+    }
+
+    private List<TeamMemberDto> teamMemberstoDto(List<TeamMember> teamMembers) {
+        return teamMembers.stream()
+                .map(m -> new TeamMemberDto(
+                        m.getId(),
+                        m.getUser().getUsername(),
+                        m.getRole(),
+                        m.getJoinedAt()
+                ))
+                .collect(Collectors.toList());
     }
 
     private User getCurrentUser(Authentication auth) {
