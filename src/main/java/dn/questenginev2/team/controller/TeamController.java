@@ -40,11 +40,11 @@ public class TeamController {
                 .body(teamService.approveRequest(requestId, auth));
     }
 
-    @PostMapping(Routes.LEAVE)
-    public ResponseEntity<Boolean> leaveRequest(Authentication auth) {
+    @DeleteMapping(Routes.LEAVE)
+    public ResponseEntity<Boolean> leaveTeam(Authentication auth) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(teamService.leaveRequest(auth));
+                .body(teamService.leaveTeam(auth));
     }
 
     @PostMapping(Routes.REJECT_JOIN_REQUEST)
@@ -52,6 +52,20 @@ public class TeamController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(teamService.rejectRequest(requestId, auth));
+    }
+
+    @PostMapping(Routes.TRANSFER_CAPTAIN)
+    public ResponseEntity<Boolean> transferCaptain(@PathVariable Long userId, Authentication auth) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(teamService.transferCaptain(userId, auth));
+    }
+
+    @GetMapping(Routes.TEAM_ID)
+    public ResponseEntity<TeamResponse> getTeamById(@PathVariable Long teamId, Authentication auth) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(teamService.getTeamById(teamId));
     }
 
     @GetMapping(Routes.JOIN_REQUESTS)
@@ -62,7 +76,7 @@ public class TeamController {
     }
 
     @GetMapping(Routes.MY)
-    public ResponseEntity<MyTeamResponse> getMyTeam(Authentication auth) {
+    public ResponseEntity<TeamResponse> getMyTeam(Authentication auth) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(teamService.getMyTeam(auth));

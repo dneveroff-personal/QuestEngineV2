@@ -2,7 +2,10 @@ package dn.questenginev2.user.service;
 
 import java.util.Optional;
 
+import dn.questenginev2.user.dto.UserResponse;
 import dn.questenginev2.user.entity.User;
+import dn.questenginev2.user.entity.UserRole;
+import org.springframework.security.core.Authentication;
 
 public interface UserService {
 
@@ -14,4 +17,9 @@ public interface UserService {
 
     boolean existsByEmail(String email);
 
+    User getCurrentUser(Authentication auth);
+
+    User getUser(Long userId);
+
+    UserResponse setUserRole(Long userId, UserRole role, Authentication auth);
 }

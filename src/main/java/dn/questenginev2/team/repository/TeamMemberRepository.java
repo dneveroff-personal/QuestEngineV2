@@ -1,6 +1,5 @@
 package dn.questenginev2.team.repository;
 
-import dn.questenginev2.team.dto.TeamMemberDto;
 import dn.questenginev2.team.entity.Team;
 import dn.questenginev2.team.entity.TeamMember;
 import dn.questenginev2.user.entity.User;
@@ -17,4 +16,5 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
 
     Optional<TeamMember> findByUser(User user);
 
+    Optional<TeamMember> findByUserAndTeam(User user, Team team);
 }

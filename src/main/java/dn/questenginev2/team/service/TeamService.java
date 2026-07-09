@@ -17,9 +17,13 @@ public interface TeamService {
 
     Boolean rejectRequest(Long requestId, Authentication auth);
 
-    MyTeamResponse getMyTeam(Authentication auth);
+    TeamResponse getMyTeam(Authentication auth);
 
     List<TeamMemberDto> getTeamMembers(Long teamId);
 
-    Boolean leaveRequest(Authentication auth);
+    Boolean leaveTeam(Authentication auth);
+
+    Boolean transferCaptain(Long userId, Authentication auth);
+
+    TeamResponse getTeamById(Long teamId);
 }

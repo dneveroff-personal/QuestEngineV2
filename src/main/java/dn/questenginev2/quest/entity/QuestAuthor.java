@@ -1,4 +1,4 @@
-package dn.questenginev2.team.entity;
+package dn.questenginev2.quest.entity;
 
 import dn.questenginev2.user.entity.User;
 import jakarta.persistence.*;
@@ -14,25 +14,22 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "team_members")
-public class TeamMember {
+@Table(name = "quest_authors")
+public class QuestAuthor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
-    private Team team;
+    @JoinColumn(name = "quest_id", nullable = false)
+    private Quest quest;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", unique = true, nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 16)
-    private TeamRole role;
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
-    @Column(name = "joined_at", nullable = false)
-    private Instant joinedAt;
 }

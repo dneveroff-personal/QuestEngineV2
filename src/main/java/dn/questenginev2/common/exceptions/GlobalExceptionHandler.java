@@ -1,10 +1,12 @@
 package dn.questenginev2.common.exceptions;
 
 import dn.questenginev2.QuestEngineV2Application;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -25,6 +27,34 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND,
                 "Requested Access Denied",
                 ex.getMessage()
+        );
+    }
+
+    // ===== MethodArgumentNotValidException (ошибки @Valid в теле запроса) =====
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .reduce((left, right) -> left + "; " + right)
+                .orElse("Validation failed");
+        return buildResponseEntity(
+                HttpStatus.BAD_REQUEST,
+                message,
+                message
+        );
+    }
+
+    // ===== ConstraintViolationException (ошибки валидации параметров/путей) =====
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
+        String message = ex.getConstraintViolations().stream()
+                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .reduce((left, right) -> left + "; " + right)
+                .orElse("Validation failed");
+        return buildResponseEntity(
+                HttpStatus.BAD_REQUEST,
+                message,
+                message
         );
     }
 

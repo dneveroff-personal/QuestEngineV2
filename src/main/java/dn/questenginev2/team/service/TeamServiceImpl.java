@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,7 +30,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public TeamResponse createTeam(CreateTeamRequest request, Authentication auth) {
-        User currentUser = getCurrentUser(auth);
+        User currentUser = userService.getCurrentUser(auth);
 
         String teamName = request.getName();
         validateTeamNameUnique(teamName);
@@ -40,7 +39,7 @@ public class TeamServiceImpl implements TeamService {
         Team team = buildTeam(teamName, currentUser);
         Team savedTeam = teamRepository.save(team);
 
-        TeamMember teamMember = buildTeamMember(savedTeam, currentUser);
+        TeamMember teamMember = buildTeamMember(savedTeam, currentUser, TeamRole.CAPTAIN);
         teamMemberRepository.save(teamMember);
 
         return buildTeamResponse(savedTeam);
@@ -48,7 +47,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public Boolean createJoinRequest(Authentication auth, Long teamId, String username) {
-        User currentUser = getCurrentUser(auth);
+        User currentUser = userService.getCurrentUser(auth);
         Team team = getTeam(teamId);
 
         JoinRequestType requestType = JoinRequestType.of(username);
@@ -69,7 +68,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public List<TeamJoinResponse> getJoinRequests(Authentication auth) {
-        User currentUser = getCurrentUser(auth);
+        User currentUser = userService.getCurrentUser(auth);
 
         return teamRepository.findByCaptain(currentUser)
                 .map(this::getCaptainJoinRequests)
@@ -78,12 +77,12 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public Boolean approveRequest(Long requestId, Authentication auth) {
-        User currentUser = getCurrentUser(auth);
+        User currentUser = userService.getCurrentUser(auth);
         TeamJoinRequest request = getJoinRequest(requestId);
 
         validateApprovalPermission(request, currentUser);
 
-        TeamMember member = buildTeamMember(request.getTeam(), request.getUser());
+        TeamMember member = buildTeamMember(request.getTeam(), request.getUser(), TeamRole.MEMBER);
         teamMemberRepository.save(member);
         joinRequestRepository.delete(request);
 
@@ -92,7 +91,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public Boolean rejectRequest(Long requestId, Authentication auth) {
-        User currentUser = getCurrentUser(auth);
+        User currentUser = userService.getCurrentUser(auth);
         TeamJoinRequest request = getJoinRequest(requestId);
 
         validateRejectionPermission(request, currentUser);
@@ -102,20 +101,14 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
-    public MyTeamResponse getMyTeam(Authentication auth) {
-        User currentUser = getCurrentUser(auth);
+    public TeamResponse getMyTeam(Authentication auth) {
+        User currentUser = userService.getCurrentUser(auth);
         TeamMember teamMember = teamMemberRepository.findByUser(currentUser)
                 .orElseThrow(() -> new TeamNotFoundException("Команда пользователя не найдена"));
 
         Team team = teamMember.getTeam();
-        List<TeamMember> teamMembers = teamMemberRepository.findAllByTeam(team);
 
-        return new MyTeamResponse(
-                team.getId(),
-                team.getName(),
-                team.getCaptain().getUsername(),
-                teamMemberstoDto(teamMembers)
-        );
+        return buildTeamResponse(team);
     }
 
     @Override
@@ -125,8 +118,8 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
-    public Boolean leaveRequest(Authentication auth) {
-        User currentUser = getCurrentUser(auth);
+    public Boolean leaveTeam(Authentication auth) {
+        User currentUser = userService.getCurrentUser(auth);
 
         TeamMember teamMember = teamMemberRepository.findByUser(currentUser)
                 .orElseThrow(() -> new TeamNotFoundException("Команда пользователя не найдена"));
@@ -138,6 +131,37 @@ public class TeamServiceImpl implements TeamService {
         teamMemberRepository.delete(teamMember);
 
         return true;
+    }
+
+    @Override
+    @Transactional
+    public Boolean transferCaptain(Long userId, Authentication auth) {
+        User currentUser = userService.getCurrentUser(auth);
+        TeamMember teamMember = teamMemberRepository.findByUser(currentUser)
+                .orElseThrow(() -> new TeamNotFoundException("Команда пользователя не найдена"));
+        Team team = teamMember.getTeam();
+
+        validateCaptain(team, currentUser);
+
+        TeamMember captainTeamMember = teamMemberRepository.findByUserAndTeam(currentUser, team)
+                .orElseThrow(() -> new TeamNotFoundException("Капитан не найден"));
+
+        User targetUser = userService.getUser(userId);
+        TeamMember targetTeamMember = teamMemberRepository.findByUserAndTeam(targetUser, team)
+                .orElseThrow(() -> new TeamNotFoundException("Нельзя передать права капитана игроку не из вашей команды"));
+
+        captainTeamMember.setRole(TeamRole.MEMBER);
+        teamMemberRepository.save(captainTeamMember);
+        targetTeamMember.setRole(TeamRole.CAPTAIN);
+        teamMemberRepository.save(targetTeamMember);
+
+        return true;
+    }
+
+    @Override
+    public TeamResponse getTeamById(Long teamId) {
+        Team team = getTeam(teamId);
+        return buildTeamResponse(team);
     }
 
     private List<TeamMemberDto> teamMemberstoDto(List<TeamMember> teamMembers) {
@@ -207,6 +231,12 @@ public class TeamServiceImpl implements TeamService {
         }
     }
 
+    private void validateCaptain(Team team, User currentUser) {
+        if (!team.getCaptain().equals(currentUser)) {
+            throw new AccessDeniedException("Only captain transfer permissions");
+        }
+    }
+
     private void validateCaptainForInvite(Team team, User currentUser) {
         if (!team.getCaptain().equals(currentUser)) {
             throw new AccessDeniedException("Only captain can invite users");
@@ -249,21 +279,24 @@ public class TeamServiceImpl implements TeamService {
                 .build();
     }
 
-    private TeamMember buildTeamMember(Team team, User user) {
+    private TeamMember buildTeamMember(Team team, User user, TeamRole role) {
         return TeamMember.builder()
                 .team(team)
                 .user(user)
-                .role(TeamRole.CAPTAIN)
+                .role(role)
                 .joinedAt(Instant.now())
                 .build();
     }
 
     private TeamResponse buildTeamResponse(Team team) {
+        List<TeamMember> teamMembers = teamMemberRepository.findAllByTeam(team);
+
         return new TeamResponse(
                 team.getId(),
                 team.getName(),
-                team.getCaptain().getPublicName(),
-                team.getCreatedAt()
+                team.getCaptain().getUsername(),
+                team.getCreatedAt(),
+                teamMemberstoDto(teamMembers)
         );
     }
 
