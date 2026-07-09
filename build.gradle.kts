@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dn"
-version = "0.0.2"
+version = "0.0.3"
 description = "QuestEngineV2"
 
 springBoot {
@@ -53,6 +53,8 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testAnnotationProcessor("org.projectlombok:lombok")
+
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4")
 }
 
 tasks.withType<Test> {

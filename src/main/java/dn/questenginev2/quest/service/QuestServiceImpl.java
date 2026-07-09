@@ -42,6 +42,8 @@ public class QuestServiceImpl implements QuestService {
                 .type(request.getType())
                 .status(QuestStatus.DRAFT)
                 .createdAt(Instant.now())
+                .startedAt(request.getStartAt())
+                .endAt(request.getEndAt())
                 .build();
     }
 

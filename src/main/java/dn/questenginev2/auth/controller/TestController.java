@@ -6,6 +6,8 @@ import dn.questenginev2.auth.service.LoginService;
 import dn.questenginev2.common.constants.Routes;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +18,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/test")
+@Tag(name = "Test", description = "Test endpoints")
 public class TestController {
 
     private final UserService userService;
 
+    @Operation(summary = "Secure test endpoint", description = "Test endpoint that requires authentication")
     @GetMapping("/secure")
     public String secure() {
         // Можно внедрить непосредственно в метод как параметр

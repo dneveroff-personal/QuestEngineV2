@@ -32,3 +32,9 @@ jwt:
 admin:
   reset:
     secret: ${ADMIN_RESET_SECRET:change-me-in-production}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui
