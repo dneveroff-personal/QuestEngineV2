@@ -5,8 +5,16 @@ plugins {
 }
 
 group = "dn"
-version = "0.0.1"
+version = "0.0.2"
 description = "QuestEngineV2"
+
+springBoot {
+    buildInfo {
+        properties {
+            version = project.version.toString()
+        }
+    }
+}
 
 java {
     toolchain {
@@ -49,4 +57,9 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+// Only one jar for build — executable bootJar
+tasks.named("jar") {
+    enabled = false
 }

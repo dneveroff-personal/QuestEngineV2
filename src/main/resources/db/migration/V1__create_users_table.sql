@@ -10,3 +10,11 @@ CREATE TABLE users (
 
 CREATE INDEX idx_users_username             ON users(username);
 CREATE INDEX idx_users_email                ON users(email);
+
+INSERT INTO users (username, public_name, email, password_hash, role)
+VALUES (
+        'admin',
+        'ADMIN',
+        'admin@dntest.ad',
+        '$2a$10$X//e4ns8cir4Lq80.bsNh.BK3j6IJ.rQp7qX6JmWKGrvXXbSsOMZa',
+        'ADMIN');

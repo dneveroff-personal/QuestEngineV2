@@ -1,9 +1,9 @@
 package dn.questenginev2.user.controller;
 
 import dn.questenginev2.common.constants.Routes;
+import dn.questenginev2.user.dto.ResetPasswordRequest;
 import dn.questenginev2.user.dto.SetRoleRequest;
 import dn.questenginev2.user.dto.UserResponse;
-import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +28,18 @@ public class UserController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(userService.setUserRole(userId, request.getRole(), auth));
+    }
+
+    @PostMapping(Routes.RESET_PASSWORD)
+    public ResponseEntity<Void> resetPassword(
+            @PathVariable Long userId,
+            @Valid @RequestBody ResetPasswordRequest request,
+            Authentication auth
+    ) {
+        userService.resetPassword(userId, request, auth);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .build();
     }
 
 }

@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import dn.questenginev2.auth.dto.ResetAdminPasswordRequest;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.UserNotFoundException;
 import dn.questenginev2.team.dto.TeamMemberDto;
 import dn.questenginev2.team.dto.TeamResponse;
 import dn.questenginev2.team.entity.Team;
 import dn.questenginev2.team.entity.TeamMember;
+import dn.questenginev2.user.dto.ResetPasswordRequest;
 import dn.questenginev2.user.dto.UserResponse;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
@@ -17,6 +19,7 @@ import dn.questenginev2.user.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,6 +27,7 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public User saveUser(User user) {
@@ -62,6 +66,25 @@ public class UserServiceImpl implements UserService {
         User targetUser = getUser(userId);
         targetUser.setRole(role);
         return buildUserResponse(userRepository.save(targetUser));
+    }
+
+    @Override
+    public void resetPassword(Long userId, ResetPasswordRequest request, Authentication auth) {
+        User currentUser = getCurrentUser(auth);
+        validateAdmin(currentUser);
+
+        User targetUser = getUser(userId);
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        targetUser.setPasswordHash(encodedPassword);
+        userRepository.save(targetUser);
+    }
+
+    @Override
+    public void resetAdminPassword(ResetAdminPasswordRequest request) {
+        User adminUser = getUser(1L);
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        adminUser.setPasswordHash(encodedPassword);
+        userRepository.save(adminUser);
     }
 
     private UserResponse buildUserResponse(User user) {

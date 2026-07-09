@@ -10,7 +10,7 @@ clean:
 	./gradlew clean
 	rm -rf */build/ .gradle/ build/
 	docker compose -f docker-compose.yml down -v --remove-orphans
-	docker rmi $$(docker images "dn-quest/*:dev" -q) 2>/dev/null || true
+	docker rmi $$(docker images "questenginev2/*:dev" -q) 2>/dev/null || true
 	@echo "$(GREEN)Очистка завершена!$(RESET)"
 
 up-clean: clean up

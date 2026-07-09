@@ -29,23 +29,53 @@ public class QuestServiceImpl implements QuestService {
         User currentUser = userService.getCurrentUser(auth);
         validateAuthorOrAdmin(currentUser);
 
-        Quest quest = Quest.builder()
+        Quest quest = buildQuest(request);
+
+        Quest savedQuest = questRepository.save(quest);
+        return mapToResponse(savedQuest);
+    }
+
+    private static Quest buildQuest(CreateQuestRequest request) {
+        return Quest.builder()
                 .title(request.getTitle())
                 .description(request.getDescription() != null ? request.getDescription() : "")
                 .type(request.getType())
                 .status(QuestStatus.DRAFT)
                 .createdAt(Instant.now())
                 .build();
+    }
+
+    @Override
+    public QuestResponse getQuestById(Long questId) {
+        Quest quest = validateQuestExist(questId);
+        return mapToResponse(quest);
+    }
+
+    @Override
+    public QuestResponse updateQuest(Long questId, CreateQuestRequest request, Authentication auth) {
+        User currentUser = userService.getCurrentUser(auth);
+        validateAuthorOrAdmin(currentUser);
+
+        Quest quest = validateQuestExist(questId);
+        quest.setTitle(request.getTitle());
+        quest.setDescription(request.getDescription());
+        quest.setType(request.getType());
+        quest.setStartedAt(request.getStartAt());
+        quest.setEndAt(request.getEndAt());
 
         Quest savedQuest = questRepository.save(quest);
         return mapToResponse(savedQuest);
     }
 
-    @Override
-    public QuestResponse getQuestById(Long questId) {
-        Quest quest = questRepository.findById(questId)
+    private Quest validateQuestExist(Long questId) {
+        return questRepository.findById(questId)
                 .orElseThrow(() -> new IllegalArgumentException("Квест не найден: " + questId));
-        return mapToResponse(quest);
+    }
+
+    @Override
+    public void delete(Long questId) {
+        Quest quest = validateQuestExist(questId);
+        questRepository.delete(quest);
     }
 
     private void validateAuthorOrAdmin(User user) {

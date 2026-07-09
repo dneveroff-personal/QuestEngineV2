@@ -175,12 +175,6 @@ public class TeamServiceImpl implements TeamService {
                 .collect(Collectors.toList());
     }
 
-    private User getCurrentUser(Authentication auth) {
-        String userName = auth.getName();
-        return userService.findByUsername(userName)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + userName));
-    }
-
     private Team getTeam(Long teamId) {
         return teamRepository.findById(teamId)
                 .orElseThrow(() -> new TeamNotFoundException("Команда не найдена"));
@@ -300,6 +294,15 @@ public class TeamServiceImpl implements TeamService {
         );
     }
 
+    private TeamJoinResponse buildTeamJoinResponse(TeamJoinRequest request) {
+        return new TeamJoinResponse(
+                request.getId(),
+                request.getUser().getPublicName(),
+                request.getType(),
+                request.getCreatedAt()
+        );
+    }
+
     private List<TeamJoinResponse> getCaptainJoinRequests(Team team) {
         return joinRequestRepository.findByTeamAndType(team, JoinRequestType.JOIN_REQUEST).stream()
                 .map(this::buildTeamJoinResponse)
@@ -310,14 +313,5 @@ public class TeamServiceImpl implements TeamService {
         return joinRequestRepository.findByUserAndType(user, JoinRequestType.CAPTAIN_INVITE).stream()
                 .map(this::buildTeamJoinResponse)
                 .collect(Collectors.toList());
-    }
-
-    private TeamJoinResponse buildTeamJoinResponse(TeamJoinRequest request) {
-        return new TeamJoinResponse(
-                request.getId(),
-                request.getUser().getPublicName(),
-                request.getType(),
-                request.getCreatedAt()
-        );
     }
 }

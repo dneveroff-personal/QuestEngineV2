@@ -31,4 +31,19 @@ public class QuestController {
                 .status(HttpStatus.OK)
                 .body(questService.getQuestById(questId));
     }
+
+    @PutMapping(Routes.QUEST_ID)
+    public ResponseEntity<QuestResponse> updateQuest(@PathVariable Long questId, @Valid @RequestBody CreateQuestRequest request, Authentication auth) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(questService.updateQuest(questId, request, auth));
+    }
+
+    @DeleteMapping(Routes.QUEST_ID)
+    public ResponseEntity<Void> delete(@PathVariable Long questId) {
+        questService.delete(questId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .build();
+    }
 }

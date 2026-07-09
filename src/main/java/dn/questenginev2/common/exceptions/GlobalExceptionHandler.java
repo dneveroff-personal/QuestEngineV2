@@ -44,6 +44,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // ===== WrongPasswordException (ошибки @Valid в теле запроса) =====
+    @ExceptionHandler(WrongPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleWrongPasswordException(WrongPasswordException ex) {
+        return buildResponseEntity(
+                HttpStatus.BAD_REQUEST,
+                "Wrong username or password",
+                ex.getMessage()
+        );
+    }
+
     // ===== ConstraintViolationException (ошибки валидации параметров/путей) =====
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
