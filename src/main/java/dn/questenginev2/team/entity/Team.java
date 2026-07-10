@@ -2,16 +2,14 @@ package dn.questenginev2.team.entity;
 
 import dn.questenginev2.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 
-@Data
-@Builder
 @Entity
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "teams")
@@ -29,6 +27,6 @@ public class Team {
     @JoinColumn(name = "captain_id", nullable = false)
     private User captain;
 
-    private Instant createdAt;
-
+    @Builder.Default
+    private Instant createdAt = Instant.now();
 }

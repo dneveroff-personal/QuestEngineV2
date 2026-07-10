@@ -4,7 +4,9 @@ import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.quest.dto.CreateQuestRequest;
 import dn.questenginev2.quest.dto.QuestResponse;
 import dn.questenginev2.quest.entity.Quest;
+import dn.questenginev2.quest.entity.QuestAuthor;
 import dn.questenginev2.quest.entity.QuestStatus;
+import dn.questenginev2.quest.repository.QuestAuthorRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
@@ -21,9 +23,11 @@ import java.time.Instant;
 @AllArgsConstructor
 public class QuestServiceImpl implements QuestService {
 
+    private final QuestAuthorRepository questAuthorRepository;
     private final QuestRepository questRepository;
     private final UserService userService;
 
+    // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
     @Override
     public QuestResponse createQuest(CreateQuestRequest request, Authentication auth) {
         User currentUser = userService.getCurrentUser(auth);
@@ -32,25 +36,17 @@ public class QuestServiceImpl implements QuestService {
         Quest quest = buildQuest(request);
 
         Quest savedQuest = questRepository.save(quest);
-        return mapToResponse(savedQuest);
-    }
 
-    private static Quest buildQuest(CreateQuestRequest request) {
-        return Quest.builder()
-                .title(request.getTitle())
-                .description(request.getDescription() != null ? request.getDescription() : "")
-                .type(request.getType())
-                .status(QuestStatus.DRAFT)
-                .createdAt(Instant.now())
-                .startedAt(request.getStartAt())
-                .endAt(request.getEndAt())
-                .build();
+        QuestAuthor author = buildQuestAuthor(savedQuest, currentUser);
+        questAuthorRepository.save(author);
+
+        return buildQuestResponse(savedQuest);
     }
 
     @Override
     public QuestResponse getQuestById(Long questId) {
         Quest quest = validateQuestExist(questId);
-        return mapToResponse(quest);
+        return buildQuestResponse(quest);
     }
 
     @Override
@@ -62,16 +58,11 @@ public class QuestServiceImpl implements QuestService {
         quest.setTitle(request.getTitle());
         quest.setDescription(request.getDescription());
         quest.setType(request.getType());
-        quest.setStartedAt(request.getStartAt());
-        quest.setEndAt(request.getEndAt());
+        quest.setStartTime(request.getStartTime());
+        quest.setFinishTime(request.getFinishTime());
 
         Quest savedQuest = questRepository.save(quest);
-        return mapToResponse(savedQuest);
-    }
-
-    private Quest validateQuestExist(Long questId) {
-        return questRepository.findById(questId)
-                .orElseThrow(() -> new IllegalArgumentException("Квест не найден: " + questId));
+        return buildQuestResponse(savedQuest);
     }
 
     @Override
@@ -80,13 +71,21 @@ public class QuestServiceImpl implements QuestService {
         questRepository.delete(quest);
     }
 
+    // ────── VALIDATIONS ───────────────────────────────────────────────────────────
+    @Override
+    public Quest validateQuestExist(Long questId) {
+        return questRepository.findById(questId)
+                .orElseThrow(() -> new IllegalArgumentException("Квест не найден: " + questId));
+    }
+
     private void validateAuthorOrAdmin(User user) {
         if (user.getRole() != UserRole.AUTHOR && user.getRole() != UserRole.ADMIN) {
             throw new ForbiddenOperationException("Создавать квесты могут только AUTHOR или ADMIN");
         }
     }
 
-    private QuestResponse mapToResponse(Quest quest) {
+    // ────── BUILDERS ───────────────────────────────────────────────────────────
+    private QuestResponse buildQuestResponse(Quest quest) {
         return QuestResponse.builder()
                 .id(quest.getId())
                 .title(quest.getTitle())
@@ -94,8 +93,27 @@ public class QuestServiceImpl implements QuestService {
                 .type(quest.getType())
                 .status(quest.getStatus())
                 .createdAt(quest.getCreatedAt())
-                .startedAt(quest.getStartedAt())
-                .endAt(quest.getEndAt())
+                .startTime(quest.getStartTime())
+                .finishTime(quest.getFinishTime())
+                .build();
+    }
+
+    private Quest buildQuest(CreateQuestRequest request) {
+        return Quest.builder()
+                .title(request.getTitle())
+                .description(request.getDescription() != null ? request.getDescription() : "")
+                .type(request.getType())
+                .status(QuestStatus.DRAFT)
+                .createdAt(Instant.now())
+                .startTime(request.getStartTime())
+                .finishTime(request.getFinishTime())
+                .build();
+    }
+
+    private QuestAuthor buildQuestAuthor(Quest savedQuest, User currentUser) {
+        return QuestAuthor.builder()
+                .quest(savedQuest)
+                .user(currentUser)
                 .build();
     }
 }

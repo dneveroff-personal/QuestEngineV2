@@ -28,6 +28,7 @@ public class TeamServiceImpl implements TeamService {
     private final TeamJoinRequestRepository joinRequestRepository;
     private final UserService userService;
 
+    // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
     @Override
     public TeamResponse createTeam(CreateTeamRequest request, Authentication auth) {
         User currentUser = userService.getCurrentUser(auth);
@@ -185,6 +186,7 @@ public class TeamServiceImpl implements TeamService {
                 .orElseThrow(() -> new RequestNotFoundException("Request not found"));
     }
 
+    // ────── VALIDATIONS ───────────────────────────────────────────────────────────
     private void validateTeamNameUnique(String teamName) {
         if (teamRepository.existsByName(teamName)) {
             throw new TeamAlreadyExistsException("Team with name " + teamName + " already exists");
@@ -265,6 +267,7 @@ public class TeamServiceImpl implements TeamService {
         }
     }
 
+    // ────── BUILDERS ───────────────────────────────────────────────────────────
     private Team buildTeam(String name, User captain) {
         return Team.builder()
                 .name(name)

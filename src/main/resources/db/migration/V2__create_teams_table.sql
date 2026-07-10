@@ -6,3 +6,5 @@ CREATE TABLE teams (
 );
 
 CREATE INDEX idx_teams_name             ON teams(name);
+
+ALTER TABLE teams ADD CONSTRAINT fk_teams_user FOREIGN KEY (captain_id) REFERENCES users(id);

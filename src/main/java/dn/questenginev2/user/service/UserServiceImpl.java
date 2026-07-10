@@ -29,6 +29,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
     @Override
     public User saveUser(User user) {
         return userRepository.save(user);
@@ -37,14 +38,6 @@ public class UserServiceImpl implements UserService {
     @Override
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
-    }
-
-    public boolean existsByUsername(String username) {
-        return userRepository.findByUsername(username).isPresent();
-    }
-
-    public boolean existsByEmail(String email) {
-        return userRepository.findByEmail(email).isPresent();
     }
 
     public User getCurrentUser(Authentication auth) {
@@ -87,6 +80,22 @@ public class UserServiceImpl implements UserService {
         userRepository.save(adminUser);
     }
 
+    // ────── VALIDATIONS ───────────────────────────────────────────────────────────
+    private void validateAdmin(User currentUser) {
+        if (currentUser.getRole() != UserRole.ADMIN) {
+            throw new ForbiddenOperationException("Данная операция разрешена только Администратору");
+        }
+    }
+
+    public boolean existsByUsername(String username) {
+        return userRepository.findByUsername(username).isPresent();
+    }
+
+    public boolean existsByEmail(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
+
+    // ────── BUILDERS ───────────────────────────────────────────────────────────
     private UserResponse buildUserResponse(User user) {
         return new UserResponse(
                 user.getId(),
@@ -95,12 +104,6 @@ public class UserServiceImpl implements UserService {
                 user.getRole(),
                 user.getCreatedAt()
         );
-    }
-
-    private void validateAdmin(User currentUser) {
-        if (currentUser.getRole() != UserRole.ADMIN) {
-            throw new ForbiddenOperationException("Данная операция разрешена только Администратору");
-        }
     }
 
 }

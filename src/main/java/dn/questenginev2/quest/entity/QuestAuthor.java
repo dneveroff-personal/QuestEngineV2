@@ -2,15 +2,13 @@ package dn.questenginev2.quest.entity;
 
 import dn.questenginev2.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,11 +23,11 @@ public class QuestAuthor {
     @JoinColumn(name = "quest_id", nullable = false)
     private Quest quest;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
-
+    @Builder.Default
+    private Instant createdAt = Instant.now();
 }

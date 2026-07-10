@@ -21,6 +21,6 @@ public class QuestResponse {
     private QuestType type;
     private QuestStatus status;
     private Instant createdAt;
-    private Instant startedAt;
-    private Instant endAt;
+    private Instant startTime;
+    private Instant finishTime;
 }

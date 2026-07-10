@@ -32,5 +32,6 @@ public final class Routes {
 
     // Quest
     public static final String QUEST_ID = "/{questId:\\d+}";
+    public static final String QUEST_LEVELS = QUEST_ID + "/levels";
 
 }

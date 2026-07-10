@@ -16,6 +16,7 @@ public class LoginServiceImpl implements LoginService {
     private final UserService userService;
     private final JwtService jwtService;
 
+    // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
     @Override
     public LoginResponse login(AuthRequestBase request) {
         User user = userService.findByUsername(request.getUsername())
@@ -29,17 +30,21 @@ public class LoginServiceImpl implements LoginService {
     @Override
     public LoginResponse login(AuthRequestBase request, User user) {
         validatePassword(request.getPassword(), user.getPasswordHash());
+
         return buildLoginResponse(user);
     }
 
+    // ────── VALIDATIONS ───────────────────────────────────────────────────────────
     private void validatePassword(String rawPassword, String passwordHash) {
         if (!jwtService.validatePassword(rawPassword, passwordHash)) {
             throw new BadCredentialsException("Invalid password");
         }
     }
 
+    // ────── BUILDERS ───────────────────────────────────────────────────────────
     private LoginResponse buildLoginResponse(User user) {
         String token = jwtService.generateToken(user.getUsername(), user.getRole().name());
+
         return new LoginResponse(user.getPublicName(), token);
     }
 }

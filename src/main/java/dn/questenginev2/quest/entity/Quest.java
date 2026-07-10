@@ -1,15 +1,13 @@
 package dn.questenginev2.quest.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 
-@Data
 @Entity
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -38,11 +36,12 @@ public class Quest {
     private QuestStatus status = QuestStatus.DRAFT;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    @Builder.Default
+    private Instant createdAt = Instant.now();
 
     @Column(name = "started_at")
-    private Instant startedAt;
+    private Instant startTime;
 
     @Column(name = "end_at")
-    private Instant endAt;
+    private Instant finishTime;
 }

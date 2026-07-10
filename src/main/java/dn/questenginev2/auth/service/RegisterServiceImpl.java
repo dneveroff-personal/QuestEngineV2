@@ -18,28 +18,18 @@ public class RegisterServiceImpl implements RegisterService {
     private final LoginService loginService;
     private final PasswordEncoder passwordEncoder;
 
+    // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
     @Override
     public LoginResponse register(RegisterRequest requestDto) {
-        // validate
         validateUserForRegistration(requestDto.getUsername(), requestDto.getEmail());
 
-        // hash password
-        String passwordHash = passwordEncoder.encode(requestDto.getPassword());
-
-        // save user
-        User user = new User();
-        user.setUsername(requestDto.getUsername());
-        user.setPublicName(requestDto.getPublicName() != null && !requestDto.getPublicName().isBlank()
-                ? requestDto.getPublicName()
-                : requestDto.getUsername());
-        user.setEmail(requestDto.getEmail());
-        user.setPasswordHash(passwordHash);
-        user.setRole(UserRole.PLAYER);
+        User user = buildUser(requestDto);
         user = userService.saveUser(user);
 
         return loginService.login(requestDto, user);
     }
 
+    // ────── VALIDATIONS ───────────────────────────────────────────────────────────
     @Override
     public void validateUserForRegistration(String username, String email) {
         if (userService.existsByUsername(username)) {
@@ -50,5 +40,19 @@ public class RegisterServiceImpl implements RegisterService {
         }
     }
 
+    // ────── BUILDERS ───────────────────────────────────────────────────────────
+    private User buildUser(RegisterRequest requestDto) {
+        String passwordHash = passwordEncoder.encode(requestDto.getPassword());
+        User user = new User();
 
+        user.setUsername(requestDto.getUsername());
+        user.setPublicName(requestDto.getPublicName() != null && !requestDto.getPublicName().isBlank()
+                ? requestDto.getPublicName()
+                : requestDto.getUsername());
+        user.setEmail(requestDto.getEmail());
+        user.setPasswordHash(passwordHash);
+        user.setRole(UserRole.PLAYER);
+
+        return user;
+    }
 }

@@ -16,7 +16,7 @@ public class CreateQuestRequest {
 
     private String description;
     private QuestType type;
-    private Instant startAt;
-    private Instant endAt;
+    private Instant startTime;
+    private Instant finishTime;
 
 }
