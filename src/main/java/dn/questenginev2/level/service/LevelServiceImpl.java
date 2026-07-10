@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 @Transactional
@@ -41,13 +42,51 @@ public class LevelServiceImpl implements LevelService {
     }
 
     @Override
+    public List<LevelResponse> getLevelsByQuestId(Long questId) {
+        return levelRepository.findByQuestIdOrderByOrderIndex(questId)
+                .stream()
+                .map(this::buildLevelResponse)
+                .toList();
+    }
+
+    @Override
+    public LevelResponse getLevelById(Long levelId) {
+        Level level = validateLevelExist(levelId);
+        return buildLevelResponse(level);
+    }
+
+    @Override
+    public LevelResponse updateLevel(Long levelId, CreateLevelRequest request, Authentication auth) {
+        User currentUser = userService.getCurrentUser(auth);
+        questService.validateAuthorOrAdmin(currentUser);
+        Level level = validateLevelExist(levelId);
+        questService.validateQuestAuthor(currentUser, level.getQuest().getId());
+
+        level.setTitle(request.getTitle());
+        level.setContent(request.getContent());
+        level.setUpdatedAt(Instant.now());
+
+        Level savedLevel = levelRepository.save(level);
+        return buildLevelResponse(savedLevel);
+    }
+
+    @Override
+    public void deleteLevel(Long levelId) {
+        Level level = validateLevelExist(levelId);
+        levelRepository.delete(level);
+    }
+
+    @Override
     public Integer getMaxLevelIndex(Long questId) {
         Integer maxIndex = levelRepository.findMaxOrderIndex(questId);
         return maxIndex != null ? maxIndex : 0;
     }
 
     // ────── VALIDATIONS ───────────────────────────────────────────────────────────
-
+    private Level validateLevelExist(Long levelId) {
+        return levelRepository.findById(levelId)
+                .orElseThrow(() -> new IllegalArgumentException("Уровень не найден: " + levelId));
+    }
 
     // ────── BUILDERS ───────────────────────────────────────────────────────────
     private LevelResponse buildLevelResponse(Level level) {

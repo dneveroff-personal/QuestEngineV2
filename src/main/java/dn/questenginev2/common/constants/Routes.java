@@ -33,5 +33,14 @@ public final class Routes {
     // Quest
     public static final String QUEST_ID = "/{questId:\\d+}";
     public static final String QUEST_LEVELS = QUEST_ID + "/levels";
+    public static final String LEVEL_ID = "/{levelId:\\d+}";
+    public static final String LEVEL_HINTS = QUEST_LEVELS + LEVEL_ID + "/hints";
+
+    // Level
+    public static final String LEVELS = API + "/levels";
+
+    // Hint
+    public static final String HINTS = API + "/hints";
+    public static final String HINT_ID = "/{hintId:\\d+}";
 
 }
