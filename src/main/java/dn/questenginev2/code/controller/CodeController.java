@@ -65,8 +65,8 @@ public class CodeController {
 
     @Operation(summary = "Delete code", description = "Delete code by ID")
     @DeleteMapping(Routes.CODES + Routes.CODE_ID)
-    public ResponseEntity<Void> deleteCode(@PathVariable Long codeId) {
-        codeService.deleteCode(codeId);
+    public ResponseEntity<Void> deleteCode(@PathVariable Long codeId, Authentication auth) {
+        codeService.deleteCode(codeId, auth);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .build();

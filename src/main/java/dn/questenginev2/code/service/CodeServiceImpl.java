@@ -81,8 +81,12 @@ public class CodeServiceImpl implements CodeService {
     }
 
     @Override
-    public void deleteCode(Long codeId) {
+    public void deleteCode(Long codeId, Authentication auth) {
+        User currentUser = userService.getCurrentUser(auth);
+        questService.validateAuthorOrAdmin(currentUser);
         Code code = validateCodeExist(codeId);
+        questService.validateQuestAuthor(currentUser, code.getLevel().getQuest().getId());
+
         codeRepository.delete(code);
     }
 

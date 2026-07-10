@@ -16,7 +16,7 @@ public interface HintService {
 
     HintResponse updateHint(Long hintId, CreateHintRequest request, Authentication auth);
 
-    void deleteHint(Long hintId);
+    void deleteHint(Long hintId, Authentication auth);
 
     Integer getMaxHintIndex(Long levelId);
 }

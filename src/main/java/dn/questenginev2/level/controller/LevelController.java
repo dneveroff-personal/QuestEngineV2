@@ -62,8 +62,8 @@ public class LevelController {
 
     @Operation(summary = "Delete level", description = "Delete level by ID")
     @DeleteMapping(Routes.LEVELS + Routes.LEVEL_ID)
-    public ResponseEntity<Void> deleteLevel(@PathVariable Long levelId) {
-        levelService.deleteLevel(levelId);
+    public ResponseEntity<Void> deleteLevel(@PathVariable Long levelId, Authentication auth) {
+        levelService.deleteLevel(levelId, auth);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .build();

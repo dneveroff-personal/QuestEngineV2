@@ -16,7 +16,7 @@ public interface LevelService {
 
     LevelResponse updateLevel(Long levelId, CreateLevelRequest request, Authentication auth);
 
-    void deleteLevel(Long levelId);
+    void deleteLevel(Long levelId, Authentication auth);
 
     Integer getMaxLevelIndex(Long questId);
 }

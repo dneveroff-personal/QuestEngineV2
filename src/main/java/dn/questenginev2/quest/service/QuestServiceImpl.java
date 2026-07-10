@@ -67,8 +67,12 @@ public class QuestServiceImpl implements QuestService {
     }
 
     @Override
-    public void delete(Long questId) {
+    public void delete(Long questId, Authentication auth) {
+        User currentUser = userService.getCurrentUser(auth);
+        validateAuthorOrAdmin(currentUser);
         Quest quest = validateQuestExist(questId);
+        validateQuestAuthor(currentUser, questId);
+
         questRepository.delete(quest);
     }
 

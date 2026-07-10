@@ -278,7 +278,7 @@ class CodeServiceImplTest {
     }
 
     @Test
-    void deleteCode_deletesCode_whenCodeExists() {
+    void deleteCode_deletesCode_whenUserIsAuthor() {
         Code code = Code.builder()
                 .id(1L)
                 .level(testLevel)
@@ -288,18 +288,22 @@ class CodeServiceImplTest {
                 .createdAt(Instant.now())
                 .build();
 
+        when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
         when(codeRepository.findById(1L)).thenReturn(java.util.Optional.of(code));
 
-        codeService.deleteCode(1L);
+        codeService.deleteCode(1L, authentication);
 
+        verify(questService).validateAuthorOrAdmin(authorUser);
+        verify(questService).validateQuestAuthor(authorUser, testLevel.getQuest().getId());
         verify(codeRepository).delete(code);
     }
 
     @Test
     void deleteCode_throwsIllegalArgumentException_whenCodeDoesNotExist() {
+        when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
         when(codeRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
-        assertThatThrownBy(() -> codeService.deleteCode(999L))
+        assertThatThrownBy(() -> codeService.deleteCode(999L, authentication))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Код не найден");
 

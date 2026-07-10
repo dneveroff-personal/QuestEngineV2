@@ -282,7 +282,7 @@ class HintServiceImplTest {
     }
 
     @Test
-    void deleteHint_deletesHint_whenHintExists() {
+    void deleteHint_deletesHint_whenUserIsAuthor() {
         Hint hint = Hint.builder()
                 .id(1L)
                 .level(testLevel)
@@ -293,18 +293,22 @@ class HintServiceImplTest {
                 .updatedAt(Instant.now())
                 .build();
 
+        when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
         when(hintRepository.findById(1L)).thenReturn(java.util.Optional.of(hint));
 
-        hintService.deleteHint(1L);
+        hintService.deleteHint(1L, authentication);
 
+        verify(questService).validateAuthorOrAdmin(authorUser);
+        verify(questService).validateQuestAuthor(authorUser, testLevel.getQuest().getId());
         verify(hintRepository).delete(hint);
     }
 
     @Test
     void deleteHint_throwsIllegalArgumentException_whenHintDoesNotExist() {
+        when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
         when(hintRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
-        assertThatThrownBy(() -> hintService.deleteHint(999L))
+        assertThatThrownBy(() -> hintService.deleteHint(999L, authentication))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Подсказка не найдена");
 

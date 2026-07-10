@@ -75,8 +75,12 @@ public class HintServiceImpl implements HintService {
     }
 
     @Override
-    public void deleteHint(Long hintId) {
+    public void deleteHint(Long hintId, Authentication auth) {
+        User currentUser = userService.getCurrentUser(auth);
+        questService.validateAuthorOrAdmin(currentUser);
         Hint hint = validateHintExist(hintId);
+        questService.validateQuestAuthor(currentUser, hint.getLevel().getQuest().getId());
+
         hintRepository.delete(hint);
     }
 

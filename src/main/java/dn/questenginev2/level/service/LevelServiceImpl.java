@@ -71,8 +71,12 @@ public class LevelServiceImpl implements LevelService {
     }
 
     @Override
-    public void deleteLevel(Long levelId) {
+    public void deleteLevel(Long levelId, Authentication auth) {
+        User currentUser = userService.getCurrentUser(auth);
+        questService.validateAuthorOrAdmin(currentUser);
         Level level = validateLevelExist(levelId);
+        questService.validateQuestAuthor(currentUser, level.getQuest().getId());
+
         levelRepository.delete(level);
     }
 

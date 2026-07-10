@@ -258,7 +258,7 @@ class QuestServiceImplTest {
     }
 
     @Test
-    void delete_deletesQuest_whenQuestExists() {
+    void delete_deletesQuest_whenUserIsAuthor() {
         Quest quest = Quest.builder()
                 .id(1L)
                 .title("Test Quest")
@@ -267,19 +267,24 @@ class QuestServiceImplTest {
                 .status(QuestStatus.DRAFT)
                 .createdAt(Instant.now())
                 .build();
+        when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
         when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
+        when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
 
-        questService.delete(1L);
+        questService.delete(1L, authentication);
 
+        verify(userService).getCurrentUser(authentication);
+        verify(questAuthorRepository).existsByQuestIdAndUserId(1L, 1L);
         verify(questRepository).findById(1L);
         verify(questRepository).delete(quest);
     }
 
     @Test
     void delete_throwsIllegalArgumentException_whenQuestDoesNotExist() {
+        when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
         when(questRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> questService.delete(999L))
+        assertThatThrownBy(() -> questService.delete(999L, authentication))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Квест не найден");
 

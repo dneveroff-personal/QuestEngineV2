@@ -47,8 +47,8 @@ public class QuestController {
 
     @Operation(summary = "Delete quest", description = "Delete quest by ID")
     @DeleteMapping(Routes.QUEST_ID)
-    public ResponseEntity<Void> delete(@PathVariable Long questId) {
-        questService.delete(questId);
+    public ResponseEntity<Void> delete(@PathVariable Long questId, Authentication auth) {
+        questService.delete(questId, auth);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .build();

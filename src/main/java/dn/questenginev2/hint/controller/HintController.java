@@ -65,8 +65,8 @@ public class HintController {
 
     @Operation(summary = "Delete hint", description = "Delete hint by ID")
     @DeleteMapping(Routes.HINTS + Routes.HINT_ID)
-    public ResponseEntity<Void> deleteHint(@PathVariable Long hintId) {
-        hintService.deleteHint(hintId);
+    public ResponseEntity<Void> deleteHint(@PathVariable Long hintId, Authentication auth) {
+        hintService.deleteHint(hintId, auth);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .build();

@@ -16,5 +16,5 @@ public interface CodeService {
 
     CodeResponse updateCode(Long codeId, CreateCodeRequest request, Authentication auth);
 
-    void deleteCode(Long codeId);
+    void deleteCode(Long codeId, Authentication auth);
 }
