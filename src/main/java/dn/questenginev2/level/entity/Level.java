@@ -2,8 +2,6 @@ package dn.questenginev2.level.entity;
 
 import dn.questenginev2.quest.entity.Quest;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.Instant;

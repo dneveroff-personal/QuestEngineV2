@@ -3,6 +3,7 @@ package dn.questenginev2.quest.service;
 import dn.questenginev2.quest.dto.CreateQuestRequest;
 import dn.questenginev2.quest.dto.QuestResponse;
 import dn.questenginev2.quest.entity.Quest;
+import dn.questenginev2.user.entity.User;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 
@@ -18,4 +19,7 @@ public interface QuestService {
 
     Quest validateQuestExist(Long questId);
 
+    void validateAuthorOrAdmin(User user);
+
+    void validateQuestAuthor(User user, Long questId);
 }

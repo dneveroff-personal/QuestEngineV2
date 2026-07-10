@@ -30,21 +30,24 @@ public class LevelServiceImpl implements LevelService {
     @Override
     public LevelResponse createLevel(Long questId, CreateLevelRequest request, Authentication auth) {
         User currentUser = userService.getCurrentUser(auth);
-        validateAuthorOrAdmin(currentUser);
-
+        questService.validateAuthorOrAdmin(currentUser);
         Quest quest = questService.validateQuestExist(questId);
+        questService.validateQuestAuthor(currentUser, questId);
+
         Level level = buildLevel(request, quest);
         Level savedLevel = levelRepository.save(level);
 
         return buildLevelResponse(savedLevel);
     }
 
-    // ────── VALIDATIONS ───────────────────────────────────────────────────────────
-    private void validateAuthorOrAdmin(User user) {
-        if (user.getRole() != UserRole.AUTHOR && user.getRole() != UserRole.ADMIN) {
-            throw new ForbiddenOperationException("Создавать уровни могут только AUTHOR или ADMIN");
-        }
+    @Override
+    public Integer getMaxLevelIndex(Long questId) {
+        Integer maxIndex = levelRepository.findMaxOrderIndex(questId);
+        return maxIndex != null ? maxIndex : 0;
     }
+
+    // ────── VALIDATIONS ───────────────────────────────────────────────────────────
+
 
     // ────── BUILDERS ───────────────────────────────────────────────────────────
     private LevelResponse buildLevelResponse(Level level) {
@@ -63,7 +66,7 @@ public class LevelServiceImpl implements LevelService {
         return Level.builder()
                 .quest(quest)
                 .title(request.getTitle())
-                .orderIndex(request.getOrderIndex())
+                .orderIndex(getMaxLevelIndex(quest.getId()) + 1)
                 .content(request.getContent())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())

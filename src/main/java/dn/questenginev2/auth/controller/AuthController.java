@@ -28,7 +28,7 @@ public class AuthController {
     private final LoginService loginService;
     private final UserService userService;
 
-    @Value("${admin.reset.secret}")
+    @Value("${admin.reset.secret:change-me-in-production}")
     private String adminResetSecret;
 
     @Operation(summary = "User login", description = "Authenticate user and return JWT token")

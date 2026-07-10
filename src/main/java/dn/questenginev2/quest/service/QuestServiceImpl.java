@@ -53,8 +53,9 @@ public class QuestServiceImpl implements QuestService {
     public QuestResponse updateQuest(Long questId, CreateQuestRequest request, Authentication auth) {
         User currentUser = userService.getCurrentUser(auth);
         validateAuthorOrAdmin(currentUser);
-
         Quest quest = validateQuestExist(questId);
+        validateQuestAuthor(currentUser, questId);
+
         quest.setTitle(request.getTitle());
         quest.setDescription(request.getDescription());
         quest.setType(request.getType());
@@ -78,9 +79,17 @@ public class QuestServiceImpl implements QuestService {
                 .orElseThrow(() -> new IllegalArgumentException("Квест не найден: " + questId));
     }
 
-    private void validateAuthorOrAdmin(User user) {
+    @Override
+    public void validateAuthorOrAdmin(User user) {
         if (user.getRole() != UserRole.AUTHOR && user.getRole() != UserRole.ADMIN) {
-            throw new ForbiddenOperationException("Создавать квесты могут только AUTHOR или ADMIN");
+            throw new ForbiddenOperationException("Доступ к редактированию квестов имеют только AUTHOR или ADMIN");
+        }
+    }
+
+    @Override
+    public void validateQuestAuthor(User user, Long questId) {
+        if (user.getRole() != UserRole.ADMIN && !questAuthorRepository.existsByQuestIdAndUserId(questId, user.getId())) {
+            throw new ForbiddenOperationException("Редактировать квесты могут только Авторы");
         }
     }
 
