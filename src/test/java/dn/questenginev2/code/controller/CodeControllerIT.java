@@ -141,7 +141,9 @@ class CodeControllerIT {
     codeRepository.save(code);
 
     mockMvc
-        .perform(get("/api/quests/" + quest.getId() + "/levels/" + level.getId() + "/codes"))
+        .perform(
+            get("/api/quests/" + quest.getId() + "/levels/" + level.getId() + "/codes")
+                .header("Authorization", "Bearer " + authorToken))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$[0].levelId").value(level.getId()))

@@ -98,9 +98,9 @@ public class CodeServiceImpl implements CodeService {
         .orElseThrow(() -> new IllegalArgumentException("Код не найден: " + codeId));
   }
 
-  private void validateCodeValueUnique(String value) {
-    if (codeRepository.existsByValue(value)) {
-      throw new IllegalArgumentException("Код уже существует: " + value);
+  private void validateCodeValueUnique(String codeValue) {
+    if (codeRepository.existsByCodeValue(codeValue)) {
+      throw new IllegalArgumentException("Код уже существует: " + codeValue);
     }
   }
 

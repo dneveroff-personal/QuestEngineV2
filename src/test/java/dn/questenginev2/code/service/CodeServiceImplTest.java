@@ -106,7 +106,7 @@ class CodeServiceImplTest {
   void createCode_createsCode_whenUserIsAuthor() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
-    when(codeRepository.existsByValue("CODE123")).thenReturn(false);
+    when(codeRepository.existsByCodeValue("CODE123")).thenReturn(false);
 
     CreateCodeRequest request = new CreateCodeRequest();
     request.setValue("CODE123");
@@ -140,7 +140,7 @@ class CodeServiceImplTest {
   void createCode_throwsIllegalArgumentException_whenCodeValueAlreadyExists() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
-    when(codeRepository.existsByValue("CODE123")).thenReturn(true);
+    when(codeRepository.existsByCodeValue("CODE123")).thenReturn(true);
 
     CreateCodeRequest request = new CreateCodeRequest();
     request.setValue("CODE123");
@@ -253,7 +253,7 @@ class CodeServiceImplTest {
 
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(codeRepository.findById(1L)).thenReturn(java.util.Optional.of(code));
-    when(codeRepository.existsByValue("NEWCODE")).thenReturn(false);
+    when(codeRepository.existsByCodeValue("NEWCODE")).thenReturn(false);
 
     CreateCodeRequest request = new CreateCodeRequest();
     request.setValue("NEWCODE");

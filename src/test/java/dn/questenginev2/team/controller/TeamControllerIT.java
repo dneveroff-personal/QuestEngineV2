@@ -4,6 +4,8 @@ import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.code.repository.CodeRepository;
+import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.repository.QuestAuthorRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
@@ -40,6 +42,10 @@ class TeamControllerIT {
 
   @Autowired private LevelRepository levelRepository;
 
+  @Autowired private HintRepository hintRepository;
+
+  @Autowired private CodeRepository codeRepository;
+
   @Autowired private QuestRepository questRepository;
 
   private User testUser;
@@ -51,6 +57,8 @@ class TeamControllerIT {
     teamMemberRepository.deleteAll();
     teamRepository.deleteAll();
     questAuthorRepository.deleteAll();
+    codeRepository.deleteAll();
+    hintRepository.deleteAll();
     levelRepository.deleteAll();
     questRepository.deleteAll();
     userRepository.deleteAll();

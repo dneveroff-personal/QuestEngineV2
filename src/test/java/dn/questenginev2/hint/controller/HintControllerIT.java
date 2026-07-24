@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.hint.entity.Hint;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.Level;
@@ -42,6 +43,8 @@ class HintControllerIT {
 
   @Autowired private HintRepository hintRepository;
 
+  @Autowired private CodeRepository codeRepository;
+
   @Autowired private PasswordEncoder passwordEncoder;
 
   private User authorUser;
@@ -49,6 +52,7 @@ class HintControllerIT {
 
   @BeforeEach
   void setUp() throws Exception {
+    codeRepository.deleteAll();
     hintRepository.deleteAll();
     levelRepository.deleteAll();
     questAuthorRepository.deleteAll();
@@ -140,7 +144,9 @@ class HintControllerIT {
     hintRepository.save(hint);
 
     mockMvc
-        .perform(get("/api/quests/" + quest.getId() + "/levels/" + level.getId() + "/hints"))
+        .perform(
+            get("/api/quests/" + quest.getId() + "/levels/" + level.getId() + "/hints")
+                .header("Authorization", "Bearer " + authorToken))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$[0].levelId").value(level.getId()))

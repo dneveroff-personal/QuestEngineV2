@@ -3,6 +3,9 @@ package dn.questenginev2.quest.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.code.repository.CodeRepository;
+import dn.questenginev2.hint.repository.HintRepository;
+import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.entity.Quest;
 import dn.questenginev2.quest.entity.QuestAuthor;
 import dn.questenginev2.quest.entity.QuestStatus;
@@ -33,7 +36,11 @@ class QuestControllerIT {
 
   @Autowired private QuestAuthorRepository questAuthorRepository;
 
-  @Autowired private dn.questenginev2.level.repository.LevelRepository levelRepository;
+  @Autowired private LevelRepository levelRepository;
+
+  @Autowired private HintRepository hintRepository;
+
+  @Autowired private CodeRepository codeRepository;
 
   @Autowired private PasswordEncoder passwordEncoder;
 
@@ -42,6 +49,8 @@ class QuestControllerIT {
 
   @BeforeEach
   void setUp() throws Exception {
+    codeRepository.deleteAll();
+    hintRepository.deleteAll();
     levelRepository.deleteAll();
     questAuthorRepository.deleteAll();
     questRepository.deleteAll();
@@ -156,6 +165,10 @@ class QuestControllerIT {
             .status(QuestStatus.DRAFT)
             .build();
     quest = questRepository.save(quest);
+
+    // Create QuestAuthor record so the author can delete the quest
+    QuestAuthor questAuthor = QuestAuthor.builder().quest(quest).user(authorUser).build();
+    questAuthorRepository.save(questAuthor);
 
     mockMvc
         .perform(

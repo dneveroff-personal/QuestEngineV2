@@ -3,6 +3,8 @@ package dn.questenginev2.level.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.code.repository.CodeRepository;
+import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.entity.Quest;
 import dn.questenginev2.quest.entity.QuestAuthor;
@@ -36,6 +38,10 @@ class LevelControllerIT {
 
   @Autowired private LevelRepository levelRepository;
 
+  @Autowired private HintRepository hintRepository;
+
+  @Autowired private CodeRepository codeRepository;
+
   @Autowired private PasswordEncoder passwordEncoder;
 
   private User authorUser;
@@ -43,6 +49,8 @@ class LevelControllerIT {
 
   @BeforeEach
   void setUp() throws Exception {
+    codeRepository.deleteAll();
+    hintRepository.deleteAll();
     levelRepository.deleteAll();
     questAuthorRepository.deleteAll();
     questRepository.deleteAll();

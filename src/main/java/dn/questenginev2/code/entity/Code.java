@@ -25,7 +25,7 @@ public class Code {
   @JoinColumn(name = "level_id", nullable = false)
   private Level level;
 
-  @Column(name = "value", nullable = false)
+  @Column(name = "code_value", nullable = false)
   private String value;
 
   @Enumerated(EnumType.STRING)

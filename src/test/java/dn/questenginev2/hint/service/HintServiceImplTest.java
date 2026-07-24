@@ -105,7 +105,6 @@ class HintServiceImplTest {
   void createHint_createsHint_whenUserIsAuthor() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
-    when(hintRepository.findMaxOrderIndex(1L)).thenReturn(0);
 
     CreateHintRequest request = new CreateHintRequest();
     request.setOrderIndex(1);

@@ -3,6 +3,8 @@ package dn.questenginev2.user.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.code.repository.CodeRepository;
+import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.repository.QuestAuthorRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
@@ -37,6 +39,10 @@ class UserControllerIT {
 
   @Autowired private LevelRepository levelRepository;
 
+  @Autowired private HintRepository hintRepository;
+
+  @Autowired private CodeRepository codeRepository;
+
   @Autowired private QuestRepository questRepository;
 
   private User testUser;
@@ -49,6 +55,8 @@ class UserControllerIT {
     teamMemberRepository.deleteAll();
     teamRepository.deleteAll();
     questAuthorRepository.deleteAll();
+    codeRepository.deleteAll();
+    hintRepository.deleteAll();
     levelRepository.deleteAll();
     questRepository.deleteAll();
     userRepository.deleteAll();

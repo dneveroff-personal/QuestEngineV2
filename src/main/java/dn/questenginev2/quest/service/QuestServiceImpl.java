@@ -72,6 +72,7 @@ public class QuestServiceImpl implements QuestService {
     Quest quest = validateQuestExist(questId);
     validateQuestAuthor(currentUser, questId);
 
+    questAuthorRepository.deleteByQuestId(questId);
     questRepository.delete(quest);
   }
 

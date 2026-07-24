@@ -1,7 +1,7 @@
 CREATE TABLE codes (
                          id              BIGSERIAL PRIMARY KEY,
                          level_id        BIGINT           NOT NULL,
-                         value           VARCHAR(255)     NOT NULL UNIQUE,
+                         code_value      VARCHAR(255)     NOT NULL,
                          type            VARCHAR(255)     NOT NULL,
                          points          INTEGER         NOT NULL,
                          created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
