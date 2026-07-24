@@ -1,9 +1,9 @@
 package dn.questenginev2.quest.entity;
 
 public enum QuestStatus {
-    DRAFT,
-    PUBLISHED,
-    STARTED,
-    FINISHED,
-    ARCHIVED
+  DRAFT,
+  PUBLISHED,
+  STARTED,
+  FINISHED,
+  ARCHIVED
 }

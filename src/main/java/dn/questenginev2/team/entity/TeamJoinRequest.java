@@ -2,9 +2,8 @@ package dn.questenginev2.team.entity;
 
 import dn.questenginev2.user.entity.User;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.Instant;
+import lombok.*;
 
 @Entity
 @Getter
@@ -15,28 +14,28 @@ import java.time.Instant;
 @Table(name = "team_join_requests")
 public class TeamJoinRequest {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id", nullable = false)
-    private Team team;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "team_id", nullable = false)
+  private Team team;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 16)
-    private JoinRequestType type;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 16)
+  private JoinRequestType type;
 
-    private Instant createdAt;
+  private Instant createdAt;
 
-    public TeamJoinRequest(Team team, User user, JoinRequestType type) {
-        this.team = team;
-        this.user = user;
-        this.type = type;
-        this.createdAt = Instant.now();
-    }
+  public TeamJoinRequest(Team team, User user, JoinRequestType type) {
+    this.team = team;
+    this.user = user;
+    this.type = type;
+    this.createdAt = Instant.now();
+  }
 }

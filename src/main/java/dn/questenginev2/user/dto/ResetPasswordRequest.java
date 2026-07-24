@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 public class ResetPasswordRequest {
 
-    @NotBlank(message = "Новый пароль не может быть пустым")
-    private String newPassword;
+  @NotBlank(message = "Новый пароль не может быть пустым")
+  private String newPassword;
 }

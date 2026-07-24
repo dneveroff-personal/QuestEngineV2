@@ -9,17 +9,17 @@ import org.springframework.security.core.Authentication;
 
 public interface QuestService {
 
-    QuestResponse createQuest(CreateQuestRequest request, Authentication auth);
+  QuestResponse createQuest(CreateQuestRequest request, Authentication auth);
 
-    QuestResponse getQuestById(Long questId);
+  QuestResponse getQuestById(Long questId);
 
-    QuestResponse updateQuest(Long questId, @Valid CreateQuestRequest request, Authentication auth);
+  QuestResponse updateQuest(Long questId, @Valid CreateQuestRequest request, Authentication auth);
 
-    void delete(Long questId, Authentication auth);
+  void delete(Long questId, Authentication auth);
 
-    Quest validateQuestExist(Long questId);
+  Quest validateQuestExist(Long questId);
 
-    void validateAuthorOrAdmin(User user);
+  void validateAuthorOrAdmin(User user);
 
-    void validateQuestAuthor(User user, Long questId);
+  void validateQuestAuthor(User user, Long questId);
 }

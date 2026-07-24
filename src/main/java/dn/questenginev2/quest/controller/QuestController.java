@@ -19,38 +19,35 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Quests", description = "Quest management endpoints")
 public class QuestController {
 
-    private final QuestService questService;
+  private final QuestService questService;
 
-    @Operation(summary = "Create quest", description = "Create a new quest")
-    @PostMapping
-    public ResponseEntity<QuestResponse> create(@Valid @RequestBody CreateQuestRequest request, Authentication auth) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(questService.createQuest(request, auth));
-    }
+  @Operation(summary = "Create quest", description = "Create a new quest")
+  @PostMapping
+  public ResponseEntity<QuestResponse> create(
+      @Valid @RequestBody CreateQuestRequest request, Authentication auth) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(questService.createQuest(request, auth));
+  }
 
-    @Operation(summary = "Get quest by ID", description = "Retrieve quest details by ID")
-    @GetMapping(Routes.QUEST_ID)
-    public ResponseEntity<QuestResponse> getById(@PathVariable Long questId) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(questService.getQuestById(questId));
-    }
+  @Operation(summary = "Get quest by ID", description = "Retrieve quest details by ID")
+  @GetMapping(Routes.QUEST_ID)
+  public ResponseEntity<QuestResponse> getById(@PathVariable Long questId) {
+    return ResponseEntity.status(HttpStatus.OK).body(questService.getQuestById(questId));
+  }
 
-    @Operation(summary = "Update quest", description = "Update existing quest")
-    @PutMapping(Routes.QUEST_ID)
-    public ResponseEntity<QuestResponse> updateQuest(@PathVariable Long questId, @Valid @RequestBody CreateQuestRequest request, Authentication auth) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(questService.updateQuest(questId, request, auth));
-    }
+  @Operation(summary = "Update quest", description = "Update existing quest")
+  @PutMapping(Routes.QUEST_ID)
+  public ResponseEntity<QuestResponse> updateQuest(
+      @PathVariable Long questId,
+      @Valid @RequestBody CreateQuestRequest request,
+      Authentication auth) {
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(questService.updateQuest(questId, request, auth));
+  }
 
-    @Operation(summary = "Delete quest", description = "Delete quest by ID")
-    @DeleteMapping(Routes.QUEST_ID)
-    public ResponseEntity<Void> delete(@PathVariable Long questId, Authentication auth) {
-        questService.delete(questId, auth);
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .build();
-    }
+  @Operation(summary = "Delete quest", description = "Delete quest by ID")
+  @DeleteMapping(Routes.QUEST_ID)
+  public ResponseEntity<Void> delete(@PathVariable Long questId, Authentication auth) {
+    questService.delete(questId, auth);
+    return ResponseEntity.status(HttpStatus.OK).build();
+  }
 }

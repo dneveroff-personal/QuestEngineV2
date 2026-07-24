@@ -1,12 +1,11 @@
 package dn.questenginev2.code.dto;
 
 import dn.questenginev2.code.entity.CodeType;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.Instant;
 
 @Data
 @Builder
@@ -14,10 +13,10 @@ import java.time.Instant;
 @NoArgsConstructor
 public class CodeResponse {
 
-    private Long id;
-    private Long levelId;
-    private String value;
-    private CodeType type;
-    private Integer points;
-    private Instant createdAt;
+  private Long id;
+  private Long levelId;
+  private String value;
+  private CodeType type;
+  private Integer points;
+  private Instant createdAt;
 }

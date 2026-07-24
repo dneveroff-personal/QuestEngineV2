@@ -7,6 +7,6 @@ import lombok.Data;
 @Data
 public class SetRoleRequest {
 
-    @NotNull(message = "Роль не может быть пустой")
-    private UserRole role;
+  @NotNull(message = "Роль не может быть пустой")
+  private UserRole role;
 }

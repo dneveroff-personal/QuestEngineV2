@@ -1,11 +1,10 @@
 package dn.questenginev2.level.dto;
 
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.Instant;
 
 @Data
 @Builder
@@ -13,11 +12,12 @@ import java.time.Instant;
 @NoArgsConstructor
 public class LevelResponse {
 
-    private Long id;
-    private Long questId;
-    private String title;
-    private Integer orderIndex;
-    private String content;
-    private Instant createdAt;
-    private Instant updatedAt;
+  private Long id;
+  private Long questId;
+  private String title;
+  private Integer orderIndex;
+  private String content;
+  private Integer timeoutSeconds;
+  private Instant createdAt;
+  private Instant updatedAt;
 }

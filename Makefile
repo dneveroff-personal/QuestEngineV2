@@ -3,13 +3,13 @@ GREEN  := \033[32m
 YELLOW := \033[33m
 
 down:
-	docker compose down --remove-orphans
+	docker compose -f docker-compose.local.yml down --remove-orphans
 
 clean:
 	@echo "$(YELLOW)Полная очистка..."
 	./gradlew clean
 	rm -rf */build/ .gradle/ build/
-	docker compose -f docker-compose.yml down -v --remove-orphans
+	docker compose -f docker-compose.local.yml down -v --remove-orphans
 	docker rmi $$(docker images "questenginev2/*:dev" -q) 2>/dev/null || true
 	@echo "$(GREEN)Очистка завершена!$(RESET)"
 
@@ -26,7 +26,7 @@ tests:
 up:
 	@echo "$(GREEN)Starting Project..."
 	@$(MAKE) build
-	docker compose -f docker-compose.yml up -d --remove-orphans --build
+	docker compose -f docker-compose.local.yml up -d --remove-orphans --build
 
 status:
 	@echo "$(YELLOW)Containers Status"
@@ -38,6 +38,19 @@ logs:
 
 rebuild-app:
 	@echo "$(GREEN)Rebuilding and ReStarting Project..."
-	docker compose stop app
+	docker compose -f docker-compose.local.yml stop app
 	@$(MAKE) build
-	docker compose up -d app --remove-orphans --build
+	docker compose -f docker-compose.local.yml up -d app --remove-orphans --build
+
+# =========================================================
+# Деплой
+# =========================================================
+#deploy-ghcr:
+#	@echo "Start deploy ..."
+#	@if [ -z "$(HOST)" ]; then echo "Usage: make deploy-ghcr HOST=user@server"; exit 1; fi
+#	ssh $(HOST) "\
+#		cd ~/ts-wc-scores && \
+#		docker compose -f docker-compose.prod.yml pull && \
+#		docker compose -f docker-compose.prod.yml up -d && \
+#		docker image prune -f"
+#	@echo "✅ Deploy DONE"

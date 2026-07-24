@@ -1,7 +1,8 @@
 package dn.questenginev2.level.controller;
 
-import dn.questenginev2.level.dto.CreateLevelRequest;
-import dn.questenginev2.level.entity.Level;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.entity.Quest;
 import dn.questenginev2.quest.entity.QuestAuthor;
@@ -21,90 +22,86 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 @SpringBootTest
 @AutoConfigureMockMvc
 class LevelControllerIT {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-    @Autowired
-    private UserRepository userRepository;
+  @Autowired private UserRepository userRepository;
 
-    @Autowired
-    private QuestRepository questRepository;
+  @Autowired private QuestRepository questRepository;
 
-    @Autowired
-    private QuestAuthorRepository questAuthorRepository;
+  @Autowired private QuestAuthorRepository questAuthorRepository;
 
-    @Autowired
-    private LevelRepository levelRepository;
+  @Autowired private LevelRepository levelRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+  @Autowired private PasswordEncoder passwordEncoder;
 
-    private User authorUser;
-    private String authorToken;
+  private User authorUser;
+  private String authorToken;
 
-    @BeforeEach
-    void setUp() throws Exception {
-        levelRepository.deleteAll();
-        questAuthorRepository.deleteAll();
-        questRepository.deleteAll();
-        userRepository.deleteAll();
+  @BeforeEach
+  void setUp() throws Exception {
+    levelRepository.deleteAll();
+    questAuthorRepository.deleteAll();
+    questRepository.deleteAll();
+    userRepository.deleteAll();
 
-        // Create an author user directly with properly encoded password
-        authorUser = new User();
-        authorUser.setUsername("author");
-        authorUser.setPublicName("Author User");
-        authorUser.setEmail("author@example.com");
-        authorUser.setPasswordHash(passwordEncoder.encode("password123"));
-        authorUser.setRole(UserRole.AUTHOR);
-        authorUser = userRepository.save(authorUser);
+    // Create an author user directly with properly encoded password
+    authorUser = new User();
+    authorUser.setUsername("author");
+    authorUser.setPublicName("Author User");
+    authorUser.setEmail("author@example.com");
+    authorUser.setPasswordHash(passwordEncoder.encode("password123"));
+    authorUser.setRole(UserRole.AUTHOR);
+    authorUser = userRepository.save(authorUser);
 
-        // Get JWT token for author
-        String response = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"author\",\"password\":\"password123\"}"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+    // Get JWT token for author
+    String response =
+        mockMvc
+            .perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(
+                        "/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"username\":\"author\",\"password\":\"password123\"}"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
 
-        authorToken = response.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
-    }
+    authorToken = response.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+  }
 
-    @Test
-    void createLevel_returnsCreatedLevel_whenUserIsAuthorized() throws Exception {
-        // Create a quest first
-        Quest quest = Quest.builder()
-                .title("Test Quest")
-                .description("Test Description")
-                .type(QuestType.TEAM)
-                .status(QuestStatus.DRAFT)
-                .build();
-        quest = questRepository.save(quest);
+  @Test
+  void createLevel_returnsCreatedLevel_whenUserIsAuthorized() throws Exception {
+    // Create a quest first
+    Quest quest =
+        Quest.builder()
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.DRAFT)
+            .build();
+    quest = questRepository.save(quest);
 
-        // Create QuestAuthor record so the author can create levels
-        QuestAuthor questAuthor = QuestAuthor.builder()
-                .quest(quest)
-                .user(authorUser)
-                .build();
-        questAuthorRepository.save(questAuthor);
+    // Create QuestAuthor record so the author can create levels
+    QuestAuthor questAuthor = QuestAuthor.builder().quest(quest).user(authorUser).build();
+    questAuthorRepository.save(questAuthor);
 
-        mockMvc.perform(post("/api/quests/" + quest.getId() + "/levels")
-                        .header("Authorization", "Bearer " + authorToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"Level 1\",\"content\":\"Level content\"}"))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.questId").value(quest.getId()))
-                .andExpect(jsonPath("$.title").value("Level 1"))
-                .andExpect(jsonPath("$.orderIndex").value(1))
-                .andExpect(jsonPath("$.content").value("Level content"));
-    }
+    mockMvc
+        .perform(
+            post("/api/quests/" + quest.getId() + "/levels")
+                .header("Authorization", "Bearer " + authorToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"Level 1\",\"content\":\"Level content\",\"timeoutSeconds\":300}"))
+        .andExpect(status().isCreated())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.questId").value(quest.getId()))
+        .andExpect(jsonPath("$.title").value("Level 1"))
+        .andExpect(jsonPath("$.orderIndex").value(1))
+        .andExpect(jsonPath("$.content").value("Level content"))
+        .andExpect(jsonPath("$.timeoutSeconds").value(300));
+  }
 }

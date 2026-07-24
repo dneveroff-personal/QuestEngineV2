@@ -7,8 +7,7 @@ import lombok.Data;
 @Data
 public class CreateTeamRequest {
 
-    @NotBlank
-    @Size(min = 1, max = 255)
-    private String name;
-
+  @NotBlank
+  @Size(min = 1, max = 255)
+  private String name;
 }

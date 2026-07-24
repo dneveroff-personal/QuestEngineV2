@@ -1,13 +1,12 @@
 package dn.questenginev2.auth.service;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import javax.crypto.SecretKey;
-
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,40 +15,39 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret}")
-    private String secret;
+  private final PasswordEncoder passwordEncoder;
 
-    @Value("${jwt.expiration:86400000}")
-    private Long expiration;
+  @Value("${jwt.secret}")
+  private String secret;
 
-    @Getter
-    private SecretKey key;
+  @Value("${jwt.expiration:86400000}")
+  private Long expiration;
 
-    private final PasswordEncoder passwordEncoder;
+  @Getter private SecretKey key;
 
-    public JwtService(PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
-    }
+  public JwtService(PasswordEncoder passwordEncoder) {
+    this.passwordEncoder = passwordEncoder;
+  }
 
-    @PostConstruct
-    public void init() {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes());
-    }
+  @PostConstruct
+  public void init() {
+    this.key = Keys.hmacShaKeyFor(secret.getBytes());
+  }
 
-    public String generateToken(String username, String role) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role);
-        
-        return Jwts.builder()
-                .claims(claims)
-                .subject(username)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(key)
-                .compact();
-    }
+  public String generateToken(String username, String role) {
+    Map<String, Object> claims = new HashMap<>();
+    claims.put("role", role);
 
-    public boolean validatePassword(String rawPassword, String passwordHash) {
-        return passwordEncoder.matches(rawPassword, passwordHash);
-    }
+    return Jwts.builder()
+        .claims(claims)
+        .subject(username)
+        .issuedAt(new Date())
+        .expiration(new Date(System.currentTimeMillis() + expiration))
+        .signWith(key)
+        .compact();
+  }
+
+  public boolean validatePassword(String rawPassword, String passwordHash) {
+    return passwordEncoder.matches(rawPassword, passwordHash);
+  }
 }

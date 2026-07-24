@@ -13,38 +13,41 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LoginServiceImpl implements LoginService {
 
-    private final UserService userService;
-    private final JwtService jwtService;
+  private final UserService userService;
+  private final JwtService jwtService;
 
-    // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
-    @Override
-    public LoginResponse login(AuthRequestBase request) {
-        User user = userService.findByUsername(request.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + request.getUsername()));
+  // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
+  @Override
+  public LoginResponse login(AuthRequestBase request) {
+    User user =
+        userService
+            .findByUsername(request.getUsername())
+            .orElseThrow(
+                () -> new UsernameNotFoundException("User not found: " + request.getUsername()));
 
-        validatePassword(request.getPassword(), user.getPasswordHash());
+    validatePassword(request.getPassword(), user.getPasswordHash());
 
-        return buildLoginResponse(user);
+    return buildLoginResponse(user);
+  }
+
+  @Override
+  public LoginResponse login(AuthRequestBase request, User user) {
+    validatePassword(request.getPassword(), user.getPasswordHash());
+
+    return buildLoginResponse(user);
+  }
+
+  // ────── VALIDATIONS ───────────────────────────────────────────────────────────
+  private void validatePassword(String rawPassword, String passwordHash) {
+    if (!jwtService.validatePassword(rawPassword, passwordHash)) {
+      throw new BadCredentialsException("Invalid password");
     }
+  }
 
-    @Override
-    public LoginResponse login(AuthRequestBase request, User user) {
-        validatePassword(request.getPassword(), user.getPasswordHash());
+  // ────── BUILDERS ───────────────────────────────────────────────────────────
+  private LoginResponse buildLoginResponse(User user) {
+    String token = jwtService.generateToken(user.getUsername(), user.getRole().name());
 
-        return buildLoginResponse(user);
-    }
-
-    // ────── VALIDATIONS ───────────────────────────────────────────────────────────
-    private void validatePassword(String rawPassword, String passwordHash) {
-        if (!jwtService.validatePassword(rawPassword, passwordHash)) {
-            throw new BadCredentialsException("Invalid password");
-        }
-    }
-
-    // ────── BUILDERS ───────────────────────────────────────────────────────────
-    private LoginResponse buildLoginResponse(User user) {
-        String token = jwtService.generateToken(user.getUsername(), user.getRole().name());
-
-        return new LoginResponse(user.getPublicName(), token);
-    }
+    return new LoginResponse(user.getPublicName(), token);
+  }
 }

@@ -7,12 +7,11 @@ import lombok.Data;
 @Data
 public abstract class AuthRequestBase {
 
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 64, message = "Username must be between 3 and 64 characters")
-    private String username;
+  @NotBlank(message = "Username is required")
+  @Size(min = 3, max = 64, message = "Username must be between 3 and 64 characters")
+  private String username;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
-    private String password;
-
+  @NotBlank(message = "Password is required")
+  @Size(min = 6, message = "Password must be at least 6 characters")
+  private String password;
 }

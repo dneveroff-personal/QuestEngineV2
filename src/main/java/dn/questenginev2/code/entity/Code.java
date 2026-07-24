@@ -1,12 +1,11 @@
 package dn.questenginev2.code.entity;
 
+import static jakarta.persistence.FetchType.LAZY;
+
 import dn.questenginev2.level.entity.Level;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.Instant;
-
-import static jakarta.persistence.FetchType.LAZY;
+import lombok.*;
 
 @Entity
 @Getter
@@ -17,26 +16,26 @@ import static jakarta.persistence.FetchType.LAZY;
 @Table(name = "codes")
 public class Code {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id")
+  private Long id;
 
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "level_id", nullable = false)
-    private Level level;
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "level_id", nullable = false)
+  private Level level;
 
-    @Column(name = "value", nullable = false)
-    private String value;
+  @Column(name = "value", nullable = false)
+  private String value;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    private CodeType type;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "type", nullable = false)
+  private CodeType type;
 
-    @Column(name = "points", nullable = false)
-    private Integer points;
+  @Column(name = "points", nullable = false)
+  private Integer points;
 
-    @Builder.Default
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt = Instant.now();
+  @Builder.Default
+  @Column(name = "created_at", nullable = false)
+  private Instant createdAt = Instant.now();
 }

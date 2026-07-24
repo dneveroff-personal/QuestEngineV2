@@ -2,10 +2,12 @@ plugins {
     java
     id("org.springframework.boot") version "3.5.14"
     id("io.spring.dependency-management") version "1.1.7"
+    id("com.diffplug.spotless") version "6.25.0"
+    jacoco
 }
 
 group = "dn"
-version = "0.2.1"
+version = "0.3.0"
 description = "QuestEngineV2"
 
 springBoot {
@@ -65,3 +67,49 @@ tasks.withType<Test> {
 tasks.named("jar") {
     enabled = false
 }
+
+jacoco {
+    toolVersion = "0.8.13"
+}
+
+tasks.test {
+    useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+spotless {
+    java {
+        googleJavaFormat("1.21.0")
+            .reflowLongStrings()
+            .skipJavadocFormatting()
+
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+
+        targetExclude("build/**", "**/generated/**")
+    }
+}
+// Чтобы spotlessCheck запускался перед компиляцией
+tasks.compileJava {
+    dependsOn(tasks.spotlessCheck)
+}
+
+// ### SpotlessCheck ###
+//# Проверка стиля
+//        ./gradlew spotlessCheck
+//
+//# Авто-исправление всех ошибок стиля (магия! ✨)
+//./gradlew spotlessApply
+//
+//# Только для Checkstyle
+//    ./gradlew checkstyleMain
+//    ./gradlew checkstyleTest

@@ -24,3 +24,34 @@
 ✅ первый сервис покрыт тестами
 
 ## localhost:8080//swagger-ui
+
+GameSession:
+id
+Quest
+Team
+status
+startedAt
+finishedAt
+currentLevel
+
+QuestLevelProgress:
+id
+QuestSession session
+Level level
+startedAt
+finishedAt
+codesFound
+hintsShown
+completedAutomatically
+
+QuestCodeAttempt:
+id
+QuestLevelProgress
+User
+enteredCode
+isCorrect
+submittedAt
+
+
+Статусы для GameSession:
+

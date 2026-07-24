@@ -5,8 +5,7 @@ import dn.questenginev2.auth.dto.RegisterRequest;
 
 public interface RegisterService {
 
-    void validateUserForRegistration(String username, String email);
+  void validateUserForRegistration(String username, String email);
 
-    LoginResponse register(RegisterRequest dto);
-
+  LoginResponse register(RegisterRequest dto);
 }

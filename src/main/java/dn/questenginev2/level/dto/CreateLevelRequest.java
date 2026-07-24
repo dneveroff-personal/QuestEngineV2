@@ -6,8 +6,9 @@ import lombok.Data;
 @Data
 public class CreateLevelRequest {
 
-    @NotBlank
-    private String title;
+  @NotBlank private String title;
 
-    private String content;
+  private String content;
+
+  private Integer timeoutSeconds;
 }

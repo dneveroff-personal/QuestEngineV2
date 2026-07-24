@@ -21,15 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Registration", description = "User registration endpoints")
 public class RegisterController {
 
-    private final RegisterService registerService;
+  private final RegisterService registerService;
 
-    @Operation(summary = "Register new user", description = "Create a new user account")
-    @PostMapping(Routes.REGISTER)
-    public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
-        LoginResponse created = registerService.register(request);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(created);
-    }
-
+  @Operation(summary = "Register new user", description = "Create a new user account")
+  @PostMapping(Routes.REGISTER)
+  public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
+    LoginResponse created = registerService.register(request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(created);
+  }
 }

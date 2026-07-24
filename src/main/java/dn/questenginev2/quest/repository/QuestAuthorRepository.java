@@ -5,8 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface QuestAuthorRepository extends JpaRepository<QuestAuthor, Long> {
 
-    boolean existsByQuestId(Long questId);
+  boolean existsByQuestId(Long questId);
 
-    boolean existsByQuestIdAndUserId(Long questId, Long userId);
-
+  boolean existsByQuestIdAndUserId(Long questId, Long userId);
 }

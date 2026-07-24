@@ -7,12 +7,9 @@ import lombok.Data;
 @Data
 public class CreateHintRequest {
 
-    @NotNull
-    private Integer orderIndex;
+  @NotNull private Integer orderIndex;
 
-    @NotNull
-    private Integer delaySeconds;
+  @NotNull private Integer delaySeconds;
 
-    @NotBlank
-    private String content;
+  @NotBlank private String content;
 }

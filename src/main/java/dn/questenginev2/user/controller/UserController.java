@@ -20,31 +20,23 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Users", description = "User management endpoints")
 public class UserController {
 
-    private final UserService userService;
+  private final UserService userService;
 
-    @Operation(summary = "Set user role", description = "Set role for a user")
-    @PutMapping(Routes.SET_ROLE)
-    public ResponseEntity<UserResponse> setUserRole(
-            @PathVariable Long userId,
-            @Valid @RequestBody SetRoleRequest request,
-            Authentication auth
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(userService.setUserRole(userId, request.getRole(), auth));
-    }
+  @Operation(summary = "Set user role", description = "Set role for a user")
+  @PutMapping(Routes.SET_ROLE)
+  public ResponseEntity<UserResponse> setUserRole(
+      @PathVariable Long userId, @Valid @RequestBody SetRoleRequest request, Authentication auth) {
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(userService.setUserRole(userId, request.getRole(), auth));
+  }
 
-    @Operation(summary = "Reset user password", description = "Reset password for a user")
-    @PostMapping(Routes.RESET_PASSWORD)
-    public ResponseEntity<Void> resetPassword(
-            @PathVariable Long userId,
-            @Valid @RequestBody ResetPasswordRequest request,
-            Authentication auth
-    ) {
-        userService.resetPassword(userId, request, auth);
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .build();
-    }
-
+  @Operation(summary = "Reset user password", description = "Reset password for a user")
+  @PostMapping(Routes.RESET_PASSWORD)
+  public ResponseEntity<Void> resetPassword(
+      @PathVariable Long userId,
+      @Valid @RequestBody ResetPasswordRequest request,
+      Authentication auth) {
+    userService.resetPassword(userId, request, auth);
+    return ResponseEntity.status(HttpStatus.OK).build();
+  }
 }

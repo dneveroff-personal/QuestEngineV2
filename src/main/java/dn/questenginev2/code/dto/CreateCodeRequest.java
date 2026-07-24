@@ -8,12 +8,9 @@ import lombok.Data;
 @Data
 public class CreateCodeRequest {
 
-    @NotBlank
-    private String value;
+  @NotBlank private String value;
 
-    @NotNull
-    private CodeType type;
+  @NotNull private CodeType type;
 
-    @NotNull
-    private Integer points;
+  @NotNull private Integer points;
 }
