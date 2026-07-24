@@ -53,6 +53,9 @@ jobs:
         id: version
         run: echo "VERSION=$(./gradlew properties --console=plain | grep "^version:" | cut -d' ' -f2)" >> $GITHUB_OUTPUT
 
+      - name: Set lowercase repository name
+        run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       # Публикации версии и latest
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -60,8 +63,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.VERSION }}
-            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ env.REPO_LOWER }}:${{ steps.version.outputs.VERSION }}
+            ghcr.io/${{ env.REPO_LOWER }}:latest
 
       ## Создание Артефактов
       # Артефакт: создание jar файла
