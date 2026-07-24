@@ -25,9 +25,7 @@ services:
           memory: 128M
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/dneveroff-personal/questenginev2:${VERSION}
     container_name: qe-v2-app
     ports:
       - "8080:8080"
