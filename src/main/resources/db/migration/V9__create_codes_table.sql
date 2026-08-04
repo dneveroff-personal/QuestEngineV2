@@ -8,6 +8,6 @@ CREATE TABLE codes (
 );
 
 CREATE INDEX idx_codes_level_id ON codes(level_id);
-CREATE INDEX idx_codes_value ON codes(value);
+CREATE INDEX idx_codes_value ON codes(code_value);
 
 ALTER TABLE codes ADD CONSTRAINT fk_codes_level FOREIGN KEY (level_id) REFERENCES levels(id);

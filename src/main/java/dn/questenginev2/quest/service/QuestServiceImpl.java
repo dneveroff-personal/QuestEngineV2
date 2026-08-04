@@ -13,6 +13,8 @@ import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.service.UserService;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -46,6 +48,15 @@ public class QuestServiceImpl implements QuestService {
   public QuestResponse getQuestById(Long questId) {
     Quest quest = validateQuestExist(questId);
     return buildQuestResponse(quest);
+  }
+
+  @Override
+  public List<QuestResponse> getAllByAuthorId(Long authorId) {
+    userService.getUser(authorId);
+    return questAuthorRepository.findByUserId(authorId).stream()
+        .map(QuestAuthor::getQuest)
+        .map(this::buildQuestResponse)
+        .collect(Collectors.toList());
   }
 
   @Override
