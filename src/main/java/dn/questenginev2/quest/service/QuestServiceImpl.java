@@ -13,6 +13,8 @@ import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.service.UserService;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -49,17 +51,26 @@ public class QuestServiceImpl implements QuestService {
   }
 
   @Override
+  public List<QuestResponse> getAllByAuthorId(Long authorId) {
+    userService.getUser(authorId);
+    return questAuthorRepository.findByUserId(authorId).stream()
+        .map(QuestAuthor::getQuest)
+        .map(this::buildQuestResponse)
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public QuestResponse updateQuest(Long questId, CreateQuestRequest request, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
     validateAuthorOrAdmin(currentUser);
     Quest quest = validateQuestExist(questId);
     validateQuestAuthor(currentUser, questId);
 
-    quest.setTitle(request.getTitle());
-    quest.setDescription(request.getDescription());
-    quest.setType(request.getType());
-    quest.setStartTime(request.getStartTime());
-    quest.setFinishTime(request.getFinishTime());
+    quest.setTitle(request.title());
+    quest.setDescription(request.description());
+    quest.setType(request.type());
+    quest.setStartTime(request.startTime());
+    quest.setFinishTime(request.finishTime());
 
     Quest savedQuest = questRepository.save(quest);
     return buildQuestResponse(savedQuest);
@@ -116,13 +127,13 @@ public class QuestServiceImpl implements QuestService {
 
   private Quest buildQuest(CreateQuestRequest request) {
     return Quest.builder()
-        .title(request.getTitle())
-        .description(request.getDescription() != null ? request.getDescription() : "")
-        .type(request.getType())
+        .title(request.title())
+        .description(request.description() != null ? request.description() : "")
+        .type(request.type())
         .status(QuestStatus.DRAFT)
         .createdAt(Instant.now())
-        .startTime(request.getStartTime())
-        .finishTime(request.getFinishTime())
+        .startTime(request.startTime())
+        .finishTime(request.finishTime())
         .build();
   }
 

@@ -27,7 +27,7 @@ public class UserController {
   public ResponseEntity<UserResponse> setUserRole(
       @PathVariable Long userId, @Valid @RequestBody SetRoleRequest request, Authentication auth) {
     return ResponseEntity.status(HttpStatus.OK)
-        .body(userService.setUserRole(userId, request.getRole(), auth));
+        .body(userService.setUserRole(userId, request.role(), auth));
   }
 
   @Operation(summary = "Reset user password", description = "Reset password for a user")

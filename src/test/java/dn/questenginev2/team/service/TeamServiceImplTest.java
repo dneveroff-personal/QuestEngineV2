@@ -56,8 +56,7 @@ class TeamServiceImplTest {
     testUser.setEmail("test@example.com");
     testUser.setPasswordHash("hashedPassword");
 
-    createTeamRequest = new CreateTeamRequest();
-    createTeamRequest.setName("Test Team");
+    createTeamRequest = new CreateTeamRequest("Test Team");
   }
 
   @Test
@@ -74,10 +73,10 @@ class TeamServiceImplTest {
     TeamResponse response = teamService.createTeam(createTeamRequest, authentication);
 
     assertThat(response).isNotNull();
-    assertThat(response.getId()).isEqualTo(1L);
-    assertThat(response.getName()).isEqualTo("Test Team");
-    assertThat(response.getCaptainName()).isEqualTo("testuser");
-    assertThat(response.getCreatedAt()).isNotNull();
+    assertThat(response.id()).isEqualTo(1L);
+    assertThat(response.name()).isEqualTo("Test Team");
+    assertThat(response.captainName()).isEqualTo("testuser");
+    assertThat(response.createdAt()).isNotNull();
 
     verify(teamRepository).existsByName("Test Team");
     verify(teamRepository).save(any(Team.class));
@@ -170,7 +169,7 @@ class TeamServiceImplTest {
 
     assertThat(response).isNotNull();
     assertThat(response).hasSize(1);
-    assertThat(response.get(0).getUserName()).isEqualTo("Requester User");
+    assertThat(response.get(0).userName()).isEqualTo("Requester User");
   }
 
   @Test
@@ -345,7 +344,7 @@ class TeamServiceImplTest {
 
     assertThat(response).isNotNull();
     assertThat(response).hasSize(1);
-    assertThat(response.get(0).getType()).isEqualTo(JoinRequestType.CAPTAIN_INVITE);
+    assertThat(response.get(0).type()).isEqualTo(JoinRequestType.CAPTAIN_INVITE);
   }
 
   @Test

@@ -38,3 +38,6 @@ out/
 
 ### DN ###
 .tree.txt
+
+### Environment ###
+.env

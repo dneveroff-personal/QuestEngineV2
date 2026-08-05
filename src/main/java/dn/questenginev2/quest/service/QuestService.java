@@ -5,6 +5,7 @@ import dn.questenginev2.quest.dto.QuestResponse;
 import dn.questenginev2.quest.entity.Quest;
 import dn.questenginev2.user.entity.User;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.security.core.Authentication;
 
 public interface QuestService {
@@ -12,6 +13,8 @@ public interface QuestService {
   QuestResponse createQuest(CreateQuestRequest request, Authentication auth);
 
   QuestResponse getQuestById(Long questId);
+
+  List<QuestResponse> getAllByAuthorId(Long authorId);
 
   QuestResponse updateQuest(Long questId, @Valid CreateQuestRequest request, Authentication auth);
 

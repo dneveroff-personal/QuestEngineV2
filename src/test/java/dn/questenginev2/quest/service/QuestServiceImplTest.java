@@ -78,10 +78,8 @@ class QuestServiceImplTest {
   void createQuest_createsQuest_whenUserIsAuthor() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
 
-    CreateQuestRequest request = new CreateQuestRequest();
-    request.setTitle("Test Quest");
-    request.setDescription("Test Description");
-    request.setType(QuestType.TEAM);
+    CreateQuestRequest request =
+        new CreateQuestRequest("Test Quest", "Test Description", QuestType.TEAM, null, null);
 
     Quest savedQuest =
         Quest.builder()
@@ -120,10 +118,8 @@ class QuestServiceImplTest {
   void createQuest_createsQuest_whenUserIsAdmin() {
     when(userService.getCurrentUser(authentication)).thenReturn(adminUser);
 
-    CreateQuestRequest request = new CreateQuestRequest();
-    request.setTitle("Admin Quest");
-    request.setDescription("Admin Description");
-    request.setType(QuestType.SINGLE);
+    CreateQuestRequest request =
+        new CreateQuestRequest("Admin Quest", "Admin Description", QuestType.SINGLE, null, null);
 
     Quest savedQuest =
         Quest.builder()
@@ -157,9 +153,8 @@ class QuestServiceImplTest {
   void createQuest_throwsForbiddenOperationException_whenUserIsPlayer() {
     when(userService.getCurrentUser(authentication)).thenReturn(playerUser);
 
-    CreateQuestRequest request = new CreateQuestRequest();
-    request.setTitle("Player Quest");
-    request.setDescription("Player Description");
+    CreateQuestRequest request =
+        new CreateQuestRequest("Player Quest", "Player Description", null, null, null);
 
     assertThatThrownBy(() -> questService.createQuest(request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
@@ -230,10 +225,8 @@ class QuestServiceImplTest {
             .build();
     when(questRepository.save(any(Quest.class))).thenReturn(updatedQuest);
 
-    CreateQuestRequest request = new CreateQuestRequest();
-    request.setTitle("New Title");
-    request.setDescription("New Description");
-    request.setType(QuestType.SINGLE);
+    CreateQuestRequest request =
+        new CreateQuestRequest("New Title", "New Description", QuestType.SINGLE, null, null);
 
     QuestResponse response = questService.updateQuest(1L, request, authentication);
 
@@ -248,8 +241,7 @@ class QuestServiceImplTest {
   void updateQuest_throwsForbiddenOperationException_whenUserIsPlayer() {
     when(userService.getCurrentUser(authentication)).thenReturn(playerUser);
 
-    CreateQuestRequest request = new CreateQuestRequest();
-    request.setTitle("New Title");
+    CreateQuestRequest request = new CreateQuestRequest("New Title", null, null, null, null);
 
     assertThatThrownBy(() -> questService.updateQuest(1L, request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)

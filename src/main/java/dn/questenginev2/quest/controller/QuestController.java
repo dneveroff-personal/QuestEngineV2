@@ -7,6 +7,7 @@ import dn.questenginev2.quest.service.QuestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,14 @@ public class QuestController {
   @GetMapping(Routes.QUEST_ID)
   public ResponseEntity<QuestResponse> getById(@PathVariable Long questId) {
     return ResponseEntity.status(HttpStatus.OK).body(questService.getQuestById(questId));
+  }
+
+  @Operation(
+      summary = "Get all quests by author ID",
+      description = "Retrieve all quests authored by the specified user")
+  @GetMapping(Routes.QUEST_BY_AUTHOR)
+  public ResponseEntity<List<QuestResponse>> getAllByAuthorId(@PathVariable Long authorId) {
+    return ResponseEntity.status(HttpStatus.OK).body(questService.getAllByAuthorId(authorId));
   }
 
   @Operation(summary = "Update quest", description = "Update existing quest")

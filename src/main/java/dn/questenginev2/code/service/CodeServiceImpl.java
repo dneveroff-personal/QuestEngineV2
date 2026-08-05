@@ -34,7 +34,7 @@ public class CodeServiceImpl implements CodeService {
     Level level = validateLevelExist(levelId);
     questService.validateQuestAuthor(currentUser, level.getQuest().getId());
 
-    validateCodeValueUnique(request.getValue());
+    validateCodeValueUnique(request.value());
 
     Code code = buildCode(request, level);
     Code savedCode = codeRepository.save(code);
@@ -63,13 +63,13 @@ public class CodeServiceImpl implements CodeService {
     Code code = validateCodeExist(codeId);
     questService.validateQuestAuthor(currentUser, code.getLevel().getQuest().getId());
 
-    if (!code.getValue().equals(request.getValue())) {
-      validateCodeValueUnique(request.getValue());
+    if (!code.getValue().equals(request.value())) {
+      validateCodeValueUnique(request.value());
     }
 
-    code.setValue(request.getValue());
-    code.setType(request.getType());
-    code.setPoints(request.getPoints());
+    code.setValue(request.value());
+    code.setType(request.type());
+    code.setPoints(request.points());
 
     Code savedCode = codeRepository.save(code);
     return buildCodeResponse(savedCode);
@@ -119,9 +119,9 @@ public class CodeServiceImpl implements CodeService {
   private Code buildCode(CreateCodeRequest request, Level level) {
     return Code.builder()
         .level(level)
-        .value(request.getValue())
-        .type(request.getType())
-        .points(request.getPoints())
+        .value(request.value())
+        .type(request.type())
+        .points(request.points())
         .createdAt(Instant.now())
         .build();
   }
