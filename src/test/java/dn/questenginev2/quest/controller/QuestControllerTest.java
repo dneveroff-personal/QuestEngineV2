@@ -123,7 +123,9 @@ class QuestControllerTest {
         .perform(
             post("/api/quests")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"Test Quest\",\"description\":\"Test Description\"}"))
+                .content(
+                    "{\"title\":\"Test Quest\",\"description\":\"Test"
+                        + " Description\",\"type\":\"TEAM\"}"))
         .andExpect(status().isConflict())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error", is("Forbidden Operation")));
