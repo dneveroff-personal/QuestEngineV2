@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "dn"
-version = "0.4.1"
+version = "0.4.2"
 description = "QuestEngineV2"
 
 springBoot {
