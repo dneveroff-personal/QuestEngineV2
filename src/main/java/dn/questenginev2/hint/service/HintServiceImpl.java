@@ -61,9 +61,9 @@ public class HintServiceImpl implements HintService {
     Hint hint = validateHintExist(hintId);
     questService.validateQuestAuthor(currentUser, hint.getLevel().getQuest().getId());
 
-    hint.setOrderIndex(request.getOrderIndex());
-    hint.setDelaySeconds(request.getDelaySeconds());
-    hint.setContent(request.getContent());
+    hint.setOrderIndex(request.orderIndex());
+    hint.setDelaySeconds(request.delaySeconds());
+    hint.setContent(request.content());
     hint.setUpdatedAt(Instant.now());
 
     Hint savedHint = hintRepository.save(hint);
@@ -115,9 +115,9 @@ public class HintServiceImpl implements HintService {
   private Hint buildHint(CreateHintRequest request, Level level) {
     return Hint.builder()
         .level(level)
-        .orderIndex(request.getOrderIndex())
-        .delaySeconds(request.getDelaySeconds())
-        .content(request.getContent())
+        .orderIndex(request.orderIndex())
+        .delaySeconds(request.delaySeconds())
+        .content(request.content())
         .createdAt(Instant.now())
         .updatedAt(Instant.now())
         .build();

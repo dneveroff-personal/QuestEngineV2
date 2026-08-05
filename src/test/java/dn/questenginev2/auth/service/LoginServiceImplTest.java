@@ -56,8 +56,8 @@ class LoginServiceImplTest {
     LoginResponse response = loginService.login(request);
 
     assertThat(response).isNotNull();
-    assertThat(response.getPublicName()).isEqualTo("Test User");
-    assertThat(response.getToken()).isEqualTo("test-jwt-token");
+    assertThat(response.publicName()).isEqualTo("Test User");
+    assertThat(response.token()).isEqualTo("test-jwt-token");
     verify(userService).findByUsername("testuser");
     verify(jwtService).validatePassword("password123", "hashedPassword");
     verify(jwtService).generateToken("testuser", "PLAYER");
@@ -109,8 +109,8 @@ class LoginServiceImplTest {
     LoginResponse response = loginService.login(request, testUser);
 
     assertThat(response).isNotNull();
-    assertThat(response.getPublicName()).isEqualTo("Test User");
-    assertThat(response.getToken()).isEqualTo("test-jwt-token");
+    assertThat(response.publicName()).isEqualTo("Test User");
+    assertThat(response.token()).isEqualTo("test-jwt-token");
     verify(jwtService).validatePassword("password123", "hashedPassword");
     verify(jwtService).generateToken("testuser", "PLAYER");
   }

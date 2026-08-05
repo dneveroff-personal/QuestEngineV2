@@ -66,11 +66,11 @@ public class QuestServiceImpl implements QuestService {
     Quest quest = validateQuestExist(questId);
     validateQuestAuthor(currentUser, questId);
 
-    quest.setTitle(request.getTitle());
-    quest.setDescription(request.getDescription());
-    quest.setType(request.getType());
-    quest.setStartTime(request.getStartTime());
-    quest.setFinishTime(request.getFinishTime());
+    quest.setTitle(request.title());
+    quest.setDescription(request.description());
+    quest.setType(request.type());
+    quest.setStartTime(request.startTime());
+    quest.setFinishTime(request.finishTime());
 
     Quest savedQuest = questRepository.save(quest);
     return buildQuestResponse(savedQuest);
@@ -127,13 +127,13 @@ public class QuestServiceImpl implements QuestService {
 
   private Quest buildQuest(CreateQuestRequest request) {
     return Quest.builder()
-        .title(request.getTitle())
-        .description(request.getDescription() != null ? request.getDescription() : "")
-        .type(request.getType())
+        .title(request.title())
+        .description(request.description() != null ? request.description() : "")
+        .type(request.type())
         .status(QuestStatus.DRAFT)
         .createdAt(Instant.now())
-        .startTime(request.getStartTime())
-        .finishTime(request.getFinishTime())
+        .startTime(request.startTime())
+        .finishTime(request.finishTime())
         .build();
   }
 

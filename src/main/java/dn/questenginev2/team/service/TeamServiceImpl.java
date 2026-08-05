@@ -35,7 +35,7 @@ public class TeamServiceImpl implements TeamService {
   public TeamResponse createTeam(CreateTeamRequest request, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
 
-    String teamName = request.getName();
+    String teamName = request.name();
     validateTeamNameUnique(teamName);
     validateUserNotInTeam(currentUser);
 

@@ -188,7 +188,7 @@ class UserServiceImplTest {
     UserResponse response = userService.setUserRole(1L, UserRole.AUTHOR, authentication);
 
     assertThat(response).isNotNull();
-    assertThat(response.getRole()).isEqualTo(UserRole.AUTHOR);
+    assertThat(response.role()).isEqualTo(UserRole.AUTHOR);
     verify(userRepository).save(testUser);
   }
 
@@ -213,8 +213,7 @@ class UserServiceImplTest {
     when(passwordEncoder.encode("newPassword")).thenReturn("encodedNewPassword");
     when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-    ResetPasswordRequest request = new ResetPasswordRequest();
-    request.setNewPassword("newPassword");
+    ResetPasswordRequest request = new ResetPasswordRequest("newPassword");
 
     userService.resetPassword(1L, request, authentication);
 
@@ -228,8 +227,7 @@ class UserServiceImplTest {
     when(authentication.getName()).thenReturn("testuser");
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
-    ResetPasswordRequest request = new ResetPasswordRequest();
-    request.setNewPassword("newPassword");
+    ResetPasswordRequest request = new ResetPasswordRequest("newPassword");
 
     assertThatThrownBy(() -> userService.resetPassword(1L, request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
@@ -246,8 +244,7 @@ class UserServiceImplTest {
     when(userRepository.save(any(User.class))).thenReturn(adminUser);
 
     dn.questenginev2.auth.dto.ResetAdminPasswordRequest request =
-        new dn.questenginev2.auth.dto.ResetAdminPasswordRequest();
-    request.setNewPassword("newAdminPassword");
+        new dn.questenginev2.auth.dto.ResetAdminPasswordRequest("newAdminPassword");
 
     userService.resetAdminPassword(request);
 

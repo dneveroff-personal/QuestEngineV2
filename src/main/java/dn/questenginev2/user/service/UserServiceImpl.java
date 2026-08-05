@@ -61,7 +61,7 @@ public class UserServiceImpl implements UserService {
     validateAdmin(currentUser);
 
     User targetUser = getUser(userId);
-    String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+    String encodedPassword = passwordEncoder.encode(request.newPassword());
     targetUser.setPasswordHash(encodedPassword);
     userRepository.save(targetUser);
   }
@@ -69,7 +69,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public void resetAdminPassword(ResetAdminPasswordRequest request) {
     User adminUser = getUser(1L);
-    String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+    String encodedPassword = passwordEncoder.encode(request.newPassword());
     adminUser.setPasswordHash(encodedPassword);
     userRepository.save(adminUser);
   }

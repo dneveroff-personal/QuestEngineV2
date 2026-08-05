@@ -106,10 +106,7 @@ class HintServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
 
-    CreateHintRequest request = new CreateHintRequest();
-    request.setOrderIndex(1);
-    request.setDelaySeconds(30);
-    request.setContent("Hint content");
+    CreateHintRequest request = new CreateHintRequest(1, 30, "Hint content");
 
     Hint savedHint =
         Hint.builder()
@@ -144,10 +141,7 @@ class HintServiceImplTest {
         .when(questService)
         .validateAuthorOrAdmin(playerUser);
 
-    CreateHintRequest request = new CreateHintRequest();
-    request.setOrderIndex(1);
-    request.setDelaySeconds(30);
-    request.setContent("Hint content");
+    CreateHintRequest request = new CreateHintRequest(1, 30, "Hint content");
 
     assertThatThrownBy(() -> hintService.createHint(1L, request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
@@ -162,10 +156,7 @@ class HintServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(levelRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
-    CreateHintRequest request = new CreateHintRequest();
-    request.setOrderIndex(1);
-    request.setDelaySeconds(30);
-    request.setContent("Hint content");
+    CreateHintRequest request = new CreateHintRequest(1, 30, "Hint content");
 
     assertThatThrownBy(() -> hintService.createHint(999L, request, authentication))
         .isInstanceOf(IllegalArgumentException.class)
@@ -256,10 +247,7 @@ class HintServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(hintRepository.findById(1L)).thenReturn(java.util.Optional.of(hint));
 
-    CreateHintRequest request = new CreateHintRequest();
-    request.setOrderIndex(2);
-    request.setDelaySeconds(45);
-    request.setContent("New content");
+    CreateHintRequest request = new CreateHintRequest(2, 45, "New content");
 
     Hint updatedHint =
         Hint.builder()
