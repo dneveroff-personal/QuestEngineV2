@@ -229,8 +229,8 @@ class TeamControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Test Team\"}"))
         .andExpect(status().isConflict())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.error", is("Team Already Exists")));
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title", is("Team Already Exists")));
   }
 
   @Test
@@ -243,8 +243,8 @@ class TeamControllerTest {
     mockMvc
         .perform(post("/api/teams/1/request"))
         .andExpect(status().isConflict())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.error", is("User Already In The Team")));
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title", is("User Already In Team")));
   }
 
   @Test
@@ -257,8 +257,8 @@ class TeamControllerTest {
     mockMvc
         .perform(post("/api/teams/1/request").param("username", "nonexistent"))
         .andExpect(status().isNotFound())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.error", is("User Was Not Found In DB")));
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title", is("User Not Found")));
   }
 
   @Test
@@ -271,7 +271,7 @@ class TeamControllerTest {
     mockMvc
         .perform(post("/api/teams/requests/999/approve"))
         .andExpect(status().isNotFound())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.error", is("Request Was Not Found In DB")));
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title", is("Request Not Found")));
   }
 }

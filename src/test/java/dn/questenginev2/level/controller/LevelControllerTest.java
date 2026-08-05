@@ -71,7 +71,7 @@ class LevelControllerTest {
                 .content(
                     "{\"title\":\"Level 1\",\"content\":\"Level content\",\"timeoutSeconds\":300}"))
         .andExpect(status().isConflict())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.error", is("Forbidden Operation")));
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title", is("Forbidden Operation")));
   }
 }

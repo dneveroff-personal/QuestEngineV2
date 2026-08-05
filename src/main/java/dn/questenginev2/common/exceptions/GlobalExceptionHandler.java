@@ -1,138 +1,291 @@
 package dn.questenginev2.common.exceptions;
 
 import dn.questenginev2.QuestEngineV2Application;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
+import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  private static final int STACK_TAIL = 5;
+  private static final String BASE_URI = "https://api.questenginev2.dn/problems";
   private static final String PACKAGE_NAME = QuestEngineV2Application.class.getPackageName();
-
-  // ===== AccessDeniedException =====
-  @ExceptionHandler(AccessDeniedException.class)
-  public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
-    return buildResponseEntity(HttpStatus.NOT_FOUND, "Requested Access Denied", ex.getMessage());
-  }
 
   // ===== MethodArgumentNotValidException (ошибки @Valid в теле запроса) =====
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
-      MethodArgumentNotValidException ex) {
-    String message =
-        ex.getBindingResult().getFieldErrors().stream()
-            .map(error -> error.getField() + ": " + error.getDefaultMessage())
-            .reduce((left, right) -> left + "; " + right)
-            .orElse("Validation failed");
-    return buildResponseEntity(HttpStatus.BAD_REQUEST, message, message);
-  }
+  public ProblemDetail handleMethodArgumentNotValid(
+      MethodArgumentNotValidException ex, WebRequest request) {
 
-  // ===== WrongPasswordException (ошибки @Valid в теле запроса) =====
-  @ExceptionHandler(WrongPasswordException.class)
-  public ResponseEntity<ErrorResponse> handleWrongPasswordException(WrongPasswordException ex) {
-    return buildResponseEntity(
-        HttpStatus.BAD_REQUEST, "Wrong username or password", ex.getMessage());
+    List<ValidationError> errors =
+        ex.getBindingResult().getFieldErrors().stream()
+            .map(error -> new ValidationError(error.getField(), error.getDefaultMessage()))
+            .collect(Collectors.toList());
+
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex,
+            HttpStatus.BAD_REQUEST,
+            request,
+            "Validation Failed",
+            "Request validation failed. Check the 'errors' field for details.");
+
+    problemDetail.setProperty("errors", errors);
+    log.error("Validation error: {}", errors);
+    return problemDetail;
   }
 
   // ===== ConstraintViolationException (ошибки валидации параметров/путей) =====
   @ExceptionHandler(ConstraintViolationException.class)
-  public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
-    String message =
+  public ProblemDetail handleConstraintViolation(
+      ConstraintViolationException ex, WebRequest request) {
+
+    List<ValidationError> errors =
         ex.getConstraintViolations().stream()
-            .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
-            .reduce((left, right) -> left + "; " + right)
-            .orElse("Validation failed");
-    return buildResponseEntity(HttpStatus.BAD_REQUEST, message, message);
+            .map(
+                violation ->
+                    new ValidationError(
+                        violation.getPropertyPath().toString(), violation.getMessage()))
+            .collect(Collectors.toList());
+
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex,
+            HttpStatus.BAD_REQUEST,
+            request,
+            "Constraint Violation",
+            "Request constraint violation. Check the 'errors' field for details.");
+
+    problemDetail.setProperty("errors", errors);
+    log.error("Constraint violation: {}", errors);
+    return problemDetail;
+  }
+
+  // ===== AccessDeniedException =====
+  @ExceptionHandler(AccessDeniedException.class)
+  public ProblemDetail handleAccessDenied(AccessDeniedException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(ex, HttpStatus.FORBIDDEN, request, "Access Denied", ex.getMessage());
+    log.error("Access denied: {}", ex.getMessage());
+    return problemDetail;
+  }
+
+  // ===== WrongPasswordException =====
+  @ExceptionHandler(WrongPasswordException.class)
+  public ProblemDetail handleWrongPasswordException(WrongPasswordException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(ex, HttpStatus.BAD_REQUEST, request, "Wrong Password", ex.getMessage());
+    log.error("Wrong password attempt: {}", ex.getMessage());
+    return problemDetail;
   }
 
   // ===== RequestAlreadyExistsException =====
   @ExceptionHandler(RequestAlreadyExistsException.class)
-  public ResponseEntity<ErrorResponse> handleRequestAlreadyExists(
-      RequestAlreadyExistsException ex) {
-    return buildResponseEntity(HttpStatus.CONFLICT, "Request Already Exists", ex.getMessage());
+  public ProblemDetail handleRequestAlreadyExists(
+      RequestAlreadyExistsException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(ex, HttpStatus.CONFLICT, request, "Conflict", ex.getMessage());
+    log.error("Request already exists: {}", ex.getMessage());
+    return problemDetail;
   }
 
   // ===== ForbiddenOperationException =====
   @ExceptionHandler(ForbiddenOperationException.class)
-  public ResponseEntity<ErrorResponse> handleForbiddenOperation(ForbiddenOperationException ex) {
-    return buildResponseEntity(HttpStatus.CONFLICT, "Forbidden Operation", ex.getMessage());
+  public ProblemDetail handleForbiddenOperation(
+      ForbiddenOperationException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex, HttpStatus.CONFLICT, request, "Forbidden Operation", ex.getMessage());
+    log.error("Forbidden operation: {}", ex.getMessage());
+    return problemDetail;
+  }
+
+  // ===== EntityNotFoundException =====
+  @ExceptionHandler(EntityNotFoundException.class)
+  public ProblemDetail handleEntityNotFound(EntityNotFoundException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(ex, HttpStatus.NOT_FOUND, request, "Entity Not Found", ex.getMessage());
+    log.error("Entity not found: {}", ex.getMessage());
+    return problemDetail;
   }
 
   // ===== UserNotFoundException =====
   @ExceptionHandler(UserNotFoundException.class)
-  public ResponseEntity<ErrorResponse> handleEntityNotFound(UserNotFoundException ex) {
-    return buildResponseEntity(HttpStatus.NOT_FOUND, "User Was Not Found In DB", ex.getMessage());
+  public ProblemDetail handleUserNotFound(UserNotFoundException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(ex, HttpStatus.NOT_FOUND, request, "User Not Found", ex.getMessage());
+    log.error("User not found: {}", ex.getMessage());
+    return problemDetail;
   }
 
   // ===== RequestNotFoundException =====
   @ExceptionHandler(RequestNotFoundException.class)
-  public ResponseEntity<ErrorResponse> handleRequestNotFound(RequestNotFoundException ex) {
-    return buildResponseEntity(
-        HttpStatus.NOT_FOUND, "Request Was Not Found In DB", ex.getMessage());
+  public ProblemDetail handleRequestNotFound(RequestNotFoundException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex, HttpStatus.NOT_FOUND, request, "Request Not Found", ex.getMessage());
+    log.error("Request not found: {}", ex.getMessage());
+    return problemDetail;
   }
 
   // ===== TeamNotFoundException =====
   @ExceptionHandler(TeamNotFoundException.class)
-  public ResponseEntity<ErrorResponse> handleTeamNotFound(TeamNotFoundException ex) {
-    return buildResponseEntity(HttpStatus.NOT_FOUND, "Team Was Not Found In DB", ex.getMessage());
+  public ProblemDetail handleTeamNotFound(TeamNotFoundException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(ex, HttpStatus.NOT_FOUND, request, "Team Not Found", ex.getMessage());
+    log.error("Team not found: {}", ex.getMessage());
+    return problemDetail;
   }
 
   // ===== UserAlreadyExistsException =====
   @ExceptionHandler(UserAlreadyExistsException.class)
-  public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex) {
-    return buildResponseEntity(HttpStatus.CONFLICT, "User Already Exists", ex.getMessage());
+  public ProblemDetail handleUserAlreadyExists(UserAlreadyExistsException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex, HttpStatus.CONFLICT, request, "User Already Exists", ex.getMessage());
+    log.error("User already exists: {}", ex.getMessage());
+    return problemDetail;
   }
 
-  // ===== UserAlreadyExistsException =====
+  // ===== UserAlreadyInTeamException =====
   @ExceptionHandler(UserAlreadyInTeamException.class)
-  public ResponseEntity<ErrorResponse> handleUserAlreadyExistsInTeam(
-      UserAlreadyInTeamException ex) {
-    return buildResponseEntity(HttpStatus.CONFLICT, "User Already In The Team", ex.getMessage());
+  public ProblemDetail handleUserAlreadyInTeam(UserAlreadyInTeamException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex, HttpStatus.CONFLICT, request, "User Already In Team", ex.getMessage());
+    log.error("User already in team: {}", ex.getMessage());
+    return problemDetail;
   }
 
   // ===== TeamAlreadyExistsException =====
   @ExceptionHandler(TeamAlreadyExistsException.class)
-  public ResponseEntity<ErrorResponse> handleTeamAlreadyExists(TeamAlreadyExistsException ex) {
-    return buildResponseEntity(HttpStatus.CONFLICT, "Team Already Exists", ex.getMessage());
+  public ProblemDetail handleTeamAlreadyExists(TeamAlreadyExistsException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex, HttpStatus.CONFLICT, request, "Team Already Exists", ex.getMessage());
+    log.error("Team already exists: {}", ex.getMessage());
+    return problemDetail;
   }
 
-  // ===== Конфликты, недопустимые состояния =====
+  // ===== IllegalArgumentException / IllegalStateException =====
   @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
-  public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex) {
-    return buildResponseEntity(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
+  public ProblemDetail handleConflict(RuntimeException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(ex, HttpStatus.CONFLICT, request, "Conflict", ex.getMessage());
+    log.error("Conflict: {}", ex.getMessage());
+    return problemDetail;
+  }
+
+  // ===== HttpMessageNotReadableException (невалидный JSON) =====
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ProblemDetail handleHttpMessageNotReadable(
+      HttpMessageNotReadableException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex,
+            HttpStatus.BAD_REQUEST,
+            request,
+            "Malformed JSON Request",
+            "Request body is not valid JSON or has invalid structure.");
+    log.error("Malformed JSON request: {}", ex.getMessage());
+    return problemDetail;
+  }
+
+  // ===== MethodArgumentTypeMismatchException (неверный тип параметра) =====
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ProblemDetail handleMethodArgumentTypeMismatch(
+      MethodArgumentTypeMismatchException ex, WebRequest request) {
+    String message =
+        "Parameter '"
+            + ex.getName()
+            + "' should be of type "
+            + ex.getRequiredType().getSimpleName();
+    ProblemDetail problemDetail =
+        createProblemDetail(ex, HttpStatus.BAD_REQUEST, request, "Type Mismatch", message);
+    log.error("Type mismatch: {}", message);
+    return problemDetail;
+  }
+
+  // ===== ResponseStatusException =====
+  @ExceptionHandler(ResponseStatusException.class)
+  public ProblemDetail handleResponseStatusException(
+      ResponseStatusException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex,
+            HttpStatus.valueOf(ex.getStatusCode().value()),
+            request,
+            ex.getReason() != null ? ex.getReason() : "Error",
+            ex.getReason() != null ? ex.getReason() : "An error occurred");
+    log.error("Response status exception: {}", ex.getMessage());
+    return problemDetail;
   }
 
   // ===== Все остальные исключения =====
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<ErrorResponse> handleAll(Exception ex) {
-    StackTraceElement[] stackTraceElements = ex.getStackTrace();
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append("Internal Server Error").append("\n");
+  public ProblemDetail handleAll(Exception ex, WebRequest request) {
+    log.error("Internal server error", ex);
 
-    Arrays.stream(stackTraceElements)
-        .filter(stackTraceElement -> stackTraceElement.getClassName().startsWith(PACKAGE_NAME))
-        .skip(Math.max(0, stackTraceElements.length - STACK_TAIL))
-        .forEach(stackTraceElement -> stringBuilder.append(stackTraceElement).append(" \n "));
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex,
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            request,
+            "Internal Server Error",
+            "An unexpected error occurred. Please try again later.");
 
-    return buildResponseEntity(
-        HttpStatus.INTERNAL_SERVER_ERROR, stringBuilder.toString(), ex.getMessage());
+    problemDetail.setProperty("timestamp", LocalDateTime.now());
+    return problemDetail;
   }
 
-  private ResponseEntity<ErrorResponse> buildResponseEntity(
-      HttpStatus status, String error, String message) {
-    ErrorResponse body = new ErrorResponse(LocalDateTime.now(), status.value(), error);
-    log.error("Error log message: {}", message);
+  private ProblemDetail createProblemDetail(
+      Exception ex, HttpStatus status, WebRequest request, String title, String detail) {
 
-    return ResponseEntity.status(status).body(body);
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(status, detail);
+    problemDetail.setTitle(title);
+    problemDetail.setType(URI.create(BASE_URI + "/" + getProblemType(ex)));
+    problemDetail.setProperty("timestamp", LocalDateTime.now());
+
+    if (request != null) {
+      problemDetail.setInstance(URI.create(request.getDescription(false).replace("uri=", "")));
+    }
+
+    return problemDetail;
+  }
+
+  private String getProblemType(Exception ex) {
+    if (ex instanceof MethodArgumentNotValidException) return "validation-error";
+    if (ex instanceof ConstraintViolationException) return "constraint-violation";
+    if (ex instanceof AccessDeniedException) return "access-denied";
+    if (ex instanceof WrongPasswordException) return "wrong-password";
+    if (ex instanceof RequestAlreadyExistsException) return "conflict";
+    if (ex instanceof ForbiddenOperationException) return "forbidden-operation";
+    if (ex instanceof EntityNotFoundException) return "entity-not-found";
+    if (ex instanceof UserNotFoundException) return "user-not-found";
+    if (ex instanceof RequestNotFoundException) return "request-not-found";
+    if (ex instanceof TeamNotFoundException) return "team-not-found";
+    if (ex instanceof UserAlreadyExistsException) return "user-already-exists";
+    if (ex instanceof UserAlreadyInTeamException) return "user-already-in-team";
+    if (ex instanceof TeamAlreadyExistsException) return "team-already-exists";
+    if (ex instanceof IllegalArgumentException || ex instanceof IllegalStateException)
+      return "conflict";
+    if (ex instanceof HttpMessageNotReadableException) return "malformed-json";
+    if (ex instanceof MethodArgumentTypeMismatchException) return "type-mismatch";
+    if (ex instanceof ResponseStatusException) return "response-status";
+    return "internal-error";
   }
 }

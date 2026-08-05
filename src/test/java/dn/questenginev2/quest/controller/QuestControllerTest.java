@@ -127,7 +127,7 @@ class QuestControllerTest {
                     "{\"title\":\"Test Quest\",\"description\":\"Test"
                         + " Description\",\"type\":\"TEAM\"}"))
         .andExpect(status().isConflict())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.error", is("Forbidden Operation")));
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title", is("Forbidden Operation")));
   }
 }
