@@ -32,7 +32,7 @@ public class Code {
   @Column(name = "type", nullable = false)
   private CodeType type;
 
-  @Column(name = "points", nullable = false)
+  @Column(name = "points")
   private Integer points;
 
   @Builder.Default
