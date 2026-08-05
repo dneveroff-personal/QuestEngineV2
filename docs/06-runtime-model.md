@@ -1,0 +1,37 @@
+# QuestProgress
+REGISTERED
+↓
+WAITING
+↓
+ACTIVE
+↓
+FINISHED
+
+или
+
+ACTIVE
+↓
+DNF
+
+# LevelProgress
+WAITING
+↓
+ACTIVE
+↓
+FINISHED
+
+или
+
+WAITING
+↓
+ACTIVE
+↓
+AUTO_FINISHED
+
+или
+
+WAITING
+↓
+ACTIVE
+↓
+FORCED_FINISHED
