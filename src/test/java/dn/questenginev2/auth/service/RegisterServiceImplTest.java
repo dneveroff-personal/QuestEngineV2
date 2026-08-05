@@ -63,8 +63,8 @@ class RegisterServiceImplTest {
     LoginResponse response = registerService.register(request);
 
     assertThat(response).isNotNull();
-    assertThat(response.getPublicName()).isEqualTo("New User");
-    assertThat(response.getToken()).isEqualTo("test-jwt-token");
+    assertThat(response.publicName()).isEqualTo("New User");
+    assertThat(response.token()).isEqualTo("test-jwt-token");
 
     verify(userService).saveUser(any(User.class));
     verify(loginService).login(any(RegisterRequest.class), eq(savedUser));
@@ -96,7 +96,7 @@ class RegisterServiceImplTest {
     LoginResponse response = registerService.register(request);
 
     assertThat(response).isNotNull();
-    assertThat(response.getPublicName()).isEqualTo("newuser");
+    assertThat(response.publicName()).isEqualTo("newuser");
   }
 
   @Test
@@ -125,7 +125,7 @@ class RegisterServiceImplTest {
     LoginResponse response = registerService.register(request);
 
     assertThat(response).isNotNull();
-    assertThat(response.getPublicName()).isEqualTo("newuser");
+    assertThat(response.publicName()).isEqualTo("newuser");
   }
 
   @Test

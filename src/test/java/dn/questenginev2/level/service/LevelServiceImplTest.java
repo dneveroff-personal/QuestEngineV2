@@ -90,10 +90,7 @@ class LevelServiceImplTest {
     when(questService.validateQuestExist(1L)).thenReturn(testQuest);
     when(levelRepository.findMaxOrderIndex(1L)).thenReturn(0);
 
-    CreateLevelRequest request = new CreateLevelRequest();
-    request.setTitle("Level 1");
-    request.setContent("Level content");
-    request.setTimeoutSeconds(300);
+    CreateLevelRequest request = new CreateLevelRequest("Level 1", "Level content", 300);
 
     Level savedLevel =
         Level.builder()
@@ -127,10 +124,7 @@ class LevelServiceImplTest {
     when(questService.validateQuestExist(1L)).thenReturn(testQuest);
     when(levelRepository.findMaxOrderIndex(1L)).thenReturn(0);
 
-    CreateLevelRequest request = new CreateLevelRequest();
-    request.setTitle("Admin Level");
-    request.setContent("Admin level content");
-    request.setTimeoutSeconds(600);
+    CreateLevelRequest request = new CreateLevelRequest("Admin Level", "Admin level content", 600);
 
     Level savedLevel =
         Level.builder()
@@ -162,10 +156,8 @@ class LevelServiceImplTest {
         .when(questService)
         .validateAuthorOrAdmin(playerUser);
 
-    CreateLevelRequest request = new CreateLevelRequest();
-    request.setTitle("Player Level");
-    request.setContent("Player level content");
-    request.setTimeoutSeconds(100);
+    CreateLevelRequest request =
+        new CreateLevelRequest("Player Level", "Player level content", 100);
 
     assertThatThrownBy(() -> levelService.createLevel(1L, request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
@@ -181,10 +173,7 @@ class LevelServiceImplTest {
     when(questService.validateQuestExist(999L))
         .thenThrow(new IllegalArgumentException("Квест не найден: 999"));
 
-    CreateLevelRequest request = new CreateLevelRequest();
-    request.setTitle("Level 1");
-    request.setContent("Level content");
-    request.setTimeoutSeconds(200);
+    CreateLevelRequest request = new CreateLevelRequest("Level 1", "Level content", 200);
 
     assertThatThrownBy(() -> levelService.createLevel(999L, request, authentication))
         .isInstanceOf(IllegalArgumentException.class)

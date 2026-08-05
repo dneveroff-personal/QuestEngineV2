@@ -85,8 +85,7 @@ class TeamControllerIT {
 
   @Test
   void createTeam_returnsCreatedTeam_whenNameIsUnique() throws Exception {
-    CreateTeamRequest request = new CreateTeamRequest();
-    request.setName("Unique Team Name");
+    CreateTeamRequest request = new CreateTeamRequest("Unique Team Name");
 
     mockMvc
         .perform(

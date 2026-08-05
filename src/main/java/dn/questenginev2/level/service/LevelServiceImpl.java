@@ -58,9 +58,9 @@ public class LevelServiceImpl implements LevelService {
     Level level = validateLevelExist(levelId);
     questService.validateQuestAuthor(currentUser, level.getQuest().getId());
 
-    level.setTitle(request.getTitle());
-    level.setContent(request.getContent());
-    level.setTimeoutSeconds(request.getTimeoutSeconds());
+    level.setTitle(request.title());
+    level.setContent(request.content());
+    level.setTimeoutSeconds(request.timeoutSeconds());
     level.setUpdatedAt(Instant.now());
 
     Level savedLevel = levelRepository.save(level);
@@ -107,10 +107,10 @@ public class LevelServiceImpl implements LevelService {
   private Level buildLevel(CreateLevelRequest request, Quest quest) {
     return Level.builder()
         .quest(quest)
-        .title(request.getTitle())
+        .title(request.title())
         .orderIndex(getMaxLevelIndex(quest.getId()) + 1)
-        .content(request.getContent())
-        .timeoutSeconds(request.getTimeoutSeconds())
+        .content(request.content())
+        .timeoutSeconds(request.timeoutSeconds())
         .createdAt(Instant.now())
         .updatedAt(Instant.now())
         .build();

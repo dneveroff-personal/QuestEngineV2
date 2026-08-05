@@ -108,10 +108,7 @@ class CodeServiceImplTest {
     when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
     when(codeRepository.existsByCodeValue("CODE123")).thenReturn(false);
 
-    CreateCodeRequest request = new CreateCodeRequest();
-    request.setValue("CODE123");
-    request.setType(CodeType.MAIN);
-    request.setPoints(100);
+    CreateCodeRequest request = new CreateCodeRequest("CODE123", CodeType.MAIN, 100);
 
     Code savedCode =
         Code.builder()
@@ -142,10 +139,7 @@ class CodeServiceImplTest {
     when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
     when(codeRepository.existsByCodeValue("CODE123")).thenReturn(true);
 
-    CreateCodeRequest request = new CreateCodeRequest();
-    request.setValue("CODE123");
-    request.setType(CodeType.MAIN);
-    request.setPoints(100);
+    CreateCodeRequest request = new CreateCodeRequest("CODE123", CodeType.MAIN, 100);
 
     assertThatThrownBy(() -> codeService.createCode(1L, request, authentication))
         .isInstanceOf(IllegalArgumentException.class)
@@ -163,10 +157,7 @@ class CodeServiceImplTest {
         .when(questService)
         .validateAuthorOrAdmin(playerUser);
 
-    CreateCodeRequest request = new CreateCodeRequest();
-    request.setValue("CODE123");
-    request.setType(CodeType.MAIN);
-    request.setPoints(100);
+    CreateCodeRequest request = new CreateCodeRequest("CODE123", CodeType.MAIN, 100);
 
     assertThatThrownBy(() -> codeService.createCode(1L, request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
@@ -255,10 +246,7 @@ class CodeServiceImplTest {
     when(codeRepository.findById(1L)).thenReturn(java.util.Optional.of(code));
     when(codeRepository.existsByCodeValue("NEWCODE")).thenReturn(false);
 
-    CreateCodeRequest request = new CreateCodeRequest();
-    request.setValue("NEWCODE");
-    request.setType(CodeType.BONUS);
-    request.setPoints(200);
+    CreateCodeRequest request = new CreateCodeRequest("NEWCODE", CodeType.BONUS, 200);
 
     Code updatedCode =
         Code.builder()
