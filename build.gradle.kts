@@ -7,8 +7,8 @@ plugins {
 }
 
 group = "dn"
-version = "0.4.6"
-description = "QuestEngineV2"
+version = "0.5.0"
+description = "Платформа для городских квестов в реальности и онлайн"
 
 springBoot {
     buildInfo {
@@ -21,7 +21,7 @@ springBoot {
 tasks.processResources {
     filteringCharset = "UTF-8"
     filesMatching("**/application.yml") {
-        expand("version" to project.version)
+        expand(mapOf("version" to project.version, "description" to project.description))
     }
 }
 

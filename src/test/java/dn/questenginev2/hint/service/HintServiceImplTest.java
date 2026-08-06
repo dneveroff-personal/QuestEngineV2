@@ -303,6 +303,6 @@ class HintServiceImplTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Подсказка не найдена");
 
-    verify(hintRepository, never()).delete(any());
+    verify(hintRepository, never()).delete(any(Hint.class));
   }
 }

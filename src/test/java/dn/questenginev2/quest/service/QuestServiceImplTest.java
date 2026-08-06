@@ -284,7 +284,7 @@ class QuestServiceImplTest {
         .hasMessageContaining("Квест не найден");
 
     verify(questRepository).findById(999L);
-    verify(questRepository, never()).delete(any());
+    verify(questRepository, never()).delete(any(Quest.class));
   }
 
   @Test

@@ -2,6 +2,7 @@ package dn.questenginev2.team.controller;
 
 import dn.questenginev2.common.constants.Routes;
 import dn.questenginev2.team.dto.CreateTeamRequest;
+import dn.questenginev2.team.dto.TeamFilterRequest;
 import dn.questenginev2.team.dto.TeamJoinResponse;
 import dn.questenginev2.team.dto.TeamMemberDto;
 import dn.questenginev2.team.dto.TeamResponse;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -91,5 +93,14 @@ public class TeamController {
   @GetMapping(Routes.MEMBERS)
   public ResponseEntity<List<TeamMemberDto>> getTeamMembers(@PathVariable Long teamId) {
     return ResponseEntity.status(HttpStatus.OK).body(teamService.getTeamMembers(teamId));
+  }
+
+  @Operation(
+      summary = "Search teams",
+      description = "Search teams with dynamic filters (name, captain, date range)")
+  @GetMapping("/search")
+  public ResponseEntity<List<TeamResponse>> searchTeams(
+      @Valid TeamFilterRequest filter, Pageable pageable) {
+    return ResponseEntity.status(HttpStatus.OK).body(teamService.searchTeams(filter, pageable));
   }
 }

@@ -5,6 +5,7 @@ import dn.questenginev2.quest.dto.CreateQuestRequest;
 import dn.questenginev2.quest.dto.QuestResponse;
 import dn.questenginev2.quest.entity.Quest;
 import dn.questenginev2.quest.entity.QuestAuthor;
+import dn.questenginev2.quest.entity.QuestShortProjection;
 import dn.questenginev2.quest.entity.QuestStatus;
 import dn.questenginev2.quest.repository.QuestAuthorRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
@@ -35,9 +36,7 @@ public class QuestServiceImpl implements QuestService {
     validateAuthorOrAdmin(currentUser);
 
     Quest quest = buildQuest(request);
-
     Quest savedQuest = questRepository.save(quest);
-
     QuestAuthor author = buildQuestAuthor(savedQuest, currentUser);
     questAuthorRepository.save(author);
 
@@ -85,6 +84,11 @@ public class QuestServiceImpl implements QuestService {
 
     questAuthorRepository.deleteByQuestId(questId);
     questRepository.delete(quest);
+  }
+
+  @Override
+  public List<QuestShortProjection> getAllUpcomingBrief() {
+    return questRepository.findAllByStartTimeAfter(Instant.now());
   }
 
   // ────── VALIDATIONS ───────────────────────────────────────────────────────────

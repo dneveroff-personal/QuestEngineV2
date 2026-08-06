@@ -3,12 +3,15 @@ package dn.questenginev2.user.controller;
 import dn.questenginev2.common.constants.Routes;
 import dn.questenginev2.user.dto.ResetPasswordRequest;
 import dn.questenginev2.user.dto.SetRoleRequest;
+import dn.questenginev2.user.dto.UserFilterRequest;
 import dn.questenginev2.user.dto.UserResponse;
 import dn.questenginev2.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -38,5 +41,14 @@ public class UserController {
       Authentication auth) {
     userService.resetPassword(userId, request, auth);
     return ResponseEntity.status(HttpStatus.OK).build();
+  }
+
+  @Operation(
+      summary = "Search users",
+      description = "Search users with dynamic filters (username, email, role, date range)")
+  @GetMapping("/search")
+  public ResponseEntity<List<UserResponse>> searchUsers(
+      @Valid UserFilterRequest filter, Pageable pageable) {
+    return ResponseEntity.status(HttpStatus.OK).body(userService.searchUsers(filter, pageable));
   }
 }

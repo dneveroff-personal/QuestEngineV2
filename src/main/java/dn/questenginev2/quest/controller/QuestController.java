@@ -3,6 +3,7 @@ package dn.questenginev2.quest.controller;
 import dn.questenginev2.common.constants.Routes;
 import dn.questenginev2.quest.dto.CreateQuestRequest;
 import dn.questenginev2.quest.dto.QuestResponse;
+import dn.questenginev2.quest.entity.QuestShortProjection;
 import dn.questenginev2.quest.service.QuestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,6 +42,14 @@ public class QuestController {
   @GetMapping(Routes.QUEST_BY_AUTHOR)
   public ResponseEntity<List<QuestResponse>> getAllByAuthorId(@PathVariable Long authorId) {
     return ResponseEntity.status(HttpStatus.OK).body(questService.getAllByAuthorId(authorId));
+  }
+
+  @Operation(
+      summary = "Get all upcoming quests",
+      description = "Retrieve all upcoming quests in brief view")
+  @GetMapping(Routes.QUEST_UPCOMING)
+  public ResponseEntity<List<QuestShortProjection>> getAllUpcomingBrief() {
+    return ResponseEntity.status(HttpStatus.OK).body(questService.getAllUpcomingBrief());
   }
 
   @Operation(summary = "Update quest", description = "Update existing quest")

@@ -4,12 +4,18 @@ import dn.questenginev2.auth.dto.ResetAdminPasswordRequest;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.UserNotFoundException;
 import dn.questenginev2.user.dto.ResetPasswordRequest;
+import dn.questenginev2.user.dto.UserFilterRequest;
 import dn.questenginev2.user.dto.UserResponse;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.repository.UserRepository;
+import dn.questenginev2.user.specification.UserSpecification;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -72,6 +78,20 @@ public class UserServiceImpl implements UserService {
     String encodedPassword = passwordEncoder.encode(request.newPassword());
     adminUser.setPasswordHash(encodedPassword);
     userRepository.save(adminUser);
+  }
+
+  @Override
+  public List<UserResponse> searchUsers(UserFilterRequest filter, Pageable pageable) {
+    var spec =
+        Specification.where(UserSpecification.hasUsername(filter.username()))
+            .and(UserSpecification.hasEmail(filter.email()))
+            .and(UserSpecification.hasRole(filter.role()))
+            .and(UserSpecification.createdAtAfter(filter.createdAtAfter()))
+            .and(UserSpecification.createdAtBefore(filter.createdAtBefore()));
+
+    return userRepository.findAll(spec, pageable).stream()
+        .map(this::buildUserResponse)
+        .collect(Collectors.toList());
   }
 
   // ────── VALIDATIONS ───────────────────────────────────────────────────────────

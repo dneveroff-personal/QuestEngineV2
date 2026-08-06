@@ -300,6 +300,6 @@ class CodeServiceImplTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Код не найден");
 
-    verify(codeRepository, never()).delete(any());
+    verify(codeRepository, never()).delete(any(Code.class));
   }
 }

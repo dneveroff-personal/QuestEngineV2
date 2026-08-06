@@ -2,6 +2,7 @@ package dn.questenginev2.team.service;
 
 import dn.questenginev2.common.exceptions.*;
 import dn.questenginev2.team.dto.CreateTeamRequest;
+import dn.questenginev2.team.dto.TeamFilterRequest;
 import dn.questenginev2.team.dto.TeamJoinResponse;
 import dn.questenginev2.team.dto.TeamMemberDto;
 import dn.questenginev2.team.dto.TeamResponse;
@@ -9,6 +10,7 @@ import dn.questenginev2.team.entity.*;
 import dn.questenginev2.team.repository.TeamJoinRequestRepository;
 import dn.questenginev2.team.repository.TeamMemberRepository;
 import dn.questenginev2.team.repository.TeamRepository;
+import dn.questenginev2.team.specification.TeamSpecification;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.service.UserService;
 import jakarta.transaction.Transactional;
@@ -16,6 +18,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -179,6 +183,19 @@ public class TeamServiceImpl implements TeamService {
   public TeamResponse getTeamById(Long teamId) {
     Team team = getTeam(teamId);
     return buildTeamResponse(team);
+  }
+
+  @Override
+  public List<TeamResponse> searchTeams(TeamFilterRequest filter, Pageable pageable) {
+    Specification<Team> spec =
+        Specification.where(TeamSpecification.hasName(filter.name()))
+            .and(TeamSpecification.hasCaptain(filter.captain()))
+            .and(TeamSpecification.createdAtAfter(filter.createdAtAfter()))
+            .and(TeamSpecification.createdAtBefore(filter.createdAtBefore()));
+
+    return teamRepository.findAll(spec, pageable).stream()
+        .map(this::buildTeamResponse)
+        .collect(Collectors.toList());
   }
 
   private List<TeamMemberDto> teamMemberstoDto(List<TeamMember> teamMembers) {

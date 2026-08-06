@@ -6,8 +6,10 @@ import dn.questenginev2.user.entity.User;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
+public interface TeamMemberRepository
+    extends JpaRepository<TeamMember, Long>, JpaSpecificationExecutor<TeamMember> {
 
   boolean existsByUser(User user);
 
