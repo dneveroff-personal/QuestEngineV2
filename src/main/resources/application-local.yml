@@ -12,3 +12,12 @@ jwt:
 admin:
   reset:
     secret: ${ADMIN_RESET_SECRET:-change-me-in-production}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always

@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "dn"
-version = "0.4.4"
+version = "0.4.6"
 description = "QuestEngineV2"
 
 springBoot {
@@ -15,6 +15,13 @@ springBoot {
         properties {
             version = project.version.toString()
         }
+    }
+}
+
+tasks.processResources {
+    filteringCharset = "UTF-8"
+    filesMatching("**/application.yml") {
+        expand("version" to project.version)
     }
 }
 
@@ -33,6 +40,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.5")

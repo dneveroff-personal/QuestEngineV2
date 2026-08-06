@@ -1,6 +1,5 @@
 package dn.questenginev2.common.exceptions;
 
-import dn.questenginev2.QuestEngineV2Application;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
@@ -24,7 +23,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class GlobalExceptionHandler {
 
   private static final String BASE_URI = "https://api.questenginev2.dn/problems";
-  private static final String PACKAGE_NAME = QuestEngineV2Application.class.getPackageName();
 
   // ===== MethodArgumentNotValidException (ошибки @Valid в теле запроса) =====
   @ExceptionHandler(MethodArgumentNotValidException.class)

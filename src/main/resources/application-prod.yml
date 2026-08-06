@@ -12,3 +12,9 @@ jwt:
 admin:
   reset:
     secret: ${ADMIN_RESET_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

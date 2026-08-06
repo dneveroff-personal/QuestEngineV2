@@ -1,3 +1,9 @@
+info:
+  app:
+    name: QuestEngineV2
+    description: Platform for real-time team quests
+    version: ${version}
+
 spring:
   ## Common ##
   application:
@@ -30,9 +36,3 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health
