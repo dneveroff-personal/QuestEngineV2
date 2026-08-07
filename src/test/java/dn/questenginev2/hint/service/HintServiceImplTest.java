@@ -167,8 +167,6 @@ class HintServiceImplTest {
 
   @Test
   void getHintsByLevelId_returnsHints_whenLevelExists() {
-    when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
-
     Hint hint1 =
         Hint.builder()
             .id(1L)

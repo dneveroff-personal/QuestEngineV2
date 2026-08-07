@@ -39,14 +39,14 @@ public class CodeServiceImpl implements CodeService {
     Code code = buildCode(request, level);
     Code savedCode = codeRepository.save(code);
 
-    return buildCodeResponse(savedCode);
+    return buildCodeResponse(savedCode, levelId);
   }
 
   @Override
   public List<CodeResponse> getCodesByLevelId(Long levelId) {
-    Level level = validateLevelExist(levelId);
-    return codeRepository.findByLevelIdOrderByCreatedAt(level.getId()).stream()
-        .map(this::buildCodeResponse)
+    validateLevelExist(levelId);
+    return codeRepository.findByLevelIdOrderByCreatedAt(levelId).stream()
+        .map(code -> buildCodeResponse(code, levelId))
         .toList();
   }
 
@@ -109,6 +109,17 @@ public class CodeServiceImpl implements CodeService {
     return CodeResponse.builder()
         .id(code.getId())
         .levelId(code.getLevel().getId())
+        .value(code.getValue())
+        .type(code.getType())
+        .points(code.getPoints())
+        .createdAt(code.getCreatedAt())
+        .build();
+  }
+
+  private CodeResponse buildCodeResponse(Code code, Long levelId) {
+    return CodeResponse.builder()
+        .id(code.getId())
+        .levelId(levelId)
         .value(code.getValue())
         .type(code.getType())
         .points(code.getPoints())

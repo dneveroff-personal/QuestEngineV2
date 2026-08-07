@@ -7,8 +7,14 @@ plugins {
 }
 
 group = "dn"
-version = "0.5.0"
+version = "0.5.1"
 description = "Платформа для городских квестов в реальности и онлайн"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 springBoot {
     buildInfo {
@@ -22,12 +28,6 @@ tasks.processResources {
     filteringCharset = "UTF-8"
     filesMatching("**/application.yml") {
         expand(mapOf("version" to project.version, "description" to project.description))
-    }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -60,6 +60,7 @@ dependencies {
 
     // For tests
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.mockito:mockito-inline:5.17.0")
     testCompileOnly("org.projectlombok:lombok")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testAnnotationProcessor("org.projectlombok:lombok")

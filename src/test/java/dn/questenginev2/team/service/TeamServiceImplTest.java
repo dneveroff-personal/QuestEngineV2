@@ -136,7 +136,7 @@ class TeamServiceImplTest {
 
     assertThatThrownBy(() -> teamService.createJoinRequest(authentication, 1L, null))
         .isInstanceOf(UserAlreadyInTeamException.class)
-        .hasMessage("User already member of a team");
+        .hasMessage("Пользователь уже состоит в команде");
 
     verify(joinRequestRepository, never()).save(any(TeamJoinRequest.class));
   }
@@ -237,7 +237,7 @@ class TeamServiceImplTest {
 
     assertThatThrownBy(() -> teamService.rejectRequest(1L, authentication))
         .isInstanceOf(AccessDeniedException.class)
-        .hasMessage("Only captain can reject");
+        .hasMessage("Нет прав капитана для этой операции");
 
     verify(joinRequestRepository, never()).delete(any(TeamJoinRequest.class));
   }
@@ -299,7 +299,7 @@ class TeamServiceImplTest {
 
     assertThatThrownBy(() -> teamService.createJoinRequest(authentication, 1L, "inviteduser"))
         .isInstanceOf(AccessDeniedException.class)
-        .hasMessage("Only captain can invite users");
+        .hasMessage("Нет прав капитана для этой операции");
 
     verify(joinRequestRepository, never()).save(any(TeamJoinRequest.class));
   }
@@ -424,7 +424,7 @@ class TeamServiceImplTest {
 
     assertThatThrownBy(() -> teamService.approveRequest(1L, authentication))
         .isInstanceOf(AccessDeniedException.class)
-        .hasMessage("Only captain can approve");
+        .hasMessage("Нет прав капитана для этой операции");
 
     verify(teamMemberRepository, never()).save(any(TeamMember.class));
     verify(joinRequestRepository, never()).delete(any(TeamJoinRequest.class));
@@ -454,7 +454,7 @@ class TeamServiceImplTest {
 
     assertThatThrownBy(() -> teamService.approveRequest(1L, authentication))
         .isInstanceOf(AccessDeniedException.class)
-        .hasMessage("Only invited user can accept");
+        .hasMessage("Только капитан может обрабатывать реквесты");
 
     verify(teamMemberRepository, never()).save(any(TeamMember.class));
     verify(joinRequestRepository, never()).delete(any(TeamJoinRequest.class));
@@ -507,7 +507,7 @@ class TeamServiceImplTest {
 
     assertThatThrownBy(() -> teamService.rejectRequest(1L, authentication))
         .isInstanceOf(AccessDeniedException.class)
-        .hasMessage("Only invited user can reject");
+        .hasMessage("Только капитан может обрабатывать реквесты");
 
     verify(joinRequestRepository, never()).delete(any(TeamJoinRequest.class));
   }

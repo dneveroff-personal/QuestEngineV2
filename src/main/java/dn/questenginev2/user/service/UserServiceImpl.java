@@ -15,7 +15,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -83,7 +82,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public List<UserResponse> searchUsers(UserFilterRequest filter, Pageable pageable) {
     var spec =
-        Specification.where(UserSpecification.hasUsername(filter.username()))
+        UserSpecification.hasUsername(filter.username())
             .and(UserSpecification.hasEmail(filter.email()))
             .and(UserSpecification.hasRole(filter.role()))
             .and(UserSpecification.createdAtAfter(filter.createdAtAfter()))

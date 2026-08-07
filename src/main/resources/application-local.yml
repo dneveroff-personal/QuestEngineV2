@@ -4,6 +4,8 @@ spring:
     url: jdbc:postgresql://localhost:5432/qe_v2_db
     username: ${POSTGRES_USER:-admin}
     password: ${POSTGRES_PASSWORD:-admin}
+  jpa:
+    show-sql: true
 
 jwt:
   secret: ${JWT_SECRET:-OMGItsQuestEngineV2JWTSuperSecureTokenMadeByDN}

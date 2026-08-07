@@ -37,14 +37,13 @@ public class HintServiceImpl implements HintService {
     Hint hint = buildHint(request, level);
     Hint savedHint = hintRepository.save(hint);
 
-    return buildHintResponse(savedHint);
+    return buildHintResponse(savedHint, levelId);
   }
 
   @Override
   public List<HintResponse> getHintsByLevelId(Long levelId) {
-    Level level = validateLevelExist(levelId);
-    return hintRepository.findByLevelIdOrderByOrderIndex(level.getId()).stream()
-        .map(this::buildHintResponse)
+    return hintRepository.findByLevelIdOrderByOrderIndex(levelId).stream()
+        .map(hint -> buildHintResponse(hint, levelId))
         .toList();
   }
 
@@ -104,6 +103,18 @@ public class HintServiceImpl implements HintService {
     return HintResponse.builder()
         .id(hint.getId())
         .levelId(hint.getLevel().getId())
+        .orderIndex(hint.getOrderIndex())
+        .delaySeconds(hint.getDelaySeconds())
+        .content(hint.getContent())
+        .createdAt(hint.getCreatedAt())
+        .updatedAt(hint.getUpdatedAt())
+        .build();
+  }
+
+  private HintResponse buildHintResponse(Hint hint, Long levelId) {
+    return HintResponse.builder()
+        .id(hint.getId())
+        .levelId(levelId)
         .orderIndex(hint.getOrderIndex())
         .delaySeconds(hint.getDelaySeconds())
         .content(hint.getContent())

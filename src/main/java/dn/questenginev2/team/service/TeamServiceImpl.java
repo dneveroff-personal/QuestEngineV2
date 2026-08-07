@@ -60,7 +60,7 @@ public class TeamServiceImpl implements TeamService {
     JoinRequestType requestType = JoinRequestType.of(username);
 
     if (requestType == JoinRequestType.CAPTAIN_INVITE) {
-      validateCaptainForInvite(team, currentUser);
+      validateCaptain(team, currentUser);
     }
 
     User targetUser = requestType.resolveUser(userService, username, currentUser);
@@ -88,7 +88,7 @@ public class TeamServiceImpl implements TeamService {
     User currentUser = userService.getCurrentUser(auth);
     TeamJoinRequest request = getJoinRequest(requestId);
 
-    validateApprovalPermission(request, currentUser);
+    validateJoinRequestPermission(request, currentUser);
 
     TeamMember member = buildTeamMember(request.getTeam(), request.getUser(), TeamRole.MEMBER);
     teamMemberRepository.save(member);
@@ -102,7 +102,7 @@ public class TeamServiceImpl implements TeamService {
     User currentUser = userService.getCurrentUser(auth);
     TeamJoinRequest request = getJoinRequest(requestId);
 
-    validateRejectionPermission(request, currentUser);
+    validateJoinRequestPermission(request, currentUser);
 
     joinRequestRepository.delete(request);
     return true;
@@ -136,9 +136,7 @@ public class TeamServiceImpl implements TeamService {
             .findByUser(currentUser)
             .orElseThrow(() -> new TeamNotFoundException("Команда пользователя не найдена"));
 
-    if (teamMember.getRole().equals(TeamRole.CAPTAIN)) {
-      throw new ForbiddenOperationException("Капитану запрещено покидать команду");
-    }
+    validateCaptain(teamMember, "Капитану запрещено покидать команду");
 
     teamMemberRepository.delete(teamMember);
 
@@ -149,18 +147,13 @@ public class TeamServiceImpl implements TeamService {
   @Transactional
   public Boolean transferCaptain(Long userId, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
-    TeamMember teamMember =
+    TeamMember captainTeamMember =
         teamMemberRepository
             .findByUser(currentUser)
             .orElseThrow(() -> new TeamNotFoundException("Команда пользователя не найдена"));
-    Team team = teamMember.getTeam();
+    Team team = captainTeamMember.getTeam();
 
-    validateCaptain(team, currentUser);
-
-    TeamMember captainTeamMember =
-        teamMemberRepository
-            .findByUserAndTeam(currentUser, team)
-            .orElseThrow(() -> new TeamNotFoundException("Капитан не найден"));
+    validateCaptain(captainTeamMember, null);
 
     User targetUser = userService.getUser(userId);
     TeamMember targetTeamMember =
@@ -188,11 +181,11 @@ public class TeamServiceImpl implements TeamService {
   @Override
   public List<TeamResponse> searchTeams(TeamFilterRequest filter, Pageable pageable) {
     Specification<Team> spec =
-        Specification.where(TeamSpecification.hasName(filter.name()))
+        TeamSpecification.hasName(filter.name())
             .and(TeamSpecification.hasCaptain(filter.captain()))
             .and(TeamSpecification.createdAtAfter(filter.createdAtAfter()))
             .and(TeamSpecification.createdAtBefore(filter.createdAtBefore()));
-
+    // TODO - нужно исправить проблему N+1
     return teamRepository.findAll(spec, pageable).stream()
         .map(this::buildTeamResponse)
         .collect(Collectors.toList());
@@ -228,7 +221,7 @@ public class TeamServiceImpl implements TeamService {
 
   private void validateUserNotInTeam(User user) {
     if (teamMemberRepository.existsByUser(user)) {
-      throw new UserAlreadyInTeamException("User already member of a team");
+      throw new UserAlreadyInTeamException("Пользователь уже состоит в команде");
     }
   }
 
@@ -249,55 +242,36 @@ public class TeamServiceImpl implements TeamService {
 
   private void validateJoinRequest(User user) {
     if (teamMemberRepository.existsByUser(user)) {
-      throw new UserAlreadyInTeamException("User already member of a team");
+      throw new UserAlreadyInTeamException("Пользователь уже состоит в команде");
     }
   }
 
   private void validateInvite(Team team, User captain, User invitedUser) {
-    validateCaptainForInvite(team, captain);
+    validateCaptain(team, captain);
 
     if (teamMemberRepository.existsByUser(invitedUser)) {
       throw new UserAlreadyInTeamException("Пользователь уже состоит в команде");
     }
   }
 
+  private void validateCaptain(TeamMember teamMember, String message) {
+    if (!teamMember.getRole().equals(TeamRole.CAPTAIN)) {
+      throw new AccessDeniedException(
+          message != null && !message.isEmpty() ? message : "Нет прав капитана для этой операции");
+    }
+  }
+
   private void validateCaptain(Team team, User currentUser) {
     if (!team.getCaptain().equals(currentUser)) {
-      throw new AccessDeniedException("Only captain transfer permissions");
+      throw new AccessDeniedException("Нет прав капитана для этой операции");
     }
   }
 
-  private void validateCaptainForInvite(Team team, User currentUser) {
-    if (!team.getCaptain().equals(currentUser)) {
-      throw new AccessDeniedException("Only captain can invite users");
-    }
-  }
-
-  private void validateCaptainForApproval(Team team, User currentUser) {
-    if (!team.getCaptain().equals(currentUser)) {
-      throw new AccessDeniedException("Only captain can approve");
-    }
-  }
-
-  private void validateCaptainForRejection(Team team, User currentUser) {
-    if (!team.getCaptain().equals(currentUser)) {
-      throw new AccessDeniedException("Only captain can reject");
-    }
-  }
-
-  private void validateApprovalPermission(TeamJoinRequest request, User currentUser) {
+  private void validateJoinRequestPermission(TeamJoinRequest request, User currentUser) {
     if (request.getType() == JoinRequestType.JOIN_REQUEST) {
-      validateCaptainForApproval(request.getTeam(), currentUser);
+      validateCaptain(request.getTeam(), currentUser);
     } else if (!request.getUser().equals(currentUser)) {
-      throw new AccessDeniedException("Only invited user can accept");
-    }
-  }
-
-  private void validateRejectionPermission(TeamJoinRequest request, User currentUser) {
-    if (request.getType() == JoinRequestType.JOIN_REQUEST) {
-      validateCaptainForRejection(request.getTeam(), currentUser);
-    } else if (!request.getUser().equals(currentUser)) {
-      throw new AccessDeniedException("Only invited user can reject");
+      throw new AccessDeniedException("Только капитан может обрабатывать реквесты");
     }
   }
 
