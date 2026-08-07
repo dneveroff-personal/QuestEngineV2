@@ -7,8 +7,8 @@ plugins {
 }
 
 group = "dn"
-version = "0.5.1"
-description = "Платформа для городских квестов в реальности и онлайн"
+version = "0.5.2"
+description = "Platform of city-quests, real-time and online"
 
 java {
     toolchain {
