@@ -115,13 +115,9 @@ Quest Engine содержит два типа сущностей.
 Использовать термин **Progress**.
 
 Будут существовать пары сущностей:
-
 Quest → QuestProgress
-
 Level → LevelProgress
-
 Code → CodeSubmission
-
 Hint → HintUsage
 
 ---
@@ -137,17 +133,3 @@ Hint → HintUsage
 Недостатки:
 
 - потребуется немного больше сущностей в модели.
-
----
-
-## Future
-
-При появлении новых игровых механик использовать тот же принцип.
-
-Например:
-
-BonusProgress
-
-PenaltyProgress
-
-AchievementProgress

@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(Routes.API)
@@ -44,6 +46,9 @@ public class AuthController {
     if (!adminResetSecret.equals(secret)) {
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
+    int[] nums = new int[]{2,3,1,2,4,3};
+    Arrays.sort(nums);
+
     userService.resetAdminPassword(request);
     return ResponseEntity.status(HttpStatus.OK).build();
   }

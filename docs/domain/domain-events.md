@@ -121,18 +121,7 @@ Quest завершён.
 
 # Statistics Events
 
-## StatisticsUpdated
-Изменилось положение команд.
-Таблица статистики пересчитана.
-
----
-
 # System Events
-
-## TeamDisqualified
-Команда дисквалифицирована.
-
----
 
 ## TeamDNF
 Команда получила статус DNF.

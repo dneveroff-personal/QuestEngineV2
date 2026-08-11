@@ -1,47 +1,30 @@
-Quest
+# Quest
 
 DRAFT
-
 ↓
-
 REGISTRATION
-
 ↓
-
 RUNNING
-
 ↓
-
 FINISHED
 
 ---
 
-QuestRegistration
+# QuestRegistration
 
 PENDING
-
-↓
-
-APPROVED
-
-↓
-
-QuestProgress
+├── CANCELLED
+├── REJECTED
+└── APPROVED
+│
+└── creates QuestProgress
 
 ---
 
-QuestProgress
+# QuestProgress
 
 WAITING
-
 ↓
-
 RUNNING
-
-↓
-
-FINISHED
-
-↓
-
-DNF
+├── FINISHED
+└── DNF

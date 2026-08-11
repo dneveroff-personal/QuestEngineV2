@@ -30,7 +30,7 @@ erDiagram
 
     QuestProgress ||--|{ LevelProgress : contains
 
-    Level ||--|| LevelProgress : runtime_of
+    Level ||--o{ LevelProgress : produces
 
     LevelProgress ||--o{ CodeSubmission : receives
 
@@ -91,7 +91,7 @@ HintProgress
 ---
 
 # Quest
-Quest является центральной сущностью всей системы.
+Quest является центральной сущностью предметной области (Core Domain Entity).
 
 Quest описывает:
 - автора;
