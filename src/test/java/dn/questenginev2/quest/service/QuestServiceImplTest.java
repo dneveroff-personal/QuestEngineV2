@@ -172,7 +172,7 @@ class QuestServiceImplTest {
             .title("Test Quest")
             .description("Test Description")
             .type(QuestType.TEAM)
-            .status(QuestStatus.PUBLISHED)
+            .status(QuestStatus.REGISTRATION)
             .createdAt(Instant.now())
             .build();
     when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
@@ -182,7 +182,7 @@ class QuestServiceImplTest {
     assertThat(response).isNotNull();
     assertThat(response.getId()).isEqualTo(1L);
     assertThat(response.getTitle()).isEqualTo("Test Quest");
-    assertThat(response.getStatus()).isEqualTo(QuestStatus.PUBLISHED);
+    assertThat(response.getStatus()).isEqualTo(QuestStatus.REGISTRATION);
     verify(questRepository).findById(1L);
   }
 
@@ -241,13 +241,26 @@ class QuestServiceImplTest {
   void updateQuest_throwsForbiddenOperationException_whenUserIsPlayer() {
     when(userService.getCurrentUser(authentication)).thenReturn(playerUser);
 
+    Quest existingQuest =
+        Quest.builder()
+            .id(1L)
+            .title("Old Title")
+            .description("Old Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.DRAFT)
+            .createdAt(Instant.now())
+            .build();
+    when(questRepository.findById(1L)).thenReturn(Optional.of(existingQuest));
+    when(questAuthorRepository.existsByQuestIdAndUserId(any(Long.class), eq(playerUser.getId())))
+        .thenReturn(false);
+
     CreateQuestRequest request = new CreateQuestRequest("New Title", null, null, null, null);
 
     assertThatThrownBy(() -> questService.updateQuest(1L, request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
-        .hasMessageContaining("AUTHOR или ADMIN");
+        .hasMessageContaining("Авторы");
 
-    verify(questRepository, never()).findById(any());
+    verify(questRepository).findById(1L);
     verify(questRepository, never()).save(any());
   }
 

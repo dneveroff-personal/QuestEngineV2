@@ -13,7 +13,6 @@ FINISHED
 # QuestRegistration
 
 PENDING
-├── CANCELLED
 ├── REJECTED
 └── APPROVED
 │

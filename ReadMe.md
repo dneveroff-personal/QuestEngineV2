@@ -1,57 +1,35 @@
-Готово:
+Мы пишем современный джижок квеста. Это учебный проект, так что тут будет использовано максимум технологий современного Java стека.
+Что уже есть в коде
 
-## Auth
-✅ регистрация
-✅ логин
-✅ JWT
-✅ SecurityContext
+Сейчас проект находится примерно здесь:
 
-## Team
-✅ создание команды
-✅ TeamMember
-✅ капитан команды
-
-## Join Request
-✅ отправка заявки
-✅ просмотр заявок капитаном
-✅ approve
-✅ reject
-
-## GlobalExceptionHandler
-✅ кастомные исключения
-
-## Unit Tests
-✅ первый сервис покрыт тестами
-
-## localhost:8080//swagger-ui
-
-GameSession:
-id
-Quest
-Team
-status
-startedAt
-finishedAt
-currentLevel
-
-QuestLevelProgress:
-id
-QuestSession session
-Level level
-startedAt
-finishedAt
-codesFound
-hintsShown
-completedAutomatically
-
-QuestCodeAttempt:
-id
-QuestLevelProgress
 User
-enteredCode
-isCorrect
-submittedAt
+└── Team
+├── TeamMember
+└── TeamJoinRequest
 
+User
+└── QuestAuthor
+└── Quest
+└── Level
+├── Code
+└── Hint
 
-Статусы для GameSession:
-
+Уже работают/реализованы базовые части:
+authentication / JWT;
+User;
+Team;
+TeamMember;
+TeamJoinRequest;
+Quest;
+QuestAuthor;
+Level;
+Code;
+Hint;
+Flyway migrations;
+unit/integration tests;
+JaCoCo;
+CI;
+GHCR;
+Docker Compose local/prod;
+документация доменной модели.

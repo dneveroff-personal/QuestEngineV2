@@ -9,13 +9,12 @@ import dn.questenginev2.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Arrays;
 
 @RestController
 @RequiredArgsConstructor
@@ -46,7 +45,7 @@ public class AuthController {
     if (!adminResetSecret.equals(secret)) {
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
-    int[] nums = new int[]{2,3,1,2,4,3};
+    int[] nums = new int[] {2, 3, 1, 2, 4, 3};
     Arrays.sort(nums);
 
     userService.resetAdminPassword(request);

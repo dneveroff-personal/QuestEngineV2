@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "dn"
-version = "0.5.3"
+version = "0.5.4"
 description = "Platform of city-quests, real-time and online"
 
 java {
@@ -60,7 +60,6 @@ dependencies {
 
     // For tests
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.mockito:mockito-inline:5.17.0")
     testCompileOnly("org.projectlombok:lombok")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testAnnotationProcessor("org.projectlombok:lombok")

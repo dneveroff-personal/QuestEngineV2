@@ -34,6 +34,10 @@ public class Quest {
   @Builder.Default
   private QuestStatus status = QuestStatus.DRAFT;
 
+  @Column(name = "maximum_teams", nullable = false)
+  @Builder.Default
+  private Integer maximumTeams = 100;
+
   @Column(name = "created_at", nullable = false)
   @Builder.Default
   private Instant createdAt = Instant.now();

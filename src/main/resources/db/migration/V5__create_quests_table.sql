@@ -4,6 +4,7 @@ CREATE TABLE quests (
                        description     TEXT,
                        type            VARCHAR(16)     NOT NULL DEFAULT 'TEAM',
                        status          VARCHAR(16)     NOT NULL DEFAULT 'DRAFT',
+                       maximum_teams    INT             NOT NULL DEFAULT 100,
                        created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                        started_at      TIMESTAMP WITH TIME ZONE,
                        end_at          TIMESTAMP WITH TIME ZONE

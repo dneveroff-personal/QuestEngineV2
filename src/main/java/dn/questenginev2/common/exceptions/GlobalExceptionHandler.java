@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -230,6 +231,17 @@ public class GlobalExceptionHandler {
             ex.getReason() != null ? ex.getReason() : "Error",
             ex.getReason() != null ? ex.getReason() : "An error occurred");
     log.error("Response status exception: {}", ex.getMessage());
+    return problemDetail;
+  }
+
+  // ===== NoResourceFoundException (ошибки неправильного роута) =====
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ProblemDetail handleMethodArgumentNotValid(
+      NoResourceFoundException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex, HttpStatus.NOT_FOUND, request, "Route not found error", ex.getBody().getTitle());
+    log.error("Route not found status exception: {}", ex.getMessage());
     return problemDetail;
   }
 

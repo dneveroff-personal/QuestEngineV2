@@ -86,7 +86,7 @@ class QuestControllerTest {
             "Updated Quest",
             "Updated Description",
             QuestType.SINGLE,
-            dn.questenginev2.quest.entity.QuestStatus.PUBLISHED,
+            dn.questenginev2.quest.entity.QuestStatus.REGISTRATION,
             Instant.now(),
             Instant.now(),
             Instant.now());
@@ -105,7 +105,7 @@ class QuestControllerTest {
         .andExpect(jsonPath("$.id").value(1))
         .andExpect(jsonPath("$.title").value("Updated Quest"))
         .andExpect(jsonPath("$.type").value("SINGLE"))
-        .andExpect(jsonPath("$.status").value("PUBLISHED"));
+        .andExpect(jsonPath("$.status").value("REGISTRATION"));
   }
 
   @Test

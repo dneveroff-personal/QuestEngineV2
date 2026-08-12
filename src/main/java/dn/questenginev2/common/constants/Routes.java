@@ -43,6 +43,9 @@ public final class Routes {
   public static final String LEVEL_CODES = QUEST_LEVELS + LEVEL_ID + "/codes";
   public static final String QUEST_SEARCH = "/search";
 
+  // Quest Registration
+  public static final String QUEST_REGISTER = QUESTS + "/register";
+
   // Hint
   public static final String HINTS = API + "/hints";
   public static final String HINT_ID = "/{hintId:\\d+}";
