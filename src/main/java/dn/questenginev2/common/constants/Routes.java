@@ -46,6 +46,9 @@ public final class Routes {
   // Quest Registration
   public static final String QUEST_REGISTER = QUESTS + "/register";
 
+  // Quest Progress
+  public static final String QUEST_PROGRESS = QUESTS + "/progress";
+
   // Hint
   public static final String HINTS = API + "/hints";
   public static final String HINT_ID = "/{hintId:\\d+}";
