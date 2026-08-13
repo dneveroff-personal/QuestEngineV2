@@ -113,10 +113,12 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
   public QuestRegisterResponse rejectTeam(Long teamId, Long questId, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
 
-    Team team = validateTeamExist(teamId);
+    validateTeamExist(teamId);
+    validateQuestExist(questId);
+
     QuestRegistration registration =
         questRegistrationRepository
-            .findByTeamIdAndStatus(teamId, RegistrationStatus.PENDING)
+            .findByTeamIdAndQuestIdAndStatus(teamId, questId, RegistrationStatus.PENDING)
             .stream()
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Активная заявка не найдена"));

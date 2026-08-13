@@ -3,6 +3,7 @@ package dn.questenginev2.quest.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
@@ -377,6 +378,7 @@ class QuestRegistrationServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
 
     QuestRegistration registration =
         QuestRegistration.builder()
@@ -387,7 +389,8 @@ class QuestRegistrationServiceImplTest {
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
             .build();
-    when(questRegistrationRepository.findByTeamIdAndStatus(1L, RegistrationStatus.PENDING))
+    when(questRegistrationRepository.findByTeamIdAndQuestIdAndStatus(
+            1L, 1L, RegistrationStatus.PENDING))
         .thenReturn(Collections.singletonList(registration));
 
     QuestRegistration rejectedRegistration =
@@ -414,7 +417,9 @@ class QuestRegistrationServiceImplTest {
   void rejectTeam_throwsIllegalArgumentException_whenNoPendingRegistration() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
-    when(questRegistrationRepository.findByTeamIdAndStatus(1L, RegistrationStatus.PENDING))
+    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
+    when(questRegistrationRepository.findByTeamIdAndQuestIdAndStatus(
+            1L, 1L, RegistrationStatus.PENDING))
         .thenReturn(Collections.emptyList());
 
     assertThatThrownBy(() -> questRegistrationService.rejectTeam(1L, 1L, authentication))
@@ -422,5 +427,91 @@ class QuestRegistrationServiceImplTest {
         .hasMessageContaining("Активная заявка не найдена");
 
     verify(questRegistrationRepository, never()).save(any());
+  }
+
+  @Test
+  void rejectTeam_onlyRejectsSpecificQuestRegistration_whenTeamHasMultiplePendingRegistrations() {
+    // Given: Team A has PENDING registrations for Quest 1 and Quest 2
+    Quest quest1 =
+        Quest.builder()
+            .id(1L)
+            .title("Quest 1")
+            .status(QuestStatus.REGISTRATION)
+            .maximumTeams(100)
+            .createdAt(Instant.now())
+            .build();
+
+    Quest quest2 =
+        Quest.builder()
+            .id(2L)
+            .title("Quest 2")
+            .status(QuestStatus.REGISTRATION)
+            .maximumTeams(100)
+            .createdAt(Instant.now())
+            .build();
+
+    Team teamA = new Team();
+    teamA.setId(1L);
+    teamA.setName("Team A");
+
+    QuestRegistration registration1 =
+        QuestRegistration.builder()
+            .id(1L)
+            .quest(quest1)
+            .team(teamA)
+            .status(RegistrationStatus.PENDING)
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .build();
+
+    QuestRegistration registration2 =
+        QuestRegistration.builder()
+            .id(2L)
+            .quest(quest2)
+            .team(teamA)
+            .status(RegistrationStatus.PENDING)
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .build();
+
+    when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
+    when(questAuthorRepository.existsByQuestIdAndUserId(2L, 1L)).thenReturn(true);
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(teamA));
+    when(questRepository.findById(2L)).thenReturn(Optional.of(quest2));
+
+    when(questRegistrationRepository.findByTeamIdAndQuestIdAndStatus(
+            1L, 2L, RegistrationStatus.PENDING))
+        .thenReturn(Collections.singletonList(registration2));
+
+    QuestRegistration rejectedRegistration2 =
+        QuestRegistration.builder()
+            .id(2L)
+            .quest(quest2)
+            .team(teamA)
+            .status(RegistrationStatus.REJECTED)
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .build();
+    when(questRegistrationRepository.save(any(QuestRegistration.class)))
+        .thenReturn(rejectedRegistration2);
+
+    // When: Author of Quest 2 rejects Team A
+    QuestRegisterResponse response = questRegistrationService.rejectTeam(1L, 2L, authentication);
+
+    // Then: Quest 2 registration is REJECTED, Quest 1 remains PENDING
+    assertThat(response).isNotNull();
+    assertThat(response.getQuestId()).isEqualTo(2L);
+    assertThat(response.getTeamId()).isEqualTo(1L);
+    assertThat(response.getStatus()).isEqualTo(RegistrationStatus.REJECTED);
+
+    verify(questRegistrationRepository)
+        .save(
+            argThat(
+                reg ->
+                    reg.getQuest().getId().equals(2L)
+                        && reg.getStatus() == RegistrationStatus.REJECTED));
+
+    verify(questRegistrationRepository, never())
+        .save(argThat(reg -> reg.getQuest().getId().equals(1L)));
   }
 }

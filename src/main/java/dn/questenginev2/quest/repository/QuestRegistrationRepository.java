@@ -14,7 +14,8 @@ public interface QuestRegistrationRepository extends JpaRepository<QuestRegistra
 
   Optional<QuestRegistration> findByQuestIdAndTeamId(Long questId, Long teamId);
 
-  List<QuestRegistration> findByTeamIdAndStatus(Long teamId, RegistrationStatus status);
+  List<QuestRegistration> findByTeamIdAndQuestIdAndStatus(
+      Long teamId, Long questId, RegistrationStatus status);
 
   boolean existsByQuestIdAndTeamId(Long questId, Long teamId);
 
