@@ -3,9 +3,10 @@ CREATE TABLE quest_progress (
                        quest_id        BIGINT           NOT NULL,
                        team_id         BIGINT           NOT NULL,
                        status          VARCHAR(16)     NOT NULL DEFAULT 'PENDING',
-                       started_at      TIMESTAMP WITH TIME ZONE,
-                       finished_at      TIMESTAMP WITH TIME ZONE,
-                       created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+                       quest_started_at      TIMESTAMP WITH TIME ZONE,
+                       entered_at      TIMESTAMP WITH TIME ZONE,
+                       created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                       finished_at      TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX idx_quest_progress_team_id ON quest_progress(team_id);

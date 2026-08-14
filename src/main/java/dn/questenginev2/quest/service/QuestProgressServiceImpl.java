@@ -55,7 +55,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
             .quest(quest)
             .team(team)
             .status(QuestProgressStatus.WAITING)
-            .startedAt(quest.getStartTime())
+            .questStartedAt(quest.getStartTime())
             .build();
 
     QuestProgress savedProgress = questProgressRepository.save(progress);
@@ -75,7 +75,9 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     validateProgressWaiting(progress);
 
     progress.setStatus(QuestProgressStatus.RUNNING);
+    progress.setEnteredAt(Instant.now());
     QuestProgress savedProgress = questProgressRepository.save(progress);
+
     return buildQuestProgressResponse(savedProgress);
   }
 
@@ -210,7 +212,8 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     return QuestProgressResponse.builder()
         .teamName(progress.getTeam().getName())
         .status(progress.getStatus())
-        .startedAt(progress.getStartedAt())
+        .questStartedAt(progress.getQuestStartedAt())
+        .endedAt(progress.getEnteredAt())
         .finishedAt(progress.getFinishedAt())
         .build();
   }

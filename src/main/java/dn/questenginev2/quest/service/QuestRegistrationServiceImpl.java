@@ -3,10 +3,7 @@ package dn.questenginev2.quest.service;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.TeamNotFoundException;
 import dn.questenginev2.quest.dto.QuestRegisterResponse;
-import dn.questenginev2.quest.entity.Quest;
-import dn.questenginev2.quest.entity.QuestRegistration;
-import dn.questenginev2.quest.entity.QuestStatus;
-import dn.questenginev2.quest.entity.RegistrationStatus;
+import dn.questenginev2.quest.entity.*;
 import dn.questenginev2.quest.repository.QuestAuthorRepository;
 import dn.questenginev2.quest.repository.QuestRegistrationRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
@@ -33,6 +30,7 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
 
   private final QuestRegistrationRepository questRegistrationRepository;
   private final QuestRepository questRepository;
+  private final QuestProgressService questProgressService;
   private final TeamRepository teamRepository;
   private final TeamMemberRepository teamMemberRepository;
   private final QuestAuthorRepository questAuthorRepository;
@@ -88,6 +86,7 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
   }
 
   @Override
+  @Transactional
   public QuestRegisterResponse approveTeam(Long questId, Long teamId, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
 
@@ -106,6 +105,12 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
     registration.setUpdatedAt(Instant.now());
 
     QuestRegistration savedRegistration = questRegistrationRepository.save(registration);
+
+    Quest quest = validateQuestExist(questId);
+    if (quest.getStatus() == QuestStatus.RUNNING) {
+      questProgressService.createProgress(questId, teamId);
+    }
+
     return buildQuestRegisterResponse(savedRegistration);
   }
 

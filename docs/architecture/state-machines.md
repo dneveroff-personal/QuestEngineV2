@@ -27,3 +27,13 @@ WAITING
 RUNNING
 ├── FINISHED
 └── DNF
+
+---
+
+# LevelProgress
+
+ACTIVE
+├── COMPLETED
+└── AUTO_TRANSITIONED
+
+---

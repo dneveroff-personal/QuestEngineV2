@@ -20,16 +20,6 @@ public class QuestProgressController {
 
   private final QuestProgressService questProgressService;
 
-  @Operation(
-      summary = "Create quest progress",
-      description = "Create progress for approved team in running quest")
-  @PostMapping(Routes.QUEST_ID + Routes.TEAM_ID)
-  public ResponseEntity<QuestProgressResponse> createProgress(
-      @PathVariable Long questId, @PathVariable Long teamId) {
-    return ResponseEntity.status(HttpStatus.CREATED)
-        .body(questProgressService.createProgress(questId, teamId));
-  }
-
   @Operation(summary = "Enter quest", description = "Team enters the quest (WAITING -> RUNNING)")
   @PostMapping(Routes.QUEST_ID + "/enter")
   public ResponseEntity<QuestProgressResponse> enterQuest(
@@ -62,15 +52,5 @@ public class QuestProgressController {
       @PathVariable Long questId, @PathVariable Long teamId, Authentication auth) {
     return ResponseEntity.status(HttpStatus.OK)
         .body(questProgressService.finishProgress(questId, teamId, auth));
-  }
-
-  @Operation(
-      summary = "Set DNF for team",
-      description = "Author sets DNF for team (Did Not Finish)")
-  @PutMapping(Routes.QUEST_ID + Routes.TEAM_ID + "/dnf")
-  public ResponseEntity<QuestProgressResponse> setDnf(
-      @PathVariable Long questId, @PathVariable Long teamId, Authentication auth) {
-    return ResponseEntity.status(HttpStatus.OK)
-        .body(questProgressService.setDnf(questId, teamId, auth));
   }
 }

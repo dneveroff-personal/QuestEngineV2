@@ -34,13 +34,16 @@ public class QuestProgress {
   @Builder.Default
   private QuestProgressStatus status = QuestProgressStatus.WAITING;
 
-  @Column(name = "started_at", nullable = false)
-  private Instant startedAt;
+  @Column(name = "quest_started_at", nullable = false)
+  private Instant questStartedAt;
 
-  @Column(name = "finished_at")
-  private Instant finishedAt;
+  @Column(name = "entered_at")
+  private Instant enteredAt;
 
   @Column(name = "created_at", nullable = false)
   @Builder.Default
   private Instant createdAt = Instant.now();
+
+  @Column(name = "finished_at")
+  private Instant finishedAt;
 }

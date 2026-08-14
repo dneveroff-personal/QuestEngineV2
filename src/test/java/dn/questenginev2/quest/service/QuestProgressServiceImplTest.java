@@ -27,6 +27,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -174,7 +175,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.WAITING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
     when(questProgressRepository.save(any(QuestProgress.class))).thenReturn(savedProgress);
@@ -184,7 +185,7 @@ class QuestProgressServiceImplTest {
     assertThat(response).isNotNull();
     assertThat(response.getTeamName()).isEqualTo("Team 1");
     assertThat(response.getStatus()).isEqualTo(QuestProgressStatus.WAITING);
-    assertThat(response.getStartedAt()).isEqualTo(runningQuest.getStartTime());
+    assertThat(response.getQuestStartedAt()).isEqualTo(runningQuest.getStartTime());
 
     verify(questProgressRepository).save(any(QuestProgress.class));
   }
@@ -280,7 +281,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.WAITING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -289,22 +290,20 @@ class QuestProgressServiceImplTest {
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(waitingProgress));
 
-    QuestProgress runningProgress =
-        QuestProgress.builder()
-            .id(1L)
-            .quest(runningQuest)
-            .team(team1)
-            .status(QuestProgressStatus.RUNNING)
-            .startedAt(runningQuest.getStartTime())
-            .createdAt(Instant.now())
-            .build();
-    when(questProgressRepository.save(any(QuestProgress.class))).thenReturn(runningProgress);
+    ArgumentCaptor<QuestProgress> captor = ArgumentCaptor.forClass(QuestProgress.class);
+    when(questProgressRepository.save(captor.capture()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     QuestProgressResponse response = questProgressService.enterQuest(1L, authentication);
 
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(QuestProgressStatus.RUNNING);
-    assertThat(response.getStartedAt()).isEqualTo(runningQuest.getStartTime());
+    assertThat(response.getQuestStartedAt()).isEqualTo(runningQuest.getStartTime());
+
+    QuestProgress savedProgress = captor.getValue();
+    assertThat(savedProgress.getStatus()).isEqualTo(QuestProgressStatus.RUNNING);
+    assertThat(savedProgress.getEnteredAt()).isNotNull();
+    assertThat(savedProgress.getEnteredAt()).isNotEqualTo(runningQuest.getStartTime());
 
     verify(questProgressRepository).save(any(QuestProgress.class));
   }
@@ -317,7 +316,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.RUNNING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -356,7 +355,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.WAITING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -390,7 +389,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.WAITING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -400,7 +399,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team2)
             .status(QuestProgressStatus.RUNNING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -432,7 +431,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.RUNNING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -448,7 +447,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.FINISHED)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .finishedAt(Instant.now())
             .createdAt(Instant.now())
             .build();
@@ -486,7 +485,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.RUNNING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -513,7 +512,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.RUNNING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -528,7 +527,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.DNF)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .finishedAt(Instant.now())
             .createdAt(Instant.now())
             .build();
@@ -551,7 +550,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.FINISHED)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .finishedAt(Instant.now())
             .createdAt(Instant.now())
             .build();
@@ -576,7 +575,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.DNF)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .finishedAt(Instant.now())
             .createdAt(Instant.now())
             .build();
@@ -601,7 +600,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.RUNNING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -659,14 +658,14 @@ class QuestProgressServiceImplTest {
             .quest(questWithStartTime)
             .team(team1)
             .status(QuestProgressStatus.WAITING)
-            .startedAt(questWithStartTime.getStartTime())
+            .questStartedAt(questWithStartTime.getStartTime())
             .createdAt(Instant.now())
             .build();
     when(questProgressRepository.save(any(QuestProgress.class))).thenReturn(savedProgress);
 
     QuestProgressResponse response = questProgressService.createProgress(1L, 1L);
 
-    assertThat(response.getStartedAt()).isEqualTo(questStartTime);
+    assertThat(response.getQuestStartedAt()).isEqualTo(questStartTime);
   }
 
   @Test
@@ -689,7 +688,7 @@ class QuestProgressServiceImplTest {
             .quest(questWithStartTime)
             .team(team1)
             .status(QuestProgressStatus.WAITING)
-            .startedAt(questStartTime)
+            .questStartedAt(questStartTime)
             .createdAt(Instant.now())
             .build();
 
@@ -704,14 +703,14 @@ class QuestProgressServiceImplTest {
             .quest(questWithStartTime)
             .team(team1)
             .status(QuestProgressStatus.RUNNING)
-            .startedAt(questStartTime)
+            .questStartedAt(questStartTime)
             .createdAt(Instant.now())
             .build();
     when(questProgressRepository.save(any(QuestProgress.class))).thenReturn(runningProgress);
 
     QuestProgressResponse response = questProgressService.enterQuest(1L, authentication);
 
-    assertThat(response.getStartedAt()).isEqualTo(questStartTime);
+    assertThat(response.getQuestStartedAt()).isEqualTo(questStartTime);
   }
 
   // ────── ONE QUEST + ONE TEAM = ONE PROGRESS ───────────────────────────────────
@@ -775,7 +774,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.WAITING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -785,7 +784,7 @@ class QuestProgressServiceImplTest {
             .quest(quest2)
             .team(team1)
             .status(QuestProgressStatus.WAITING)
-            .startedAt(quest2.getStartTime())
+            .questStartedAt(quest2.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -823,7 +822,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.RUNNING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -839,7 +838,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.FINISHED)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .finishedAt(Instant.now())
             .createdAt(Instant.now())
             .build();
@@ -861,7 +860,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.RUNNING)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
@@ -876,7 +875,7 @@ class QuestProgressServiceImplTest {
             .quest(runningQuest)
             .team(team1)
             .status(QuestProgressStatus.DNF)
-            .startedAt(runningQuest.getStartTime())
+            .questStartedAt(runningQuest.getStartTime())
             .finishedAt(Instant.now())
             .createdAt(Instant.now())
             .build();

@@ -11,6 +11,7 @@ import dn.questenginev2.common.exceptions.RequestNotFoundException;
 import dn.questenginev2.common.exceptions.TeamAlreadyExistsException;
 import dn.questenginev2.common.exceptions.UserAlreadyInTeamException;
 import dn.questenginev2.common.exceptions.UserNotFoundException;
+import dn.questenginev2.config.test.TestSecurityConfig;
 import dn.questenginev2.team.dto.*;
 import dn.questenginev2.team.entity.JoinRequestType;
 import dn.questenginev2.team.entity.TeamRole;
@@ -27,7 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = TeamController.class)
-@Import(dn.questenginev2.config.test.TestSecurityConfig.class)
+@Import(TestSecurityConfig.class)
 class TeamControllerTest {
 
   @Autowired private MockMvc mockMvc;

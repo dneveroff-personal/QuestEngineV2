@@ -15,6 +15,7 @@ public class QuestProgressResponse {
 
   private String teamName;
   private QuestProgressStatus status;
-  private Instant startedAt;
+  private Instant questStartedAt;
+  private Instant endedAt;
   private Instant finishedAt;
 }
