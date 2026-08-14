@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "dn"
-version = "0.5.7"
+version = "0.5.8"
 description = "Platform of city-quests, real-time and online"
 
 java {
@@ -63,6 +63,9 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testAnnotationProcessor("org.projectlombok:lombok")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4")
 }
