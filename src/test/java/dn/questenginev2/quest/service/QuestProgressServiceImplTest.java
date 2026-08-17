@@ -22,6 +22,7 @@ import dn.questenginev2.team.repository.TeamRepository;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.service.UserService;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -49,6 +50,7 @@ class QuestProgressServiceImplTest {
   @Mock private UserService userService;
   @Mock private Authentication authentication;
   @Mock private LevelProgressService levelProgressService;
+  @Mock private Clock clock;
 
   @InjectMocks private QuestProgressServiceImpl questProgressService;
 
@@ -67,6 +69,9 @@ class QuestProgressServiceImplTest {
 
   @BeforeEach
   void setUp() {
+    Instant fixedNow = Instant.parse("2024-01-01T10:01:00Z");
+    when(clock.instant()).thenReturn(fixedNow);
+
     authorUser = new User();
     authorUser.setId(1L);
     authorUser.setUsername("author");

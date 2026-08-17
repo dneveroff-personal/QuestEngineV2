@@ -97,10 +97,56 @@ public class LevelProgressServiceImpl implements LevelProgressService {
     return buildLevelProgressResponse(saved);
   }
 
-  private static void validateLevelBelongsToQuest(Level level, QuestProgress questProgress) {
-    if (!level.getQuest().getId().equals(questProgress.getQuest().getId())) {
-      throw new ForbiddenOperationException("Уровень не принадлежит QuestProgress");
+  @Override
+  public LevelProgressResponse createLevelProgress(Long questProgressId) {
+    // TODO исправить проблемы N+1 для подобных выборок findById
+    QuestProgress questProgress =
+        questProgressRepository
+            .findById(questProgressId)
+            .orElseThrow(
+                () -> new IllegalArgumentException("QuestProgress не найден: " + questProgressId));
+
+    Level level =
+        levelRepository
+            .findByQuestIdAndOrderIndex(questProgress.getQuest().getId(), 1)
+            .orElseThrow(() -> new IllegalArgumentException("Уровень не найден"));
+
+    validateLevelBelongsToQuest(level, questProgress);
+
+    if (levelProgressRepository.existsByQuestProgressIdAndLevelId(questProgressId, level.getId())) {
+      throw new ForbiddenOperationException("Уровень уже был сыгран этой командой");
     }
+
+    Instant openedAt = clock.instant();
+    Instant autoTransitionAt = null;
+    Integer timeOutTime = level.getTimeoutSeconds();
+
+    if (timeOutTime != null) {
+      autoTransitionAt = questProgress.getQuestStartedAt().plusSeconds(timeOutTime);
+    }
+
+    LevelProgressStatus status;
+    Instant completedAt = null;
+
+    if (autoTransitionAt != null && !openedAt.isBefore(autoTransitionAt)) {
+      status = LevelProgressStatus.AUTO_TRANSITIONED;
+      completedAt = openedAt;
+    } else {
+      status = LevelProgressStatus.ACTIVE;
+    }
+
+    LevelProgress levelProgress =
+        LevelProgress.builder()
+            .questProgress(questProgress)
+            .level(level)
+            .status(status)
+            .openedAt(openedAt)
+            .completedAt(completedAt)
+            .autoTransitionAt(autoTransitionAt)
+            .build();
+
+    LevelProgress saved = levelProgressRepository.save(levelProgress);
+    return buildLevelProgressResponse(saved);
   }
 
   @Override
@@ -112,6 +158,22 @@ public class LevelProgressServiceImpl implements LevelProgressService {
     levelProgress.setCompletedAt(clock.instant());
     LevelProgress saved = levelProgressRepository.save(levelProgress);
 
+    //находил следующий Level;
+    int nextLevelOrderIdx = saved.getLevel().getOrderIndex() + 1;
+    QuestProgress questProgress = levelProgress.getQuestProgress();
+
+    Level nextLevel =
+        levelRepository
+            .findByQuestIdAndOrderIndex(questProgress.getQuest().getId(), nextLevelOrderIdx)
+            .orElseThrow(() -> new IllegalArgumentException("Следующий уровень не найден"));
+
+    //если следующий существует — создавал следующий LevelProgress;
+    if (nextLevel != null) {
+      return createLevelProgress(questProgress.getId());
+    }
+
+    //если следующего нет — завершал QuestProgress.
+  // TODO
     return buildLevelProgressResponse(saved);
   }
 
@@ -146,6 +208,7 @@ public class LevelProgressServiceImpl implements LevelProgressService {
   }
 
   private LevelProgress validateLevelProgressExist(Long levelProgressId) {
+    // TODO тут тоже убрать проблему N+1
     return levelProgressRepository
         .findById(levelProgressId)
         .orElseThrow(
@@ -156,6 +219,12 @@ public class LevelProgressServiceImpl implements LevelProgressService {
     if (levelProgress.getStatus() != LevelProgressStatus.ACTIVE) {
       throw new ForbiddenOperationException(
           "Завершить можно только ACTIVE уровень. Текущий статус: " + levelProgress.getStatus());
+    }
+  }
+
+  private static void validateLevelBelongsToQuest(Level level, QuestProgress questProgress) {
+    if (!level.getQuest().getId().equals(questProgress.getQuest().getId())) {
+      throw new ForbiddenOperationException("Уровень не принадлежит QuestProgress");
     }
   }
 

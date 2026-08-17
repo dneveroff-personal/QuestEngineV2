@@ -21,16 +21,15 @@ import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.service.UserService;
 import jakarta.transaction.Transactional;
-import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 @Service
 @Transactional
-@AllArgsConstructor
 public class QuestProgressServiceImpl implements QuestProgressService {
 
   private final QuestProgressRepository questProgressRepository;
@@ -41,6 +40,50 @@ public class QuestProgressServiceImpl implements QuestProgressService {
   private final QuestAuthorRepository questAuthorRepository;
   private final UserService userService;
   private final LevelProgressService levelProgressService;
+  private final Clock clock;
+
+  @Autowired
+  public QuestProgressServiceImpl(
+      QuestProgressRepository questProgressRepository,
+      QuestRepository questRepository,
+      QuestRegistrationRepository questRegistrationRepository,
+      TeamRepository teamRepository,
+      TeamMemberRepository teamMemberRepository,
+      QuestAuthorRepository questAuthorRepository,
+      UserService userService,
+      LevelProgressService levelProgressService) {
+    this(
+        questProgressRepository,
+        questRepository,
+        questRegistrationRepository,
+        teamRepository,
+        teamMemberRepository,
+        questAuthorRepository,
+        userService,
+        levelProgressService,
+        Clock.systemUTC());
+  }
+
+  public QuestProgressServiceImpl(
+      QuestProgressRepository questProgressRepository,
+      QuestRepository questRepository,
+      QuestRegistrationRepository questRegistrationRepository,
+      TeamRepository teamRepository,
+      TeamMemberRepository teamMemberRepository,
+      QuestAuthorRepository questAuthorRepository,
+      UserService userService,
+      LevelProgressService levelProgressService,
+      Clock clock) {
+    this.questProgressRepository = questProgressRepository;
+    this.questRepository = questRepository;
+    this.questRegistrationRepository = questRegistrationRepository;
+    this.teamRepository = teamRepository;
+    this.teamMemberRepository = teamMemberRepository;
+    this.questAuthorRepository = questAuthorRepository;
+    this.userService = userService;
+    this.levelProgressService = levelProgressService;
+    this.clock = clock;
+  }
 
   // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
   @Override
@@ -78,7 +121,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     validateProgressWaiting(progress);
 
     progress.setStatus(QuestProgressStatus.RUNNING);
-    progress.setEnteredAt(Instant.now());
+    progress.setEnteredAt(clock.instant());
     QuestProgress savedProgress = questProgressRepository.save(progress);
 
     levelProgressService.createFirstLevelProgress(savedProgress.getId());
@@ -118,7 +161,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     validateProgressRunning(progress);
 
     progress.setStatus(QuestProgressStatus.FINISHED);
-    progress.setFinishedAt(Instant.now());
+    progress.setFinishedAt(clock.instant());
 
     QuestProgress savedProgress = questProgressRepository.save(progress);
     return buildQuestProgressResponse(savedProgress);
@@ -137,7 +180,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     validateProgressNotFinished(progress);
 
     progress.setStatus(QuestProgressStatus.DNF);
-    progress.setFinishedAt(Instant.now());
+    progress.setFinishedAt(clock.instant());
 
     QuestProgress savedProgress = questProgressRepository.save(progress);
     return buildQuestProgressResponse(savedProgress);

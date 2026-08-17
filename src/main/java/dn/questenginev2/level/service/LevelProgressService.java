@@ -7,6 +7,8 @@ public interface LevelProgressService {
   // Создаёт первый LevelProgress для команды, вошедшей в Quest
   LevelProgressResponse createFirstLevelProgress(Long questProgressId);
 
+  LevelProgressResponse createLevelProgress(Long questProgressId);
+
   LevelProgressResponse completeLevel(Long levelProgressId);
 
   // Проверяет и применяет автопереход, если время вышло
