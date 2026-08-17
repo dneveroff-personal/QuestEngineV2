@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.TeamNotFoundException;
+import dn.questenginev2.level.service.LevelProgressService;
 import dn.questenginev2.quest.dto.QuestProgressResponse;
 import dn.questenginev2.quest.entity.*;
 import dn.questenginev2.quest.repository.QuestAuthorRepository;
@@ -47,6 +48,7 @@ class QuestProgressServiceImplTest {
   @Mock private QuestAuthorRepository questAuthorRepository;
   @Mock private UserService userService;
   @Mock private Authentication authentication;
+  @Mock private LevelProgressService levelProgressService;
 
   @InjectMocks private QuestProgressServiceImpl questProgressService;
 
@@ -289,6 +291,7 @@ class QuestProgressServiceImplTest {
     when(teamMemberRepository.findByUser(playerUser)).thenReturn(Optional.of(teamMember));
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(waitingProgress));
+    when(levelProgressService.createFirstLevelProgress(any())).thenReturn(null);
 
     ArgumentCaptor<QuestProgress> captor = ArgumentCaptor.forClass(QuestProgress.class);
     when(questProgressRepository.save(captor.capture()))
@@ -324,6 +327,7 @@ class QuestProgressServiceImplTest {
     when(teamMemberRepository.findByUser(playerUser)).thenReturn(Optional.of(teamMember));
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(runningProgress));
+    when(levelProgressService.createFirstLevelProgress(any())).thenReturn(null);
 
     assertThatThrownBy(() -> questProgressService.enterQuest(1L, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
@@ -337,6 +341,7 @@ class QuestProgressServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(playerUser);
     when(teamMemberRepository.findByUser(playerUser)).thenReturn(Optional.of(teamMember));
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L)).thenReturn(Optional.empty());
+    when(levelProgressService.createFirstLevelProgress(any())).thenReturn(null);
 
     assertThatThrownBy(() -> questProgressService.enterQuest(1L, authentication))
         .isInstanceOf(IllegalArgumentException.class)
@@ -696,6 +701,7 @@ class QuestProgressServiceImplTest {
     when(teamMemberRepository.findByUser(playerUser)).thenReturn(Optional.of(teamMember));
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(waitingProgress));
+    when(levelProgressService.createFirstLevelProgress(any())).thenReturn(null);
 
     QuestProgress runningProgress =
         QuestProgress.builder()

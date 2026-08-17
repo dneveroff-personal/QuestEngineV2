@@ -2,6 +2,7 @@ package dn.questenginev2.quest.service;
 
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.TeamNotFoundException;
+import dn.questenginev2.level.service.LevelProgressService;
 import dn.questenginev2.quest.dto.QuestProgressResponse;
 import dn.questenginev2.quest.entity.Quest;
 import dn.questenginev2.quest.entity.QuestProgress;
@@ -39,6 +40,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
   private final TeamMemberRepository teamMemberRepository;
   private final QuestAuthorRepository questAuthorRepository;
   private final UserService userService;
+  private final LevelProgressService levelProgressService;
 
   // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
   @Override
@@ -63,6 +65,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
   }
 
   @Override
+  @Transactional
   public QuestProgressResponse enterQuest(Long questId, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
 
@@ -77,6 +80,8 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     progress.setStatus(QuestProgressStatus.RUNNING);
     progress.setEnteredAt(Instant.now());
     QuestProgress savedProgress = questProgressRepository.save(progress);
+
+    levelProgressService.createFirstLevelProgress(savedProgress.getId());
 
     return buildQuestProgressResponse(savedProgress);
   }

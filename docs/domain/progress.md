@@ -82,9 +82,12 @@ Quest стартовал
 
 Для первого уровня:
 autoTransitionAt = Quest.startTime + Level.autoTransition
+`autoTransitionAt` рассчитывается от фактического времени начала Quest (`Quest.startTime` / `QuestProgress.questStartedAt`).
+Внешний вызывающий код не передаёт время начала уровня или Quest. Источником истины является время старта Quest, сохранённое в `QuestProgress`.
 
 Для последующих:
 autoTransitionAt = LevelProgress.openedAt + Level.autoTransition
+
 ---
 
 # Последующие уровни
@@ -170,6 +173,5 @@ QuestProgress является одноразовым объектом.
 - Первый LevelProgress создаётся при первом входе команды.
 - Следующий LevelProgress создаётся только после завершения предыдущего.
 - openedAt — фактическое время открытия уровня для команды.
-- Для первого уровня autoTransitionAt считается от Quest.startTime. Для остальных — от openedAt.
 - Если autoTransitionAt уже прошло в момент открытия/входа — уровень сразу считается пройденным по автопереходу.
 - Автопереход не даёт команде дополнительного времени.
