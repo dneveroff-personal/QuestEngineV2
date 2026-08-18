@@ -1,1 +1,0 @@
-механизм Quest start → создание QuestProgress для APPROVED registrations ещё не реализован.
