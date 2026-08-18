@@ -1,7 +1,12 @@
 package dn.questenginev2.quest.service;
 
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.LevelProgressNotFoundException;
 import dn.questenginev2.common.exceptions.TeamNotFoundException;
+import dn.questenginev2.level.entity.Level;
+import dn.questenginev2.level.entity.LevelProgress;
+import dn.questenginev2.level.repository.LevelProgressRepository;
+import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.level.service.LevelProgressService;
 import dn.questenginev2.quest.dto.QuestProgressResponse;
 import dn.questenginev2.quest.entity.Quest;
@@ -41,6 +46,8 @@ public class QuestProgressServiceImpl implements QuestProgressService {
   private final UserService userService;
   private final LevelProgressService levelProgressService;
   private final Clock clock;
+  private LevelProgressRepository levelProgressRepository;
+  private LevelRepository levelRepository;
 
   @Autowired
   public QuestProgressServiceImpl(
@@ -51,7 +58,9 @@ public class QuestProgressServiceImpl implements QuestProgressService {
       TeamMemberRepository teamMemberRepository,
       QuestAuthorRepository questAuthorRepository,
       UserService userService,
-      LevelProgressService levelProgressService) {
+      LevelProgressService levelProgressService,
+      LevelProgressRepository levelProgressRepository,
+      LevelRepository levelRepository) {
     this(
         questProgressRepository,
         questRepository,
@@ -62,6 +71,8 @@ public class QuestProgressServiceImpl implements QuestProgressService {
         userService,
         levelProgressService,
         Clock.systemUTC());
+    this.levelProgressRepository = levelProgressRepository;
+    this.levelRepository = levelRepository;
   }
 
   public QuestProgressServiceImpl(
@@ -124,7 +135,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     progress.setEnteredAt(clock.instant());
     QuestProgress savedProgress = questProgressRepository.save(progress);
 
-    levelProgressService.createFirstLevelProgress(savedProgress.getId());
+    levelProgressService.createFirstLevelProgress(savedProgress);
 
     return buildQuestProgressResponse(savedProgress);
   }
@@ -184,6 +195,39 @@ public class QuestProgressServiceImpl implements QuestProgressService {
 
     QuestProgress savedProgress = questProgressRepository.save(progress);
     return buildQuestProgressResponse(savedProgress);
+  }
+
+  @Override
+  public QuestProgressResponse completeLevel(Long levelProgressId, Authentication auth) {
+    // TODO устранить проблему N+1
+    LevelProgress levelProgress =
+        levelProgressRepository
+            .findById(levelProgressId)
+            .orElseThrow(() -> new LevelProgressNotFoundException("Текущий Level Progress найден"));
+
+    QuestProgress questProgress = levelProgress.getQuestProgress();
+
+    validateTeamProgress(questProgress, auth);
+
+    levelProgressService.completeLevel(levelProgressId);
+
+    int nextLevelOrderIdx = levelProgress.getLevel().getOrderIndex() + 1;
+    Level nextLevel =
+        levelRepository
+            .findByQuestIdAndOrderIndex(questProgress.getQuest().getId(), nextLevelOrderIdx)
+            .orElse(null);
+
+    if (nextLevel != null) {
+      levelProgressService.createNextLevelProgress(questProgress, nextLevelOrderIdx);
+
+      return buildQuestProgressResponse(questProgress);
+    }
+
+    questProgress.setStatus(QuestProgressStatus.FINISHED);
+    questProgress.setFinishedAt(clock.instant());
+    QuestProgress savedQuestProgress = questProgressRepository.save(questProgress);
+
+    return buildQuestProgressResponse(savedQuestProgress);
   }
 
   // ────── VALIDATIONS ───────────────────────────────────────────────────────────
@@ -253,6 +297,20 @@ public class QuestProgressServiceImpl implements QuestProgressService {
             .orElseThrow(() -> new TeamNotFoundException("Команда пользователя не найдена"));
 
     return teamMember.getTeam();
+  }
+
+  private void validateTeamProgress(QuestProgress progress, Authentication auth) {
+    User currentUser = userService.getCurrentUser(auth);
+    Team team = getCurrentUserTeam(currentUser);
+
+    if (team == null) {
+      throw new TeamNotFoundException("Команда пользователя не найдена");
+    }
+
+    if (!team.getId().equals(progress.getTeam().getId())) {
+      throw new ForbiddenOperationException(
+          "Попытка пользователя управлять не своим QuestProgress");
+    }
   }
 
   // ────── BUILDERS ───────────────────────────────────────────────────────────

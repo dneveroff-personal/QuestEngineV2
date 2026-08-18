@@ -23,4 +23,6 @@ public interface QuestProgressService {
 
   // Установить DNF для команды
   QuestProgressResponse setDnf(Long questId, Long teamId, Authentication auth);
+
+  QuestProgressResponse completeLevel(Long levelProgressId, Authentication auth);
 }

@@ -150,6 +150,17 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
+  // ===== LevelProgressNotFoundException =====
+  @ExceptionHandler(LevelProgressNotFoundException.class)
+  public ProblemDetail handleLevelProgressNotFoundException(
+      LevelProgressNotFoundException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex, HttpStatus.NOT_FOUND, request, "Level Progress Not Found", ex.getMessage());
+    log.error("Next Level Progress not found: {}", ex.getMessage());
+    return problemDetail;
+  }
+
   // ===== UserAlreadyExistsException =====
   @ExceptionHandler(UserAlreadyExistsException.class)
   public ProblemDetail handleUserAlreadyExists(UserAlreadyExistsException ex, WebRequest request) {
@@ -287,6 +298,7 @@ public class GlobalExceptionHandler {
     if (ex instanceof EntityNotFoundException) return "entity-not-found";
     if (ex instanceof UserNotFoundException) return "user-not-found";
     if (ex instanceof RequestNotFoundException) return "request-not-found";
+    if (ex instanceof LevelProgressNotFoundException) return "level-progress-not-found";
     if (ex instanceof TeamNotFoundException) return "team-not-found";
     if (ex instanceof UserAlreadyExistsException) return "user-already-exists";
     if (ex instanceof UserAlreadyInTeamException) return "user-already-in-team";

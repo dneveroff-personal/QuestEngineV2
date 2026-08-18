@@ -12,6 +12,7 @@ import dn.questenginev2.quest.repository.QuestProgressRepository;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -45,23 +46,22 @@ public class LevelProgressServiceImpl implements LevelProgressService {
 
   // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
   @Override
-  public LevelProgressResponse createFirstLevelProgress(Long questProgressId) {
+  public LevelProgressResponse createFirstLevelProgress(QuestProgress questProgress) {
+    if (questProgress == null || questProgress.getQuest() == null) {
+      throw new IllegalArgumentException("QuestProgress не найден");
+    }
 
-    // TODO исправить проблемы N+1 для подобных выборок findById
-    QuestProgress questProgress =
-        questProgressRepository
-            .findById(questProgressId)
-            .orElseThrow(
-                () -> new IllegalArgumentException("QuestProgress не найден: " + questProgressId));
+    Long questId = questProgress.getQuest().getId();
 
     Level level =
         levelRepository
-            .findByQuestIdAndOrderIndex(questProgress.getQuest().getId(), 1)
+            .findByQuestIdAndOrderIndex(questId, 1)
             .orElseThrow(() -> new IllegalArgumentException("Уровень не найден"));
 
-    validateLevelBelongsToQuest(level, questProgress);
+    validateLevelBelongsToQuest(level, questId);
 
-    if (levelProgressRepository.existsByQuestProgressIdAndLevelId(questProgressId, level.getId())) {
+    if (levelProgressRepository.existsByQuestProgressIdAndLevelId(
+        questProgress.getId(), level.getId())) {
       throw new ForbiddenOperationException("Уровень уже был сыгран этой командой");
     }
 
@@ -98,50 +98,40 @@ public class LevelProgressServiceImpl implements LevelProgressService {
   }
 
   @Override
-  public LevelProgressResponse createLevelProgress(Long questProgressId) {
-    // TODO исправить проблемы N+1 для подобных выборок findById
-    QuestProgress questProgress =
-        questProgressRepository
-            .findById(questProgressId)
-            .orElseThrow(
-                () -> new IllegalArgumentException("QuestProgress не найден: " + questProgressId));
+  public LevelProgressResponse createNextLevelProgress(
+      QuestProgress questProgress, Integer nextLevelOrderIndex) {
+    Optional<Level> level =
+        levelRepository.findByQuestIdAndOrderIndex(
+            questProgress.getQuest().getId(), nextLevelOrderIndex);
 
-    Level level =
-        levelRepository
-            .findByQuestIdAndOrderIndex(questProgress.getQuest().getId(), 1)
-            .orElseThrow(() -> new IllegalArgumentException("Уровень не найден"));
+    // Возвращаем null если в квесте не осталось больше уровней.
+    if (level.isEmpty()) {
+      return null;
+    }
 
-    validateLevelBelongsToQuest(level, questProgress);
+    Level nextLevel = level.get();
 
-    if (levelProgressRepository.existsByQuestProgressIdAndLevelId(questProgressId, level.getId())) {
+    if (levelProgressRepository.existsByQuestProgressIdAndLevelId(
+        questProgress.getId(), nextLevel.getId())) {
       throw new ForbiddenOperationException("Уровень уже был сыгран этой командой");
     }
 
     Instant openedAt = clock.instant();
     Instant autoTransitionAt = null;
-    Integer timeOutTime = level.getTimeoutSeconds();
+    Integer timeOutTime = nextLevel.getTimeoutSeconds();
+    LevelProgressStatus status = LevelProgressStatus.ACTIVE;
 
     if (timeOutTime != null) {
-      autoTransitionAt = questProgress.getQuestStartedAt().plusSeconds(timeOutTime);
-    }
-
-    LevelProgressStatus status;
-    Instant completedAt = null;
-
-    if (autoTransitionAt != null && !openedAt.isBefore(autoTransitionAt)) {
-      status = LevelProgressStatus.AUTO_TRANSITIONED;
-      completedAt = openedAt;
-    } else {
-      status = LevelProgressStatus.ACTIVE;
+      autoTransitionAt = openedAt.plusSeconds(timeOutTime);
     }
 
     LevelProgress levelProgress =
         LevelProgress.builder()
             .questProgress(questProgress)
-            .level(level)
+            .level(nextLevel)
             .status(status)
             .openedAt(openedAt)
-            .completedAt(completedAt)
+            .completedAt(null)
             .autoTransitionAt(autoTransitionAt)
             .build();
 
@@ -156,24 +146,9 @@ public class LevelProgressServiceImpl implements LevelProgressService {
 
     levelProgress.setStatus(LevelProgressStatus.COMPLETED);
     levelProgress.setCompletedAt(clock.instant());
+
     LevelProgress saved = levelProgressRepository.save(levelProgress);
 
-    //находил следующий Level;
-    int nextLevelOrderIdx = saved.getLevel().getOrderIndex() + 1;
-    QuestProgress questProgress = levelProgress.getQuestProgress();
-
-    Level nextLevel =
-        levelRepository
-            .findByQuestIdAndOrderIndex(questProgress.getQuest().getId(), nextLevelOrderIdx)
-            .orElseThrow(() -> new IllegalArgumentException("Следующий уровень не найден"));
-
-    //если следующий существует — создавал следующий LevelProgress;
-    if (nextLevel != null) {
-      return createLevelProgress(questProgress.getId());
-    }
-
-    //если следующего нет — завершал QuestProgress.
-  // TODO
     return buildLevelProgressResponse(saved);
   }
 
@@ -222,8 +197,8 @@ public class LevelProgressServiceImpl implements LevelProgressService {
     }
   }
 
-  private static void validateLevelBelongsToQuest(Level level, QuestProgress questProgress) {
-    if (!level.getQuest().getId().equals(questProgress.getQuest().getId())) {
+  private static void validateLevelBelongsToQuest(Level level, Long questId) {
+    if (!level.getQuest().getId().equals(questId)) {
       throw new ForbiddenOperationException("Уровень не принадлежит QuestProgress");
     }
   }

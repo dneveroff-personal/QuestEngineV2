@@ -78,7 +78,6 @@ class LevelProgressServiceImplTest {
   void createFirstLevelProgress_returnsActive_whenEnteredBeforeAutoTransition() {
     Instant enteredAt = Instant.parse("2024-01-01T21:30:00Z"); // 21:30
 
-    when(questProgressRepository.findById(1L)).thenReturn(Optional.of(questProgress));
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
     when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
 
@@ -93,7 +92,7 @@ class LevelProgressServiceImplTest {
             .build();
     when(levelProgressRepository.save(any(LevelProgress.class))).thenReturn(saved);
 
-    LevelProgressResponse response = levelProgressService.createFirstLevelProgress(1L);
+    LevelProgressResponse response = levelProgressService.createFirstLevelProgress(questProgress);
 
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(LevelProgressStatus.ACTIVE);
@@ -106,7 +105,6 @@ class LevelProgressServiceImplTest {
   void createFirstLevelProgress_returnsAutoTransitioned_whenEnteredAfterAutoTransition() {
     Instant enteredAt = Instant.parse("2024-01-01T22:30:00Z"); // 22:30
 
-    when(questProgressRepository.findById(1L)).thenReturn(Optional.of(questProgress));
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
     when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
 
@@ -122,7 +120,7 @@ class LevelProgressServiceImplTest {
             .build();
     when(levelProgressRepository.save(any(LevelProgress.class))).thenReturn(saved);
 
-    LevelProgressResponse response = levelProgressService.createFirstLevelProgress(1L);
+    LevelProgressResponse response = levelProgressService.createFirstLevelProgress(questProgress);
 
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(LevelProgressStatus.AUTO_TRANSITIONED);
@@ -133,11 +131,10 @@ class LevelProgressServiceImplTest {
 
   @Test
   void createFirstLevelProgress_throwsForbiddenOperationException_whenLevelAlreadyPlayed() {
-    when(questProgressRepository.findById(1L)).thenReturn(Optional.of(questProgress));
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
     when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(true);
 
-    assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(1L))
+    assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(questProgress))
         .isInstanceOf(ForbiddenOperationException.class)
         .hasMessageContaining("уже был сыгран");
 
@@ -146,9 +143,8 @@ class LevelProgressServiceImplTest {
 
   @Test
   void createFirstLevelProgress_throwsIllegalArgumentException_whenQuestProgressNotFound() {
-    when(questProgressRepository.findById(999L)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(999L))
+    QuestProgress emptyProgress = new QuestProgress();
+    assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(emptyProgress))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("QuestProgress не найден");
 
@@ -157,10 +153,9 @@ class LevelProgressServiceImplTest {
 
   @Test
   void createFirstLevelProgress_throwsIllegalArgumentException_whenLevelNotFound() {
-    when(questProgressRepository.findById(1L)).thenReturn(Optional.of(questProgress));
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(1L))
+    assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(questProgress))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Уровень не найден");
 
@@ -441,10 +436,9 @@ class LevelProgressServiceImplTest {
             .timeoutSeconds(3600)
             .build();
 
-    when(questProgressRepository.findById(1L)).thenReturn(Optional.of(questProgress));
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(levelB));
 
-    assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(1L))
+    assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(questProgress))
         .isInstanceOf(ForbiddenOperationException.class)
         .hasMessageContaining("не принадлежит QuestProgress");
 
@@ -462,7 +456,6 @@ class LevelProgressServiceImplTest {
             .timeoutSeconds(null)
             .build();
 
-    when(questProgressRepository.findById(1L)).thenReturn(Optional.of(questProgress));
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(levelNoTimeout));
     when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
 
@@ -470,7 +463,7 @@ class LevelProgressServiceImplTest {
     when(levelProgressRepository.save(captor.capture()))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    LevelProgressResponse response = levelProgressService.createFirstLevelProgress(1L);
+    LevelProgressResponse response = levelProgressService.createFirstLevelProgress(questProgress);
 
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(LevelProgressStatus.ACTIVE);
@@ -491,7 +484,6 @@ class LevelProgressServiceImplTest {
     Instant autoTransitionAt = questStartedAt.plusSeconds(3600); // 22:00
     Instant openedAt = autoTransitionAt; // exactly at deadline
 
-    when(questProgressRepository.findById(1L)).thenReturn(Optional.of(questProgress));
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
     when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
     when(clock.instant()).thenReturn(openedAt);
@@ -500,7 +492,7 @@ class LevelProgressServiceImplTest {
     when(levelProgressRepository.save(captor.capture()))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    LevelProgressResponse response = levelProgressService.createFirstLevelProgress(1L);
+    LevelProgressResponse response = levelProgressService.createFirstLevelProgress(questProgress);
 
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(LevelProgressStatus.AUTO_TRANSITIONED);
@@ -521,7 +513,6 @@ class LevelProgressServiceImplTest {
     Instant autoTransitionAt = questStartedAt.plusSeconds(3600); // 22:00
     Instant openedAt = autoTransitionAt.plusSeconds(30); // 22:00:30, after deadline
 
-    when(questProgressRepository.findById(1L)).thenReturn(Optional.of(questProgress));
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
     when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
 
@@ -531,7 +522,7 @@ class LevelProgressServiceImplTest {
     when(levelProgressRepository.save(captor.capture()))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    LevelProgressResponse response = levelProgressService.createFirstLevelProgress(1L);
+    LevelProgressResponse response = levelProgressService.createFirstLevelProgress(questProgress);
 
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(LevelProgressStatus.AUTO_TRANSITIONED);
@@ -549,7 +540,6 @@ class LevelProgressServiceImplTest {
     questProgress =
         QuestProgress.builder().id(1L).quest(quest).questStartedAt(questStartedAt).build();
 
-    when(questProgressRepository.findById(1L)).thenReturn(Optional.of(questProgress));
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
     when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
 
@@ -557,7 +547,7 @@ class LevelProgressServiceImplTest {
     when(levelProgressRepository.save(captor.capture()))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    levelProgressService.createFirstLevelProgress(1L);
+    levelProgressService.createFirstLevelProgress(questProgress);
 
     LevelProgress saved = captor.getValue();
     // autoTransitionAt should be questStartedAt + timeoutSeconds (3600s) = 22:00:00Z

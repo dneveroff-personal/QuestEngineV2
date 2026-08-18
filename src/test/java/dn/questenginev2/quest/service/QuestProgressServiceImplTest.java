@@ -7,6 +7,12 @@ import static org.mockito.Mockito.*;
 
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.TeamNotFoundException;
+import dn.questenginev2.level.dto.LevelProgressResponse;
+import dn.questenginev2.level.entity.Level;
+import dn.questenginev2.level.entity.LevelProgress;
+import dn.questenginev2.level.entity.LevelProgressStatus;
+import dn.questenginev2.level.repository.LevelProgressRepository;
+import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.level.service.LevelProgressService;
 import dn.questenginev2.quest.dto.QuestProgressResponse;
 import dn.questenginev2.quest.entity.*;
@@ -50,6 +56,8 @@ class QuestProgressServiceImplTest {
   @Mock private UserService userService;
   @Mock private Authentication authentication;
   @Mock private LevelProgressService levelProgressService;
+  @Mock private LevelProgressRepository levelProgressRepository;
+  @Mock private LevelRepository levelRepository;
   @Mock private Clock clock;
 
   @InjectMocks private QuestProgressServiceImpl questProgressService;
@@ -898,5 +906,142 @@ class QuestProgressServiceImplTest {
     assertThat(response.getStatus()).isEqualTo(QuestProgressStatus.DNF);
 
     verify(questProgressRepository).save(any(QuestProgress.class));
+  }
+
+  // ────── COMPLETE LEVEL ────────────────────────────────────────────────────────
+
+  @Test
+  void completeLevel_createsNextLevelAndKeepsQuestRunning_whenNotLastLevel() {
+    Level level1 =
+        Level.builder().id(1L).quest(runningQuest).title("Level 1").orderIndex(1).build();
+
+    Level level2 =
+        Level.builder().id(2L).quest(runningQuest).title("Level 2").orderIndex(2).build();
+
+    QuestProgress runningProgress =
+        QuestProgress.builder()
+            .id(1L)
+            .quest(runningQuest)
+            .team(team1)
+            .status(QuestProgressStatus.RUNNING)
+            .questStartedAt(runningQuest.getStartTime())
+            .createdAt(Instant.now())
+            .build();
+
+    LevelProgress levelProgress =
+        LevelProgress.builder()
+            .id(1L)
+            .questProgress(runningProgress)
+            .level(level1)
+            .status(LevelProgressStatus.ACTIVE)
+            .openedAt(Instant.parse("2024-01-01T10:01:00Z"))
+            .build();
+
+    when(levelProgressRepository.findById(1L)).thenReturn(Optional.of(levelProgress));
+    when(userService.getCurrentUser(authentication)).thenReturn(playerUser);
+    when(teamMemberRepository.findByUser(playerUser)).thenReturn(Optional.of(teamMember));
+    when(levelProgressService.completeLevel(1L))
+        .thenReturn(LevelProgressResponse.builder().build());
+    when(levelRepository.findByQuestIdAndOrderIndex(1L, 2)).thenReturn(Optional.of(level2));
+
+    QuestProgressResponse response = questProgressService.completeLevel(1L, authentication);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(QuestProgressStatus.RUNNING);
+    assertThat(response.getFinishedAt()).isNull();
+
+    verify(levelProgressService).completeLevel(1L);
+    verify(levelProgressService).createNextLevelProgress(runningProgress, 2);
+    verify(questProgressRepository, never()).save(any(QuestProgress.class));
+  }
+
+  @Test
+  void completeLevel_finishesQuest_whenLastLevel() {
+    Level level3 =
+        Level.builder().id(3L).quest(runningQuest).title("Level 3").orderIndex(3).build();
+
+    QuestProgress runningProgress =
+        QuestProgress.builder()
+            .id(1L)
+            .quest(runningQuest)
+            .team(team1)
+            .status(QuestProgressStatus.RUNNING)
+            .questStartedAt(runningQuest.getStartTime())
+            .createdAt(Instant.now())
+            .build();
+
+    LevelProgress levelProgress =
+        LevelProgress.builder()
+            .id(1L)
+            .questProgress(runningProgress)
+            .level(level3)
+            .status(LevelProgressStatus.ACTIVE)
+            .openedAt(Instant.parse("2024-01-01T10:01:00Z"))
+            .build();
+
+    when(levelProgressRepository.findById(1L)).thenReturn(Optional.of(levelProgress));
+    when(userService.getCurrentUser(authentication)).thenReturn(playerUser);
+    when(teamMemberRepository.findByUser(playerUser)).thenReturn(Optional.of(teamMember));
+    when(levelProgressService.completeLevel(1L))
+        .thenReturn(LevelProgressResponse.builder().build());
+    when(levelRepository.findByQuestIdAndOrderIndex(1L, 4)).thenReturn(Optional.empty());
+
+    ArgumentCaptor<QuestProgress> captor = ArgumentCaptor.forClass(QuestProgress.class);
+    when(questProgressRepository.save(captor.capture()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    QuestProgressResponse response = questProgressService.completeLevel(1L, authentication);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(QuestProgressStatus.FINISHED);
+    assertThat(response.getFinishedAt()).isNotNull();
+
+    QuestProgress savedProgress = captor.getValue();
+    assertThat(savedProgress.getStatus()).isEqualTo(QuestProgressStatus.FINISHED);
+    assertThat(savedProgress.getFinishedAt()).isNotNull();
+
+    verify(levelProgressService).completeLevel(1L);
+    verify(levelProgressService, never()).createNextLevelProgress(any(), any());
+    verify(questProgressRepository).save(any(QuestProgress.class));
+  }
+
+  @Test
+  void completeLevel_throwsForbiddenOperationException_whenLevelAlreadyCompleted() {
+    Level level1 =
+        Level.builder().id(1L).quest(runningQuest).title("Level 1").orderIndex(1).build();
+
+    QuestProgress runningProgress =
+        QuestProgress.builder()
+            .id(1L)
+            .quest(runningQuest)
+            .team(team1)
+            .status(QuestProgressStatus.RUNNING)
+            .questStartedAt(runningQuest.getStartTime())
+            .createdAt(Instant.now())
+            .build();
+
+    LevelProgress levelProgress =
+        LevelProgress.builder()
+            .id(1L)
+            .questProgress(runningProgress)
+            .level(level1)
+            .status(LevelProgressStatus.COMPLETED)
+            .openedAt(Instant.parse("2024-01-01T10:01:00Z"))
+            .completedAt(Instant.parse("2024-01-01T10:15:00Z"))
+            .build();
+
+    when(levelProgressRepository.findById(1L)).thenReturn(Optional.of(levelProgress));
+    when(userService.getCurrentUser(authentication)).thenReturn(playerUser);
+    when(teamMemberRepository.findByUser(playerUser)).thenReturn(Optional.of(teamMember));
+    when(levelProgressService.completeLevel(1L))
+        .thenThrow(new ForbiddenOperationException("Завершить можно только ACTIVE уровень"));
+
+    assertThatThrownBy(() -> questProgressService.completeLevel(1L, authentication))
+        .isInstanceOf(ForbiddenOperationException.class)
+        .hasMessageContaining("ACTIVE");
+
+    verify(levelProgressService).completeLevel(1L);
+    verify(levelProgressService, never()).createNextLevelProgress(any(), any());
+    verify(questProgressRepository, never()).save(any(QuestProgress.class));
   }
 }
