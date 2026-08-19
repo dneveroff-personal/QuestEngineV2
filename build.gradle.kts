@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "dn"
-version = "0.5.13"
+version = "0.5.14"
 description = "Platform of city-quests, real-time and online"
 
 java {
