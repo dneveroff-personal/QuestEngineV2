@@ -32,6 +32,7 @@
 |---|---|---|---|
 | **Manual Adjustment** | Author (или Admin) | В любой момент во время или после прохождения команды | Да, до официального завершения Quest автором |
 | **BONUS/PENALTY Code** | Команда (ввод кода) | В момент верного ввода `BONUS`/`PENALTY`-кода на активном уровне | Нет — это игровой факт, а не административное решение (см. ниже) |
+| **BONUS/PENALTY Hint** | Автоматически (auto-reveal) | В момент показа подсказки типа `BONUS`/`PENALTY` (`hintAvailableAt`) — см. `hint-progress.md`, ADR-0020 | Нет — команда не выбирает получение подсказки, эффект безусловен |
 
 ---
 
@@ -96,6 +97,16 @@
 
 ---
 
+## BONUS/PENALTY Hint (начисление через показ подсказки)
+
+Описано подробно в `hint-progress.md` (ADR-0020). Ключевые правила, релевантные этому документу:
+
+- Эффект начисляется **автоматически**, безусловно, в момент показа подсказки (`hintAvailableAt`) — команда не совершает никакого действия, показ управляется auto-reveal механизмом.
+- Величина эффекта — `Hint.bonusPenaltySeconds`.
+- Как и `BONUS`/`PENALTY`-код, не отменяем через тот же механизм, что и `ManualTimeAdjustment` — если Author считает начисление ошибочным, используется компенсирующая `ManualTimeAdjustment` с явным `reason`.
+
+---
+
 ## Агрегация итогового времени
 
 ```
@@ -103,6 +114,8 @@ QuestProgress.finalTime =
     фактическое игровое время (сумма времени прохождения уровней)
   − Σ bonusPenaltySeconds по всем зачтённым CodeSubmission типа CORRECT_BONUS
   + Σ bonusPenaltySeconds по всем зачтённым CodeSubmission типа CORRECT_PENALTY
+  − Σ bonusPenaltySeconds по всем показанным HintProgress с Hint.type = BONUS
+  + Σ bonusPenaltySeconds по всем показанным HintProgress с Hint.type = PENALTY
   − Σ seconds по всем неотозванным ManualTimeAdjustment типа BONUS
   + Σ seconds по всем неотозванным ManualTimeAdjustment типа PENALTY
 ```
