@@ -10,7 +10,7 @@
 | Механика | Специфицировано | Реализация | Комментарий |
 |---|---|---|---|
 | Quest CRUD, статусы, lifecycle | 🟢 `01-domain/quest.md` | 🔵 | `quest/` — CRUD реализован |
-| Level CRUD | 🟢 `01-domain/level.md` | 🔵 | `level/` — CRUD реализован. Поля `groupIndex` (ADR-0005), `requiredCodesCount` — ещё не добавлены |
+| Level CRUD | 🟢 `01-domain/level.md` | 🔵 | `level/` — CRUD реализован. Поля `codeIndex` (ADR-0005), `requiredMainCodesCount` — ещё не добавлены |
 | Team, Captain, membership | 🟢 `01-domain/team.md` | 🔵 | `team/` реализован |
 | QuestRegistration (заявки команд) | 🟢 `01-domain/registration.md` | 🔵 | `quest/` registration flow |
 | **Автоматический старт Quest** (Job 1) | 🟢 `01-domain/progress.md`, ADR-002 | ⚪ | Планировщик не реализован — см. `03-architecture/scheduling.md` |
@@ -27,10 +27,12 @@
 | Permissions / Security | 🟢 `05-security/permissions.md` | 🔵 | Базовая ролевая модель реализована |
 | API-контракт | 🟢 `04-api/conventions.md`, `04-api/endpoints.md` | 🟡 | Swagger/OpenAPI подключён; решения по статусам/пагинации приняты (ADR-0011/0012), не реализованы |
 | DNF для команды | 🟢 `01-domain/registration.md`, `progress.md` | 🟡 | `setDnf()` реализован в сервисе, не выведен в контроллер |
-| Live-статистика (транспорт) | 🟢 `06-nfr/requirements.md`, ADR-0014 | ⚪ | SSE выбран, не реализован |
-| Rate limiting | 🟢 `05-security/threat-model.md`, ADR-0016 | ⚪ | `bucket4j` выбран, не реализован |
-| JWT revocation | 🟢 `05-security/threat-model.md`, ADR-0015 | ⚪ | Denylist выбран, не реализован |
+| Live-статистика (транспорт) | 🟢 `06-nfr/requirements.md`, ADR-0014 | ⚪ | SSE выбран, без искусственной задержки, не реализован |
+| Rate limiting | 🟢 `05-security/threat-model.md`, ADR-0016 | ⚪ | `bucket4j` выбран, только для `/auth/login` (5/мин на IP). Явно НЕ для ввода кода — см. ADR-0016 |
+| JWT: access+refresh токены | 🟢 `05-security/threat-model.md`, ADR-0015 | ⚪ | Заменяет старую модель «единый JWT на 24ч» — текущий код (`JwtService`) реализует именно старую модель, требует переработки |
+| Нагрузочный k6-смок-тест (Сценарий 6) | 🟢 `07-quality/testing-strategy.md` | ⚪ | Проверка атомарного UPDATE при подсчёте порога кодов под параллельной нагрузкой |
 | Тестовое покрытие CI-порогом | 🟢 `07-quality/testing-strategy.md`, ADR-0017 | ⚪ | Порог (70%) выбран, `jacocoTestCoverageVerification` не добавлена в build |
+| Персональные подсказки (будущее улучшение) | 🟡 `01-domain/hint-progress.md` | ⚪ | Осознанно отложено за пределы MVP |
 | CI (сборка, тесты, Docker-образ) | — | 🔵 | `.github/workflows/build.yml` — spotless, тесты, публикация образа в GHCR, JaCoCo-артефакт. Хорошо реализовано |
 | CD (деплой на VPS) | — | 🔴 | `.github/workflows/deploy.yml` **не может сработать в текущем виде** — см. находки ниже |
 
@@ -38,15 +40,15 @@
 
 0. **Реализовать эндпоинты публикации и завершения Quest** (`DRAFT → REGISTRATION`, `RUNNING → FINISHED`) — без первого весь остальной flow недостижим даже вручную.
 1. **Закрыть найденную уязвимость в проде: открытый JDWP debug-порт** (см. находки ниже) — критичнее любого функционального блокера, если проект уже выставлен в интернет.
-2. Реализовать `CodeSubmission` по модели ADR-0005 (main-коды, синонимы, порог) — модель полностью решена, можно приступать к схеме БД и коду.
+2. Реализовать `CodeSubmission` по модели ADR-0005 (коды, синонимы, порог) — модель полностью решена, можно приступать к схеме БД и коду.
 3. Спроектировать и реализовать `Job 1`/`Job 2` из `03-architecture/scheduling.md`, подключив уже готовую оркестрацию `completeLevel()`.
 4. Закрыть подтверждённые гонки в `approveTeam()` и `enterQuest()` (ADR-0010).
 5. Реализовать `HintProgress` (auto-reveal, ADR-0020) — включая добавление полей `Hint.type`/`bonusPenaltySeconds`.
 6. Реализовать три источника Bonus/Penalty (ADR-0007) — `ManualTimeAdjustment`, эффект кода, эффект подсказки.
 7. Развести семантику HTTP-статусов ошибок (ADR-0011), добавить `PageResponse<T>` (ADR-0012).
 8. Вывести `setDnf()` в контроллер.
-9. Внедрить rate limiting (ADR-0016) и JWT denylist (ADR-0015) до первого публичного релиза.
-10. Настроить `jacocoTestCoverageVerification` (ADR-0017).
+9. Внедрить rate limiting только для `/auth/login` (ADR-0016) и перейти на access+refresh токены (ADR-0015) до первого публичного релиза.
+10. Настроить `jacocoTestCoverageVerification` (ADR-0017) и k6-смок-тест на Сценарий 6.
 11. Починить `deploy.yml` (см. находки ниже) — иначе CD не работает даже после включения триггера.
 
 ## Находки при просмотре реализованного кода (0.5.14)
@@ -64,4 +66,4 @@
 
 ## Статус документации
 
-Документация закрыта на 100%. Все 19 ADR приняты (Accepted) — реестр в `docs/ReadMe.md`. Открытых архитектурных развилок, требующих решения продукта, не осталось; оставшиеся открытые вопросы внутри документов — детали реализации (конкретные числа, не развилки направления).
+Документация закрыта на 100%, все содержательные открытые вопросы закрыты по итогам совместного разбора (см. `docs/ReadMe.md` — «Единственный оставшийся содержательный открытый вопрос»: список конкретных отличий от Encounter, не блокирует реализацию). Все 19 ADR приняты (Accepted).

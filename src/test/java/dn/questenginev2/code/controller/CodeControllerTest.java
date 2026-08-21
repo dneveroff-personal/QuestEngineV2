@@ -36,7 +36,7 @@ class CodeControllerTest {
 
   @BeforeEach
   void setUp() {
-    codeResponse = new CodeResponse(1L, 1L, "CODE123", CodeType.MAIN, 100, 1, Instant.now());
+    codeResponse = new CodeResponse(1L, 1L, "CODE123", CodeType.MAIN, 100, Instant.now());
   }
 
   @Test
@@ -76,7 +76,7 @@ class CodeControllerTest {
   @Test
   void getCodesByLevel_returnsCodes_whenLevelExists() throws Exception {
     CodeResponse codeResponse2 =
-        new CodeResponse(2L, 1L, "CODE456", CodeType.BONUS, 50, 1, Instant.now());
+        new CodeResponse(2L, 1L, "CODE456", CodeType.BONUS, 50, Instant.now());
 
     when(codeService.getCodesByLevelId(1L)).thenReturn(List.of(codeResponse, codeResponse2));
 

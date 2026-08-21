@@ -34,8 +34,7 @@ class LevelControllerTest {
   @BeforeEach
   void setUp() {
     levelResponse =
-        new LevelResponse(
-            1L, 1L, "Level 1", 1, "Level content", 1, 300, Instant.now(), Instant.now());
+        new LevelResponse(1L, 1L, "Level 1", 1, "Level content", 300, Instant.now(), Instant.now());
   }
 
   @Test

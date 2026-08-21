@@ -12,9 +12,11 @@
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST | `/auth/login` | 🔵 |
+| POST | `/auth/login` | 🟡 *(будет возвращать пару access+refresh вместо одного токена — ADR-0015)* |
 | POST | `/auth/register` | 🔵 |
 | POST | `/auth/reset-admin-password` | 🔵 |
+| **POST `/auth/refresh`** | — | ⚪ **Отсутствует.** Обмен refresh-токена на новый access-токен, с ротацией (ADR-0015). |
+| **POST `/auth/logout`** | — | ⚪ **Отсутствует.** Отзыв refresh-токена текущей сессии (ADR-0015). |
 
 ---
 
