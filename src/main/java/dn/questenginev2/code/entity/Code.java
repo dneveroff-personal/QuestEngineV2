@@ -28,6 +28,9 @@ public class Code {
   @Column(name = "code_value", nullable = false)
   private String value;
 
+  @Column(name = "group_index")
+  private Integer groupIndex;
+
   @Enumerated(EnumType.STRING)
   @Column(name = "type", nullable = false)
   private CodeType type;

@@ -17,6 +17,7 @@ public class LevelResponse {
   private String title;
   private Integer orderIndex;
   private String content;
+  private Integer requiredCodesCount;
   private Integer timeoutSeconds;
   private Instant createdAt;
   private Instant updatedAt;

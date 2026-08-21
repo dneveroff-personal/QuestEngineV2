@@ -1,3 +1,4 @@
+# ВЫКЛЮЧЕН ДО МОМЕНТА ВЫХОДА В ПРОДАКШЕН
 name: Deploy
 
 on:
@@ -29,7 +30,7 @@ jobs:
             set -e
             echo "🚀 Starting deployment..."
 
-            cd ~/ts-wc-scores
+#            cd ~/ts-wc-scores
 
             echo "📥 Pulling latest image..."
             docker compose -f docker-compose.prod.yml pull

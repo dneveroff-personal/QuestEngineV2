@@ -10,4 +10,6 @@ public record CreateLevelRequest(
         String title,
     @Size(max = 10000, message = "Содержимое уровня должно быть не более 10000 символов")
         String content,
-    @Min(value = 1, message = "Таймаут должен быть не менее 1 секунды") Integer timeoutSeconds) {}
+    @Min(value = 1, message = "Таймаут должен быть не менее 1 секунды") Integer timeoutSeconds,
+    @Min(value = 1, message = "Количество необходимых MAIN-кодов должно быть не менее 1")
+        Integer requiredMainCodesCount) {}

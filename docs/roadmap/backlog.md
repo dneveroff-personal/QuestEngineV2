@@ -10,7 +10,7 @@
 | Механика | Специфицировано | Реализация | Комментарий |
 |---|---|---|---|
 | Quest CRUD, статусы, lifecycle | 🟢 `01-domain/quest.md` | 🔵 | `quest/` — CRUD реализован |
-| Level CRUD | 🟢 `01-domain/level.md` | 🔵 | `level/` — CRUD реализован. Поля `groupIndex` (ADR-0005), `requiredMainCodesCount` — ещё не добавлены |
+| Level CRUD | 🟢 `01-domain/level.md` | 🔵 | `level/` — CRUD реализован. Поля `groupIndex` (ADR-0005), `requiredCodesCount` — ещё не добавлены |
 | Team, Captain, membership | 🟢 `01-domain/team.md` | 🔵 | `team/` реализован |
 | QuestRegistration (заявки команд) | 🟢 `01-domain/registration.md` | 🔵 | `quest/` registration flow |
 | **Автоматический старт Quest** (Job 1) | 🟢 `01-domain/progress.md`, ADR-002 | ⚪ | Планировщик не реализован — см. `03-architecture/scheduling.md` |

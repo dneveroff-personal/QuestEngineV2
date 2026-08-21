@@ -107,7 +107,8 @@ class CodeControllerIT {
             post("/api/quests/" + quest.getId() + "/levels/" + level.getId() + "/codes")
                 .header("Authorization", "Bearer " + authorToken)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"value\":\"CODE123\",\"type\":\"MAIN\",\"points\":100}"))
+                .content(
+                    "{\"value\":\"CODE123\",\"type\":\"MAIN\",\"groupIndex\":1,\"points\":100}"))
         .andExpect(status().isCreated())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.levelId").value(level.getId()))

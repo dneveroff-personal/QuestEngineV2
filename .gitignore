@@ -38,6 +38,7 @@ out/
 
 ### DN ###
 .tree.txt
+docs/.obsidian/
 
 ### Environment ###
 .env

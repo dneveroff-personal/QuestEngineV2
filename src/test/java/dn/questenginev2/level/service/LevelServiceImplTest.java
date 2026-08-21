@@ -90,7 +90,7 @@ class LevelServiceImplTest {
     when(questService.validateQuestExist(1L)).thenReturn(testQuest);
     when(levelRepository.findMaxOrderIndex(1L)).thenReturn(0);
 
-    CreateLevelRequest request = new CreateLevelRequest("Level 1", "Level content", 300);
+    CreateLevelRequest request = new CreateLevelRequest("Level 1", "Level content", 300, 1);
 
     Level savedLevel =
         Level.builder()
@@ -124,7 +124,8 @@ class LevelServiceImplTest {
     when(questService.validateQuestExist(1L)).thenReturn(testQuest);
     when(levelRepository.findMaxOrderIndex(1L)).thenReturn(0);
 
-    CreateLevelRequest request = new CreateLevelRequest("Admin Level", "Admin level content", 600);
+    CreateLevelRequest request =
+        new CreateLevelRequest("Admin Level", "Admin level content", 600, 1);
 
     Level savedLevel =
         Level.builder()
@@ -157,7 +158,7 @@ class LevelServiceImplTest {
         .validateAuthorOrAdmin(playerUser);
 
     CreateLevelRequest request =
-        new CreateLevelRequest("Player Level", "Player level content", 100);
+        new CreateLevelRequest("Player Level", "Player level content", 100, 1);
 
     assertThatThrownBy(() -> levelService.createLevel(1L, request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
@@ -173,7 +174,7 @@ class LevelServiceImplTest {
     when(questService.validateQuestExist(999L))
         .thenThrow(new IllegalArgumentException("Квест не найден: 999"));
 
-    CreateLevelRequest request = new CreateLevelRequest("Level 1", "Level content", 200);
+    CreateLevelRequest request = new CreateLevelRequest("Level 1", "Level content", 200, 1);
 
     assertThatThrownBy(() -> levelService.createLevel(999L, request, authentication))
         .isInstanceOf(IllegalArgumentException.class)

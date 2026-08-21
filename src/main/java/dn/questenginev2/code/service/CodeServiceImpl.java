@@ -3,6 +3,7 @@ package dn.questenginev2.code.service;
 import dn.questenginev2.code.dto.CodeResponse;
 import dn.questenginev2.code.dto.CreateCodeRequest;
 import dn.questenginev2.code.entity.Code;
+import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.repository.LevelRepository;
@@ -34,7 +35,8 @@ public class CodeServiceImpl implements CodeService {
     Level level = validateLevelExist(levelId);
     questService.validateQuestAuthor(currentUser, level.getQuest().getId());
 
-    validateCodeValueUnique(request.value());
+    validateCodeValueUnique(levelId, request.value());
+    validateCodeData(request);
 
     Code code = buildCode(request, level);
     Code savedCode = codeRepository.save(code);
@@ -64,12 +66,15 @@ public class CodeServiceImpl implements CodeService {
     questService.validateQuestAuthor(currentUser, code.getLevel().getQuest().getId());
 
     if (!code.getValue().equals(request.value())) {
-      validateCodeValueUnique(request.value());
+      validateCodeValueUnique(code.getLevel().getId(), request.value());
     }
+
+    validateCodeData(request);
 
     code.setValue(request.value());
     code.setType(request.type());
     code.setPoints(request.points());
+    code.setGroupIndex(request.groupIndex());
 
     Code savedCode = codeRepository.save(code);
     return buildCodeResponse(savedCode);
@@ -98,9 +103,19 @@ public class CodeServiceImpl implements CodeService {
         .orElseThrow(() -> new IllegalArgumentException("Код не найден: " + codeId));
   }
 
-  private void validateCodeValueUnique(String codeValue) {
-    if (codeRepository.existsByCodeValue(codeValue)) {
+  private void validateCodeValueUnique(Long LevelId, String codeValue) {
+    if (codeRepository.existsByLevelIdAndValue(LevelId, codeValue)) {
       throw new IllegalArgumentException("Код уже существует: " + codeValue);
+    }
+  }
+
+  private void validateCodeData(CreateCodeRequest request) {
+    if (request.type() == CodeType.MAIN && request.groupIndex() == null) {
+      throw new IllegalArgumentException("Для MAIN-кода необходимо указать groupIndex");
+    }
+
+    if (request.type() != CodeType.MAIN && request.groupIndex() != null) {
+      throw new IllegalArgumentException("groupIndex допускается только для MAIN-кода");
     }
   }
 
@@ -112,6 +127,7 @@ public class CodeServiceImpl implements CodeService {
         .value(code.getValue())
         .type(code.getType())
         .points(code.getPoints())
+        .groupIndex(code.getGroupIndex())
         .createdAt(code.getCreatedAt())
         .build();
   }
@@ -123,6 +139,7 @@ public class CodeServiceImpl implements CodeService {
         .value(code.getValue())
         .type(code.getType())
         .points(code.getPoints())
+        .groupIndex(code.getGroupIndex())
         .createdAt(code.getCreatedAt())
         .build();
   }
@@ -133,6 +150,7 @@ public class CodeServiceImpl implements CodeService {
         .value(request.value())
         .type(request.type())
         .points(request.points())
+        .groupIndex(request.groupIndex())
         .createdAt(Instant.now())
         .build();
   }

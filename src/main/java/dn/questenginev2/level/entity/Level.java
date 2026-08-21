@@ -35,6 +35,9 @@ public class Level {
   @Basic(fetch = LAZY)
   private String content;
 
+  @Column(name = "required_codes")
+  private Integer requiredCodesCount;
+
   @Column(name = "timeout")
   private Integer timeoutSeconds;
 

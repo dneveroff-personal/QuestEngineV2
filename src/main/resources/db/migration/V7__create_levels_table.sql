@@ -4,6 +4,7 @@ CREATE TABLE levels (
                         title           VARCHAR(255)     NOT NULL,
                         order_idx       INTEGER         NOT NULL,
                         content         TEXT,
+                        required_codes  INTEGER,
                         timeout         INTEGER,
                         created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         updated_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
