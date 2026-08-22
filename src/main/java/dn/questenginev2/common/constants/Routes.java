@@ -41,7 +41,8 @@ public final class Routes {
   public static final String QUEST_LEVELS = QUEST_ID + "/levels";
   public static final String LEVEL_HINTS = QUEST_LEVELS + LEVEL_ID + "/hints";
   public static final String LEVEL_CODES = QUEST_LEVELS + LEVEL_ID + "/codes";
-  public static final String QUEST_SEARCH = "/search";
+  public static final String QUEST_PUBLISH = QUEST_ID + "/publish";
+  public static final String QUEST_FINISH = QUEST_ID + "/finish";
 
   // Quest Registration
   public static final String QUEST_REGISTER = QUESTS + "/register";

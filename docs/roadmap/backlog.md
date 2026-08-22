@@ -14,8 +14,8 @@
 | Team, Captain, membership | 🟢 `01-domain/team.md` | 🔵 | `team/` реализован |
 | QuestRegistration (заявки команд) | 🟢 `01-domain/registration.md` | 🔵 | `quest/` registration flow |
 | **Автоматический старт Quest** (Job 1) | 🟢 `01-domain/progress.md`, ADR-002 | ⚪ | Планировщик не реализован — см. `03-architecture/scheduling.md` |
-| **Публикация Quest** (`DRAFT → REGISTRATION`) | 🟢 `02-processes/quest-lifecycle.md` шаг 3 | ⚪ | **Блокер уровня "ничего не работает"** — нет эндпоинта для смены статуса Quest |
-| Завершение Quest автором (`RUNNING → FINISHED`) | 🟢 `02-processes/quest-lifecycle.md` шаг 13 | ⚪ | Нет эндпоинта |
+| **Публикация Quest** (`DRAFT → REGISTRATION`) | 🟢 `02-processes/quest-lifecycle.md` шаг 3 | 🔵 | `POST /api/quests/{id}/publish` — реализовано: проверка статуса DRAFT, валидация "аномальных" уровней (ADR-0005), unit+controller+IT тесты |
+| Завершение Quest автором (`RUNNING → FINISHED`) | 🟢 `02-processes/quest-lifecycle.md` шаг 13 | 🔵 | `POST /api/quests/{id}/finish` — реализовано: проверка статуса RUNNING, незавершённые QuestProgress получают DNF, unit+controller+IT тесты |
 | **Оркестрация завершения уровня / перехода / завершения QuestProgress** | 🟢 ADR-0009 | 🟡 | `LevelProgressServiceImpl.completeLevel()` + `QuestProgressServiceImpl.completeLevel()` уже реализованы и **уже корректно следуют ADR-0009** (без разбора между CODES/AUTO_TRANSITION). Не вызывается ни из контроллера, ни из планировщика — только напрямую из теста |
 | `autoTransitionLevel()` (Job 2 building block) | 🟡 `03-architecture/scheduling.md` | 🟡 | Метод реализован в `LevelProgressServiceImpl`, но нигде не вызывается (нет планировщика) |
 | Hint — редактирование автором | 🟢 | 🔵 | `hint/service` — CRUD реализован. Поля `type`, `bonusPenaltySeconds` (ADR-0020) — не добавлены |
@@ -38,7 +38,7 @@
 
 ## Немедленные блокеры реализации (по приоритету)
 
-0. **Реализовать эндпоинты публикации и завершения Quest** (`DRAFT → REGISTRATION`, `RUNNING → FINISHED`) — без первого весь остальной flow недостижим даже вручную.
+0. ✅ **Реализовать эндпоинты публикации и завершения Quest** (`DRAFT → REGISTRATION`, `RUNNING → FINISHED`) — реализовано.
 1. **Закрыть найденную уязвимость в проде: открытый JDWP debug-порт** (см. находки ниже) — критичнее любого функционального блокера, если проект уже выставлен в интернет.
 2. Реализовать `CodeSubmission` по модели ADR-0005 (коды, синонимы, порог) — модель полностью решена, можно приступать к схеме БД и коду.
 3. Спроектировать и реализовать `Job 1`/`Job 2` из `03-architecture/scheduling.md`, подключив уже готовую оркестрацию `completeLevel()`.

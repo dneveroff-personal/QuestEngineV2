@@ -5,19 +5,26 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.level.entity.Level;
+import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.dto.CreateQuestRequest;
 import dn.questenginev2.quest.dto.QuestResponse;
 import dn.questenginev2.quest.entity.Quest;
 import dn.questenginev2.quest.entity.QuestAuthor;
+import dn.questenginev2.quest.entity.QuestProgress;
+import dn.questenginev2.quest.entity.QuestProgressStatus;
 import dn.questenginev2.quest.entity.QuestStatus;
 import dn.questenginev2.quest.entity.QuestType;
 import dn.questenginev2.quest.repository.QuestAuthorRepository;
+import dn.questenginev2.quest.repository.QuestProgressRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.service.UserService;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +40,12 @@ class QuestServiceImplTest {
   @Mock private QuestAuthorRepository questAuthorRepository;
 
   @Mock private QuestRepository questRepository;
+
+  @Mock private QuestProgressRepository questProgressRepository;
+
+  @Mock private LevelRepository levelRepository;
+
+  @Mock private CodeRepository codeRepository;
 
   @Mock private UserService userService;
 
@@ -329,5 +342,173 @@ class QuestServiceImplTest {
         .hasMessageContaining("Квест не найден");
 
     verify(questRepository).findById(999L);
+  }
+
+  // ────── publishQuest ───────────────────────────────────────────────────────────
+
+  @Test
+  void publishQuest_transitionsToRegistration_whenDraftHasValidLevels() {
+    Quest quest =
+        Quest.builder()
+            .id(1L)
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.DRAFT)
+            .createdAt(Instant.now())
+            .build();
+    Level levelWithTimeout =
+        Level.builder().id(10L).quest(quest).title("L1").orderIndex(1).timeoutSeconds(600).build();
+    Level levelWithCode = Level.builder().id(11L).quest(quest).title("L2").orderIndex(2).build();
+
+    when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
+    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
+    when(questAuthorRepository.existsByQuestIdAndUserId(1L, authorUser.getId())).thenReturn(true);
+    when(levelRepository.findByQuestIdOrderByOrderIndex(1L))
+        .thenReturn(List.of(levelWithTimeout, levelWithCode));
+    when(codeRepository.existsByLevelId(10L)).thenReturn(false);
+    when(codeRepository.existsByLevelId(11L)).thenReturn(true);
+    when(questRepository.save(any(Quest.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    QuestResponse response = questService.publishQuest(1L, authentication);
+
+    assertThat(response.getStatus()).isEqualTo(QuestStatus.REGISTRATION);
+    verify(questRepository).save(quest);
+  }
+
+  @Test
+  void publishQuest_throwsForbiddenOperationException_whenQuestNotDraft() {
+    Quest quest =
+        Quest.builder()
+            .id(1L)
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.REGISTRATION)
+            .createdAt(Instant.now())
+            .build();
+
+    when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
+    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
+    when(questAuthorRepository.existsByQuestIdAndUserId(1L, authorUser.getId())).thenReturn(true);
+
+    assertThatThrownBy(() -> questService.publishQuest(1L, authentication))
+        .isInstanceOf(ForbiddenOperationException.class)
+        .hasMessageContaining("REGISTRATION");
+
+    verify(questRepository, never()).save(any());
+  }
+
+  @Test
+  void publishQuest_throwsForbiddenOperationException_whenNoLevels() {
+    Quest quest =
+        Quest.builder()
+            .id(1L)
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.DRAFT)
+            .createdAt(Instant.now())
+            .build();
+
+    when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
+    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
+    when(questAuthorRepository.existsByQuestIdAndUserId(1L, authorUser.getId())).thenReturn(true);
+    when(levelRepository.findByQuestIdOrderByOrderIndex(1L)).thenReturn(List.of());
+
+    assertThatThrownBy(() -> questService.publishQuest(1L, authentication))
+        .isInstanceOf(ForbiddenOperationException.class)
+        .hasMessageContaining("без уровней");
+
+    verify(questRepository, never()).save(any());
+  }
+
+  @Test
+  void publishQuest_throwsForbiddenOperationException_whenLevelIsAnomalous() {
+    Quest quest =
+        Quest.builder()
+            .id(1L)
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.DRAFT)
+            .createdAt(Instant.now())
+            .build();
+    Level anomalousLevel =
+        Level.builder().id(10L).quest(quest).title("Broken Level").orderIndex(1).build();
+
+    when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
+    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
+    when(questAuthorRepository.existsByQuestIdAndUserId(1L, authorUser.getId())).thenReturn(true);
+    when(levelRepository.findByQuestIdOrderByOrderIndex(1L)).thenReturn(List.of(anomalousLevel));
+    when(codeRepository.existsByLevelId(10L)).thenReturn(false);
+
+    assertThatThrownBy(() -> questService.publishQuest(1L, authentication))
+        .isInstanceOf(ForbiddenOperationException.class)
+        .hasMessageContaining("Broken Level")
+        .hasMessageContaining("непроходим");
+
+    verify(questRepository, never()).save(any());
+  }
+
+  // ────── finishQuest ───────────────────────────────────────────────────────────
+
+  @Test
+  void finishQuest_transitionsToFinished_andMarksUnfinishedProgressesAsDnf() {
+    Quest quest =
+        Quest.builder()
+            .id(1L)
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.RUNNING)
+            .createdAt(Instant.now())
+            .build();
+    QuestProgress runningProgress =
+        QuestProgress.builder().id(100L).quest(quest).status(QuestProgressStatus.RUNNING).build();
+    QuestProgress finishedProgress =
+        QuestProgress.builder().id(101L).quest(quest).status(QuestProgressStatus.FINISHED).build();
+    QuestProgress waitingProgress =
+        QuestProgress.builder().id(102L).quest(quest).status(QuestProgressStatus.WAITING).build();
+
+    when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
+    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
+    when(questAuthorRepository.existsByQuestIdAndUserId(1L, authorUser.getId())).thenReturn(true);
+    when(questRepository.save(any(Quest.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(questProgressRepository.findByQuestId(1L))
+        .thenReturn(List.of(runningProgress, finishedProgress, waitingProgress));
+
+    QuestResponse response = questService.finishQuest(1L, authentication);
+
+    assertThat(response.getStatus()).isEqualTo(QuestStatus.FINISHED);
+    assertThat(runningProgress.getStatus()).isEqualTo(QuestProgressStatus.DNF);
+    assertThat(waitingProgress.getStatus()).isEqualTo(QuestProgressStatus.DNF);
+    assertThat(finishedProgress.getStatus()).isEqualTo(QuestProgressStatus.FINISHED);
+    verify(questProgressRepository)
+        .saveAll(List.of(runningProgress, finishedProgress, waitingProgress));
+  }
+
+  @Test
+  void finishQuest_throwsForbiddenOperationException_whenQuestNotRunning() {
+    Quest quest =
+        Quest.builder()
+            .id(1L)
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.DRAFT)
+            .createdAt(Instant.now())
+            .build();
+
+    when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
+    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
+    when(questAuthorRepository.existsByQuestIdAndUserId(1L, authorUser.getId())).thenReturn(true);
+
+    assertThatThrownBy(() -> questService.finishQuest(1L, authentication))
+        .isInstanceOf(ForbiddenOperationException.class)
+        .hasMessageContaining("DRAFT");
+
+    verify(questRepository, never()).save(any());
+    verify(questProgressRepository, never()).findByQuestId(any());
   }
 }

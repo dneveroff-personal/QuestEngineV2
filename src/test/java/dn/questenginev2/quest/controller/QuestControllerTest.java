@@ -114,6 +114,78 @@ class QuestControllerTest {
   }
 
   @Test
+  void publishQuest_returnsPublishedQuest_whenRequestIsValid() throws Exception {
+    QuestResponse publishedResponse =
+        new QuestResponse(
+            1L,
+            "Test Quest",
+            "Test Description",
+            QuestType.TEAM,
+            dn.questenginev2.quest.entity.QuestStatus.REGISTRATION,
+            Instant.now(),
+            Instant.now(),
+            Instant.now());
+    when(questService.publishQuest(eq(1L), any())).thenReturn(publishedResponse);
+
+    mockMvc
+        .perform(post("/api/quests/1/publish"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.status").value("REGISTRATION"));
+  }
+
+  @Test
+  void publishQuest_returnsConflict_whenQuestNotDraft() throws Exception {
+    when(questService.publishQuest(eq(1L), any()))
+        .thenThrow(
+            new ForbiddenOperationException(
+                "Действие \"опубликовать\" доступно только для квеста в статусе DRAFT, текущий"
+                    + " статус: REGISTRATION"));
+
+    mockMvc
+        .perform(post("/api/quests/1/publish"))
+        .andExpect(status().isConflict())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title", is("Forbidden Operation")));
+  }
+
+  @Test
+  void finishQuest_returnsFinishedQuest_whenRequestIsValid() throws Exception {
+    QuestResponse finishedResponse =
+        new QuestResponse(
+            1L,
+            "Test Quest",
+            "Test Description",
+            QuestType.TEAM,
+            dn.questenginev2.quest.entity.QuestStatus.FINISHED,
+            Instant.now(),
+            Instant.now(),
+            Instant.now());
+    when(questService.finishQuest(eq(1L), any())).thenReturn(finishedResponse);
+
+    mockMvc
+        .perform(post("/api/quests/1/finish"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.status").value("FINISHED"));
+  }
+
+  @Test
+  void finishQuest_returnsConflict_whenQuestNotRunning() throws Exception {
+    when(questService.finishQuest(eq(1L), any()))
+        .thenThrow(
+            new ForbiddenOperationException(
+                "Действие \"завершить\" доступно только для квеста в статусе RUNNING, текущий"
+                    + " статус: DRAFT"));
+
+    mockMvc
+        .perform(post("/api/quests/1/finish"))
+        .andExpect(status().isConflict())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title", is("Forbidden Operation")));
+  }
+
+  @Test
   void createQuest_returnsConflict_whenUserIsNotAuthorOrAdmin() throws Exception {
     when(questService.createQuest(any(CreateQuestRequest.class), any()))
         .thenThrow(

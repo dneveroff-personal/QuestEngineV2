@@ -62,8 +62,8 @@
 | GET | `/quests/upcoming` | 🔵 |
 | PUT | `/quests/{questId}` | 🔵 |
 | DELETE | `/quests/{questId}` | 🔵 |
-| **POST `/quests/{questId}/publish`** | — | ⚪ **Отсутствует.** `DRAFT → REGISTRATION`. См. `roadmap/backlog.md`, блокер приоритета 0. |
-| **POST `/quests/{questId}/finish`** | — | ⚪ **Отсутствует.** Шаг 13 `quest-lifecycle.md` (`RUNNING → FINISHED`, автор вручную) — нет эндпоинта, только автопереходы уровней/прогресса реализованы частично. |
+| POST | `/quests/{questId}/publish` | 🔵 *(`DRAFT → REGISTRATION`, с валидацией "аномальных" уровней по ADR-0005)* |
+| POST | `/quests/{questId}/finish` | 🔵 *(`RUNNING → FINISHED`, автор; незавершённые QuestProgress получают DNF)* |
 
 ---
 
@@ -90,7 +90,7 @@
 | POST | `/quests/progress/{questId}/enter` | 🟡 *(есть незащищённый повторный вызов — см. `concurrency-scenarios.md` Сценарий 2)* |
 | GET | `/quests/progress/{questId}/{teamId}` | 🔵 |
 | GET | `/quests/progress/{questId}` | 🔵 |
-| PUT | `/quests/progress/{questId}/{teamId}/finish` | 🟡 *(семантика пересекается с автозавершением по последнему уровню — открытый вопрос в `scheduling.md` Job 2)* |
+| PUT | `/quests/progress/{questId}/{teamId}/finish` | 🟡 *(ручной override для форс-мажорных случаев — основной путь завершения теперь автоматический, ADR-0009)* |
 | **DNF endpoint** | — | ⚪ Метод `setDnf()` существует в сервисе, но **не выведен ни в один контроллер** — вызвать через API невозможно. |
 
 ---

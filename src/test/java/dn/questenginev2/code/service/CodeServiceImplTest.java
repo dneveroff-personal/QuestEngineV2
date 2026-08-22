@@ -106,9 +106,9 @@ class CodeServiceImplTest {
   void createCode_createsCode_whenUserIsAuthor() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
-    when(codeRepository.existsByCodeValue("CODE123")).thenReturn(false);
+    when(codeRepository.existsByLevelIdAndValue(1L, "CODE123")).thenReturn(false);
 
-    CreateCodeRequest request = new CreateCodeRequest("CODE123", CodeType.MAIN, 100);
+    CreateCodeRequest request = new CreateCodeRequest("CODE123", CodeType.MAIN, 1, 100);
 
     Code savedCode =
         Code.builder()
@@ -137,9 +137,9 @@ class CodeServiceImplTest {
   void createCode_throwsIllegalArgumentException_whenCodeValueAlreadyExists() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
-    when(codeRepository.existsByCodeValue("CODE123")).thenReturn(true);
+    when(codeRepository.existsByLevelIdAndValue(1L, "CODE123")).thenReturn(true);
 
-    CreateCodeRequest request = new CreateCodeRequest("CODE123", CodeType.MAIN, 100);
+    CreateCodeRequest request = new CreateCodeRequest("CODE123", CodeType.MAIN, 1, 100);
 
     assertThatThrownBy(() -> codeService.createCode(1L, request, authentication))
         .isInstanceOf(IllegalArgumentException.class)
@@ -157,7 +157,7 @@ class CodeServiceImplTest {
         .when(questService)
         .validateAuthorOrAdmin(playerUser);
 
-    CreateCodeRequest request = new CreateCodeRequest("CODE123", CodeType.MAIN, 100);
+    CreateCodeRequest request = new CreateCodeRequest("CODE123", CodeType.MAIN, 1, 100);
 
     assertThatThrownBy(() -> codeService.createCode(1L, request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
@@ -244,9 +244,9 @@ class CodeServiceImplTest {
 
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(codeRepository.findById(1L)).thenReturn(java.util.Optional.of(code));
-    when(codeRepository.existsByCodeValue("NEWCODE")).thenReturn(false);
+    when(codeRepository.existsByLevelIdAndValue(1L, "NEWCODE")).thenReturn(false);
 
-    CreateCodeRequest request = new CreateCodeRequest("NEWCODE", CodeType.BONUS, 200);
+    CreateCodeRequest request = new CreateCodeRequest("NEWCODE", CodeType.BONUS, null, 200);
 
     Code updatedCode =
         Code.builder()
@@ -255,6 +255,7 @@ class CodeServiceImplTest {
             .value("NEWCODE")
             .type(CodeType.BONUS)
             .points(200)
+            .groupIndex(null)
             .createdAt(Instant.now())
             .build();
     when(codeRepository.save(any(Code.class))).thenReturn(updatedCode);
@@ -264,6 +265,7 @@ class CodeServiceImplTest {
     assertThat(response).isNotNull();
     assertThat(response.getValue()).isEqualTo("NEWCODE");
     assertThat(response.getType()).isEqualTo(CodeType.BONUS);
+    assertThat(response.getGroupIndex()).isNull();
     assertThat(response.getPoints()).isEqualTo(200);
 
     verify(codeRepository).save(any(Code.class));

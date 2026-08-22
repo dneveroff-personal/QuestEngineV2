@@ -19,6 +19,10 @@ public interface QuestService {
 
   QuestResponse updateQuest(Long questId, @Valid CreateQuestRequest request, Authentication auth);
 
+  QuestResponse publishQuest(Long questId, Authentication auth);
+
+  QuestResponse finishQuest(Long questId, Authentication auth);
+
   void delete(Long questId, Authentication auth);
 
   Quest validateQuestExist(Long questId);

@@ -9,4 +9,6 @@ public interface CodeRepository extends JpaRepository<Code, Long> {
   boolean existsByLevelIdAndValue(Long levelId, String value);
 
   List<Code> findByLevelIdOrderByCreatedAt(Long levelId);
+
+  boolean existsByLevelId(Long levelId);
 }

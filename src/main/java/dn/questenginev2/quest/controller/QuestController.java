@@ -62,6 +62,23 @@ public class QuestController {
         .body(questService.updateQuest(questId, request, auth));
   }
 
+  @Operation(
+      summary = "Publish quest",
+      description = "Transition quest from DRAFT to REGISTRATION, opening it for team sign-ups")
+  @PostMapping(Routes.QUEST_PUBLISH)
+  public ResponseEntity<QuestResponse> publish(@PathVariable Long questId, Authentication auth) {
+    return ResponseEntity.status(HttpStatus.OK).body(questService.publishQuest(questId, auth));
+  }
+
+  @Operation(
+      summary = "Finish quest",
+      description =
+          "Transition quest from RUNNING to FINISHED. Teams that haven't finished receive DNF")
+  @PostMapping(Routes.QUEST_FINISH)
+  public ResponseEntity<QuestResponse> finish(@PathVariable Long questId, Authentication auth) {
+    return ResponseEntity.status(HttpStatus.OK).body(questService.finishQuest(questId, auth));
+  }
+
   @Operation(summary = "Delete quest", description = "Delete quest by ID")
   @DeleteMapping(Routes.QUEST_ID)
   public ResponseEntity<Void> delete(@PathVariable Long questId, Authentication auth) {

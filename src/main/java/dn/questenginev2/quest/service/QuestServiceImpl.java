@@ -1,13 +1,19 @@
 package dn.questenginev2.quest.service;
 
+import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.level.entity.Level;
+import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.dto.CreateQuestRequest;
 import dn.questenginev2.quest.dto.QuestResponse;
 import dn.questenginev2.quest.entity.Quest;
 import dn.questenginev2.quest.entity.QuestAuthor;
+import dn.questenginev2.quest.entity.QuestProgress;
+import dn.questenginev2.quest.entity.QuestProgressStatus;
 import dn.questenginev2.quest.entity.QuestShortProjection;
 import dn.questenginev2.quest.entity.QuestStatus;
 import dn.questenginev2.quest.repository.QuestAuthorRepository;
+import dn.questenginev2.quest.repository.QuestProgressRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
@@ -27,6 +33,9 @@ public class QuestServiceImpl implements QuestService {
 
   private final QuestAuthorRepository questAuthorRepository;
   private final QuestRepository questRepository;
+  private final QuestProgressRepository questProgressRepository;
+  private final LevelRepository levelRepository;
+  private final CodeRepository codeRepository;
   private final UserService userService;
 
   // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
@@ -75,6 +84,32 @@ public class QuestServiceImpl implements QuestService {
   }
 
   @Override
+  public QuestResponse publishQuest(Long questId, Authentication auth) {
+    User currentUser = userService.getCurrentUser(auth);
+    Quest quest = validateQuestExist(questId);
+    validateQuestAuthor(currentUser, questId);
+    validateQuestStatus(quest, QuestStatus.DRAFT, "опубликовать");
+    validateQuestPublishable(quest);
+
+    quest.setStatus(QuestStatus.REGISTRATION);
+    Quest savedQuest = questRepository.save(quest);
+    return buildQuestResponse(savedQuest);
+  }
+
+  @Override
+  public QuestResponse finishQuest(Long questId, Authentication auth) {
+    User currentUser = userService.getCurrentUser(auth);
+    Quest quest = validateQuestExist(questId);
+    validateQuestAuthor(currentUser, questId);
+    validateQuestStatus(quest, QuestStatus.RUNNING, "завершить");
+
+    quest.setStatus(QuestStatus.FINISHED);
+    Quest savedQuest = questRepository.save(quest);
+    markUnfinishedProgressesAsDnf(questId);
+    return buildQuestResponse(savedQuest);
+  }
+
+  @Override
   public void delete(Long questId, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
     Quest quest = validateQuestExist(questId);
@@ -111,6 +146,52 @@ public class QuestServiceImpl implements QuestService {
         && !questAuthorRepository.existsByQuestIdAndUserId(questId, user.getId())) {
       throw new ForbiddenOperationException("Редактировать квесты могут только Авторы");
     }
+  }
+
+  private void validateQuestStatus(Quest quest, QuestStatus required, String action) {
+    if (quest.getStatus() != required) {
+      throw new ForbiddenOperationException(
+          "Действие \""
+              + action
+              + "\" доступно только для квеста в статусе "
+              + required
+              + ", текущий статус: "
+              + quest.getStatus());
+    }
+  }
+
+  /**
+   * Проверка содержимого квеста перед публикацией: должен быть хотя бы один Level, и ни один
+   * Level не должен быть "аномальным" (без кодов и без автоперехода) — см. ADR-0005.
+   */
+  private void validateQuestPublishable(Quest quest) {
+    List<Level> levels = levelRepository.findByQuestIdOrderByOrderIndex(quest.getId());
+    if (levels.isEmpty()) {
+      throw new ForbiddenOperationException("Нельзя опубликовать квест без уровней");
+    }
+    for (Level level : levels) {
+      boolean hasAutoTransition = level.getTimeoutSeconds() != null;
+      boolean hasCodes = codeRepository.existsByLevelId(level.getId());
+      if (!hasAutoTransition && !hasCodes) {
+        throw new ForbiddenOperationException(
+            "Уровень \""
+                + level.getTitle()
+                + "\" (id="
+                + level.getId()
+                + ") непроходим: нет ни кодов, ни автоперехода (ADR-0005, \"аномальный\""
+                + " уровень)");
+      }
+    }
+  }
+
+  private void markUnfinishedProgressesAsDnf(Long questId) {
+    List<QuestProgress> progresses = questProgressRepository.findByQuestId(questId);
+    for (QuestProgress progress : progresses) {
+      if (progress.getStatus() != QuestProgressStatus.FINISHED) {
+        progress.setStatus(QuestProgressStatus.DNF);
+      }
+    }
+    questProgressRepository.saveAll(progresses);
   }
 
   // ────── BUILDERS ───────────────────────────────────────────────────────────
