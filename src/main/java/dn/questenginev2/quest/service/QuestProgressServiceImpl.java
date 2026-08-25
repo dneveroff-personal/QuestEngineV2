@@ -211,7 +211,14 @@ public class QuestProgressServiceImpl implements QuestProgressService {
 
     levelProgressService.completeLevel(levelProgressId);
 
-    int nextLevelOrderIdx = levelProgress.getLevel().getOrderIndex() + 1;
+    return advanceAfterLevelCompleted(levelProgress);
+  }
+
+  @Override
+  public QuestProgressResponse advanceAfterLevelCompleted(LevelProgress completedLevelProgress) {
+    QuestProgress questProgress = completedLevelProgress.getQuestProgress();
+
+    int nextLevelOrderIdx = completedLevelProgress.getLevel().getOrderIndex() + 1;
     Level nextLevel =
         levelRepository
             .findByQuestIdAndOrderIndex(questProgress.getQuest().getId(), nextLevelOrderIdx)
@@ -223,6 +230,8 @@ public class QuestProgressServiceImpl implements QuestProgressService {
       return buildQuestProgressResponse(questProgress);
     }
 
+    // ADR-0009: QuestProgress завершается автоматически при завершении последнего уровня —
+    // независимо от способа завершения (CODES/AUTO_TRANSITION), разницы нет.
     questProgress.setStatus(QuestProgressStatus.FINISHED);
     questProgress.setFinishedAt(clock.instant());
     QuestProgress savedQuestProgress = questProgressRepository.save(questProgress);

@@ -74,7 +74,7 @@ public class CodeServiceImpl implements CodeService {
     code.setValue(request.value());
     code.setType(request.type());
     code.setPoints(request.points());
-    code.setGroupIndex(request.groupIndex());
+    code.setCodeIndex(request.codeIndex());
 
     Code savedCode = codeRepository.save(code);
     return buildCodeResponse(savedCode);
@@ -103,19 +103,19 @@ public class CodeServiceImpl implements CodeService {
         .orElseThrow(() -> new IllegalArgumentException("Код не найден: " + codeId));
   }
 
-  private void validateCodeValueUnique(Long LevelId, String codeValue) {
-    if (codeRepository.existsByLevelIdAndValue(LevelId, codeValue)) {
+  private void validateCodeValueUnique(Long levelId, String codeValue) {
+    if (codeRepository.existsByLevelIdAndValue(levelId, codeValue)) {
       throw new IllegalArgumentException("Код уже существует: " + codeValue);
     }
   }
 
   private void validateCodeData(CreateCodeRequest request) {
-    if (request.type() == CodeType.MAIN && request.groupIndex() == null) {
-      throw new IllegalArgumentException("Для MAIN-кода необходимо указать groupIndex");
+    if (request.type() == CodeType.MAIN && request.codeIndex() == null) {
+      throw new IllegalArgumentException("Для MAIN-кода необходимо указать codeIndex");
     }
 
-    if (request.type() != CodeType.MAIN && request.groupIndex() != null) {
-      throw new IllegalArgumentException("groupIndex допускается только для MAIN-кода");
+    if (request.type() != CodeType.MAIN && request.codeIndex() != null) {
+      throw new IllegalArgumentException("codeIndex допускается только для MAIN-кода");
     }
   }
 
@@ -127,7 +127,7 @@ public class CodeServiceImpl implements CodeService {
         .value(code.getValue())
         .type(code.getType())
         .points(code.getPoints())
-        .groupIndex(code.getGroupIndex())
+        .codeIndex(code.getCodeIndex())
         .createdAt(code.getCreatedAt())
         .build();
   }
@@ -139,7 +139,7 @@ public class CodeServiceImpl implements CodeService {
         .value(code.getValue())
         .type(code.getType())
         .points(code.getPoints())
-        .groupIndex(code.getGroupIndex())
+        .codeIndex(code.getCodeIndex())
         .createdAt(code.getCreatedAt())
         .build();
   }
@@ -150,7 +150,7 @@ public class CodeServiceImpl implements CodeService {
         .value(request.value())
         .type(request.type())
         .points(request.points())
-        .groupIndex(request.groupIndex())
+        .codeIndex(request.codeIndex())
         .createdAt(Instant.now())
         .build();
   }

@@ -49,6 +49,7 @@ public final class Routes {
 
   // Quest Progress
   public static final String QUEST_PROGRESS = QUESTS + "/progress";
+  public static final String QUEST_PROGRESS_CODES = QUEST_ID + TEAM_ID + "/codes";
 
   // Hint
   public static final String HINTS = API + "/hints";

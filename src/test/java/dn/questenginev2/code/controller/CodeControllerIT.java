@@ -108,7 +108,7 @@ class CodeControllerIT {
                 .header("Authorization", "Bearer " + authorToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"value\":\"CODE123\",\"type\":\"MAIN\",\"groupIndex\":1,\"points\":100}"))
+                    "{\"value\":\"CODE123\",\"type\":\"MAIN\",\"codeIndex\":1,\"points\":100}"))
         .andExpect(status().isCreated())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.levelId").value(level.getId()))

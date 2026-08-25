@@ -11,5 +11,5 @@ public record CreateCodeRequest(
         @Size(max = 255, message = "Значение кода должно быть не более 255 символов")
         String value,
     @NotNull(message = "Тип кода не может быть пустым") CodeType type,
-    @Min(value = 1, message = "Индекс группы должен быть не менее 1") Integer groupIndex,
+    @Min(value = 1, message = "Индекс кода должен быть не менее 1") Integer codeIndex,
     Integer points) {}

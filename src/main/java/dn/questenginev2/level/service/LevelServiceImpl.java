@@ -62,7 +62,7 @@ public class LevelServiceImpl implements LevelService {
     level.setContent(request.content());
     level.setTimeoutSeconds(request.timeoutSeconds());
     level.setUpdatedAt(Instant.now());
-    level.setRequiredCodesCount(request.requiredMainCodesCount());
+    level.setRequiredMainCodesCount(request.requiredMainCodesCount());
 
     Level savedLevel = levelRepository.save(level);
     return buildLevelResponse(savedLevel);
@@ -99,7 +99,7 @@ public class LevelServiceImpl implements LevelService {
         .title(level.getTitle())
         .orderIndex(level.getOrderIndex())
         .content(level.getContent())
-        .requiredCodesCount(level.getRequiredCodesCount())
+        .requiredMainCodesCount(level.getRequiredMainCodesCount())
         .timeoutSeconds(level.getTimeoutSeconds())
         .createdAt(level.getCreatedAt())
         .updatedAt(level.getUpdatedAt())
@@ -113,7 +113,7 @@ public class LevelServiceImpl implements LevelService {
         .orderIndex(getMaxLevelIndex(quest.getId()) + 1)
         .content(request.content())
         .timeoutSeconds(request.timeoutSeconds())
-        .requiredCodesCount(request.requiredMainCodesCount())
+        .requiredMainCodesCount(request.requiredMainCodesCount())
         .createdAt(Instant.now())
         .updatedAt(Instant.now())
         .build();

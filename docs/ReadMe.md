@@ -146,8 +146,7 @@
 - В проекте нет ни одной библиотеки rate limiting — уязвимо как минимум `/auth/login` (ADR-0016 принят, не реализован).
 - `JwtService` и `GlobalExceptionHandler` не имеют собственных unit-тестов.
 - CORS не требуется по решённой архитектуре (same-origin), но стоит явно проверить конфигурацию reverse-proxy при первом деплое.
-- 🔴 Критично: открытый JDWP debug-порт (5004) в `docker-compose.prod.yml` — см. `roadmap/backlog.md`.
-- `.github/workflows/deploy.yml` в текущем виде не может сработать (ошибка в `if`-условии + неверный путь) — см. `roadmap/backlog.md`.
+- `.github/workflows/deploy.yml` осознанно отключён до продакшена; при включении не забыть поправить `if`-условие + путь `cd` — см. `roadmap/backlog.md`.
 - Текущая аутентификация в коде (`JwtService`, `AuthController`) реализует старую модель (единый JWT на 24ч) — требует переработки под access+refresh (ADR-0015).
 
 Полная таблица соответствия "специфицировано → реализовано" — в `roadmap/backlog.md`.

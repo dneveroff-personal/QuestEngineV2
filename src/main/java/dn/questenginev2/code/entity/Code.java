@@ -28,8 +28,8 @@ public class Code {
   @Column(name = "code_value", nullable = false)
   private String value;
 
-  @Column(name = "group_index")
-  private Integer groupIndex;
+  @Column(name = "code_index")
+  private Integer codeIndex;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "type", nullable = false)

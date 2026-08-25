@@ -255,7 +255,7 @@ class CodeServiceImplTest {
             .value("NEWCODE")
             .type(CodeType.BONUS)
             .points(200)
-            .groupIndex(null)
+            .codeIndex(null)
             .createdAt(Instant.now())
             .build();
     when(codeRepository.save(any(Code.class))).thenReturn(updatedCode);
@@ -265,7 +265,7 @@ class CodeServiceImplTest {
     assertThat(response).isNotNull();
     assertThat(response.getValue()).isEqualTo("NEWCODE");
     assertThat(response.getType()).isEqualTo(CodeType.BONUS);
-    assertThat(response.getGroupIndex()).isNull();
+    assertThat(response.getCodeIndex()).isNull();
     assertThat(response.getPoints()).isEqualTo(200);
 
     verify(codeRepository).save(any(Code.class));

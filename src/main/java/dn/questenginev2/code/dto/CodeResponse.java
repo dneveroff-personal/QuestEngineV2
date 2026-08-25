@@ -18,6 +18,6 @@ public class CodeResponse {
   private String value;
   private CodeType type;
   private Integer points;
-  private Integer groupIndex;
+  private Integer codeIndex;
   private Instant createdAt;
 }
