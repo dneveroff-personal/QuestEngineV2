@@ -9,6 +9,7 @@ import dn.questenginev2.code.entity.CodeSubmission;
 import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
 import dn.questenginev2.level.entity.LevelProgressStatus;
@@ -19,11 +20,14 @@ import dn.questenginev2.quest.entity.QuestProgress;
 import dn.questenginev2.quest.entity.QuestProgressStatus;
 import dn.questenginev2.quest.entity.QuestStatus;
 import dn.questenginev2.quest.entity.QuestType;
+import dn.questenginev2.quest.repository.QuestAuthorRepository;
 import dn.questenginev2.quest.repository.QuestProgressRepository;
+import dn.questenginev2.quest.repository.QuestRegistrationRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
 import dn.questenginev2.team.entity.Team;
 import dn.questenginev2.team.entity.TeamMember;
 import dn.questenginev2.team.entity.TeamRole;
+import dn.questenginev2.team.repository.TeamJoinRequestRepository;
 import dn.questenginev2.team.repository.TeamMemberRepository;
 import dn.questenginev2.team.repository.TeamRepository;
 import dn.questenginev2.user.entity.User;
@@ -59,6 +63,10 @@ class CodeSubmissionControllerIT {
   @Autowired private TeamMemberRepository teamMemberRepository;
   @Autowired private QuestProgressRepository questProgressRepository;
   @Autowired private LevelProgressRepository levelProgressRepository;
+  @Autowired private HintRepository hintRepository;
+  @Autowired private QuestAuthorRepository questAuthorRepository;
+  @Autowired private QuestRegistrationRepository questRegistrationRepository;
+  @Autowired private TeamJoinRequestRepository teamJoinRequestRepository;
   @Autowired private PasswordEncoder passwordEncoder;
 
   private Quest quest;
@@ -73,9 +81,12 @@ class CodeSubmissionControllerIT {
     levelProgressRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();
+    hintRepository.deleteAll();
     levelRepository.deleteAll();
     teamMemberRepository.deleteAll();
     teamRepository.deleteAll();
+    questRegistrationRepository.deleteAll();
+    questAuthorRepository.deleteAll();
     questRepository.deleteAll();
     userRepository.deleteAll();
 

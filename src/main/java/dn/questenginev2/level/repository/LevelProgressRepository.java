@@ -3,6 +3,7 @@ package dn.questenginev2.level.repository;
 import dn.questenginev2.level.entity.LevelProgress;
 import dn.questenginev2.level.entity.LevelProgressStatus;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -16,7 +17,30 @@ public interface LevelProgressRepository extends JpaRepository<LevelProgress, Lo
   Optional<LevelProgress> findByQuestProgressIdAndStatus(
       Long questProgressId, LevelProgressStatus status);
 
+  Optional<LevelProgress> findFirstByQuestProgressIdOrderByOpenedAtDesc(Long questProgressId);
+
   boolean existsByQuestProgressIdAndLevelId(Long questProgressId, Long levelId);
+
+  // Кандидаты на автопереход (03-architecture/scheduling.md, Job 2)
+  List<LevelProgress> findByStatusAndAutoTransitionAtLessThanEqual(
+      LevelProgressStatus status, Instant autoTransitionAt);
+
+  /**
+   * Атомарный переход ACTIVE -> AUTO_TRANSITIONED. Использует то же условие "WHERE status =
+   * ACTIVE", что и {@link #tryCompleteByCodesThreshold}, поэтому корректно разрешает гонку между
+   * Job 2 (эта проверка) и CodeSubmission (завершение кодом) на одном и том же LevelProgress —
+   * см. docs/02-processes/concurrency-scenarios.md, Сценарий 5. Побеждает ровно один из двух
+   * путей. НЕ использовать вместо этого {@link
+   * dn.questenginev2.level.service.LevelProgressService#autoTransitionLevel} — тот метод делает
+   * небезопасный read-then-write и не годится для конкурентного вызова.
+   */
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(
+      value =
+          "UPDATE level_progress SET status = 'AUTO_TRANSITIONED', completed_at = :now "
+              + "WHERE id = :levelProgressId AND status = 'ACTIVE' AND auto_transition_at <= :now",
+      nativeQuery = true)
+  int tryAutoTransition(@Param("levelProgressId") Long levelProgressId, @Param("now") Instant now);
 
   /**
    * Атомарный переход ACTIVE -> COMPLETED, выполняемый только если количество различных решённых
@@ -47,7 +71,7 @@ public interface LevelProgressRepository extends JpaRepository<LevelProgress, Lo
             ) >= :requiredCount
           """,
       nativeQuery = true)
-  int tryCompleteByCodes(
+  int tryCompleteByCodesThreshold(
       @Param("levelProgressId") Long levelProgressId,
       @Param("requiredCount") long requiredCount,
       @Param("now") Instant now);

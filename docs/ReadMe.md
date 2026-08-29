@@ -46,7 +46,7 @@
 |---|---|
 | [quest-lifecycle.md](02-processes/quest-lifecycle.md) | 🟢 |
 | [sequence-diagrams.md](02-processes/sequence-diagrams.md) | 🟢 |
-| [concurrency-scenarios.md](02-processes/concurrency-scenarios.md) — гонки: лимит команд, автостарт, порог кодов под нагрузкой | 🟢 *(6 сценариев, все с решением — ADR-0010 + Сценарий 6 для высокой конкурентной нагрузки ввода кода)* |
+| [concurrency-scenarios.md](02-processes/concurrency-scenarios.md) — гонки: лимит команд, автостарт, порог кодов под нагрузкой | 🟢 *(7 сценариев, 5 из них реализованы и проверены реальными конкурентными тестами)* |
 
 ## 03. Architecture — технические решения
 
@@ -54,7 +54,7 @@
 |---|---|
 | [domain-model.md](03-architecture/domain-model.md) — ER-диаграмма, слои модели | 🟢 |
 | [state-machines.md](03-architecture/state-machines.md) | 🟢 |
-| [scheduling.md](03-architecture/scheduling.md) — механизм автостарта Quest / автоперехода уровней | 🟢 *(модель полностью решена, включая интервал polling — 1 сек; сам механизм ещё не реализован в коде)* |
+| [scheduling.md](03-architecture/scheduling.md) — механизм автостарта Quest / автоперехода уровней | 🟢 *(реализовано — `dn.questenginev2.scheduling`, Job 1/Job 2, интервал 1 сек)* |
 | [adr/](03-architecture/adr/) — architecture decision records | 🟢 *(20 ADR, все Accepted — см. реестр ниже)* |
 
 ## 04. API — контракт

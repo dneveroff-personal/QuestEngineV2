@@ -105,7 +105,7 @@ class CodeSubmissionServiceImplTest {
         .thenReturn(Optional.of(questProgress));
     when(teamMemberRepository.findByUserAndTeam(currentUser, team))
         .thenReturn(Optional.of(TeamMember.builder().id(1L).user(currentUser).team(team).build()));
-    when(levelProgressRepository.findByQuestProgressIdAndStatus(500L, LevelProgressStatus.ACTIVE))
+    when(levelProgressRepository.findFirstByQuestProgressIdOrderByOpenedAtDesc(500L))
         .thenReturn(Optional.of(levelProgress));
     when(clock.instant()).thenReturn(fixedNow);
     when(clock.getZone()).thenReturn(ZoneOffset.UTC);
@@ -131,7 +131,8 @@ class CodeSubmissionServiceImplTest {
 
     assertThat(response.getResult()).isEqualTo(CodeSubmissionResult.INCORRECT);
     assertThat(response.isLevelCompleted()).isFalse();
-    verify(levelProgressRepository, never()).tryCompleteByCodes(anyLong(), anyLong(), any());
+    verify(levelProgressRepository, never())
+        .tryCompleteByCodesThreshold(anyLong(), anyLong(), any());
   }
 
   @Test
@@ -140,7 +141,7 @@ class CodeSubmissionServiceImplTest {
     when(codeRepository.findByLevelIdOrderByCreatedAt(1000L))
         .thenReturn(List.of(mainCode(1L, "SiNiY", 1)));
     when(codeSubmissionRepository.countDistinctSolvedCodeIndexes(2000L)).thenReturn(1L);
-    when(levelProgressRepository.tryCompleteByCodes(2000L, 1L, fixedNow)).thenReturn(1);
+    when(levelProgressRepository.tryCompleteByCodesThreshold(2000L, 1L, fixedNow)).thenReturn(1);
     when(questProgressService.advanceAfterLevelCompleted(any()))
         .thenReturn(QuestProgressResponse.builder().status(QuestProgressStatus.RUNNING).build());
     when(levelProgressRepository.findById(2000L)).thenReturn(Optional.of(levelProgress));
@@ -159,7 +160,7 @@ class CodeSubmissionServiceImplTest {
     when(codeRepository.findByLevelIdOrderByCreatedAt(1000L))
         .thenReturn(List.of(mainCode(1L, "siniy", 1), mainCode(2L, "dekabr", 2)));
     when(codeSubmissionRepository.countDistinctSolvedCodeIndexes(2000L)).thenReturn(1L);
-    when(levelProgressRepository.tryCompleteByCodes(2000L, 2L, fixedNow)).thenReturn(0);
+    when(levelProgressRepository.tryCompleteByCodesThreshold(2000L, 2L, fixedNow)).thenReturn(0);
 
     CodeSubmissionResponse response =
         codeSubmissionService.submitCode(100L, 10L, new SubmitCodeRequest("siniy"), authentication);
@@ -176,7 +177,7 @@ class CodeSubmissionServiceImplTest {
     when(codeRepository.findByLevelIdOrderByCreatedAt(1000L))
         .thenReturn(List.of(mainCode(1L, "siniy", 1)));
     when(codeSubmissionRepository.countDistinctSolvedCodeIndexes(2000L)).thenReturn(1L);
-    when(levelProgressRepository.tryCompleteByCodes(2000L, 1L, fixedNow)).thenReturn(1);
+    when(levelProgressRepository.tryCompleteByCodesThreshold(2000L, 1L, fixedNow)).thenReturn(1);
     when(levelProgressRepository.findById(2000L)).thenReturn(Optional.of(levelProgress));
     when(questProgressService.advanceAfterLevelCompleted(levelProgress))
         .thenReturn(QuestProgressResponse.builder().status(QuestProgressStatus.FINISHED).build());
@@ -199,7 +200,8 @@ class CodeSubmissionServiceImplTest {
 
     assertThat(response.getResult()).isEqualTo(CodeSubmissionResult.CORRECT_BONUS);
     assertThat(response.isLevelCompleted()).isFalse();
-    verify(levelProgressRepository, never()).tryCompleteByCodes(anyLong(), anyLong(), any());
+    verify(levelProgressRepository, never())
+        .tryCompleteByCodesThreshold(anyLong(), anyLong(), any());
   }
 
   @Test
@@ -229,7 +231,7 @@ class CodeSubmissionServiceImplTest {
 
   @Test
   void submitCode_throwsForbiddenOperationException_whenNoActiveLevelProgress() {
-    when(levelProgressRepository.findByQuestProgressIdAndStatus(500L, LevelProgressStatus.ACTIVE))
+    when(levelProgressRepository.findFirstByQuestProgressIdOrderByOpenedAtDesc(500L))
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(
@@ -272,7 +274,7 @@ class CodeSubmissionServiceImplTest {
     CodeSubmissionResponse response =
         codeSubmissionService.submitCode(100L, 10L, new SubmitCodeRequest("siniy"), authentication);
 
-    verify(levelProgressRepository).tryCompleteByCodes(2000L, 2L, fixedNow);
+    verify(levelProgressRepository).tryCompleteByCodesThreshold(2000L, 2L, fixedNow);
     assertThat(response.getRemainingMainCodes()).isEqualTo(1);
   }
 }

@@ -13,11 +13,11 @@
 | Level CRUD | 🟢 `01-domain/level.md` | 🔵 | `level/` — CRUD реализован. Поля `codeIndex` (ADR-0005), `requiredMainCodesCount` — ещё не добавлены |
 | Team, Captain, membership | 🟢 `01-domain/team.md` | 🔵 | `team/` реализован |
 | QuestRegistration (заявки команд) | 🟢 `01-domain/registration.md` | 🔵 | `quest/` registration flow |
-| **Автоматический старт Quest** (Job 1) | 🟢 `01-domain/progress.md`, ADR-002 | ⚪ | Планировщик не реализован — см. `03-architecture/scheduling.md` |
+| **Автоматический старт Quest** (Job 1) | 🟢 `01-domain/progress.md`, ADR-002 | 🔵 | `QuestStartScheduler` — реализовано, атомарный переход + Сценарий 7 (гонка с `approveTeam`) |
 | **Публикация Quest** (`DRAFT → REGISTRATION`) | 🟢 `02-processes/quest-lifecycle.md` шаг 3 | 🔵 | `POST /api/quests/{id}/publish` — реализовано: проверка статуса DRAFT, валидация "аномальных" уровней (ADR-0005), unit+controller+IT тесты |
 | Завершение Quest автором (`RUNNING → FINISHED`) | 🟢 `02-processes/quest-lifecycle.md` шаг 13 | 🔵 | `POST /api/quests/{id}/finish` — реализовано: проверка статуса RUNNING, незавершённые QuestProgress получают DNF, unit+controller+IT тесты |
-| **Оркестрация завершения уровня / перехода / завершения QuestProgress** | 🟢 ADR-0009 | 🟡 | `LevelProgressServiceImpl.completeLevel()` + `QuestProgressServiceImpl.completeLevel()` уже реализованы и **уже корректно следуют ADR-0009** (без разбора между CODES/AUTO_TRANSITION). Не вызывается ни из контроллера, ни из планировщика — только напрямую из теста |
-| `autoTransitionLevel()` (Job 2 building block) | 🟡 `03-architecture/scheduling.md` | 🟡 | Метод реализован в `LevelProgressServiceImpl`, но нигде не вызывается (нет планировщика) |
+| **Автопереход уровня** (Job 2) | 🟢 `03-architecture/scheduling.md` | 🔵 | `LevelAutoTransitionScheduler` — реализовано, атомарный переход, разрешает Сценарий 5 (гонка с CodeSubmission), проверено реальным IT-тестом гонки |
+| **Оркестрация завершения уровня / перехода / завершения QuestProgress** | 🟢 ADR-0009 | 🔵 | `advanceAfterLevelCompleted()` переиспользуется `CodeSubmission` и Job 2 |
 | Hint — редактирование автором | 🟢 | 🔵 | `hint/service` — CRUD реализован. Поля `type`, `bonusPenaltySeconds` (ADR-0020) — не добавлены |
 | **Hint — auto-reveal показ во время игры (HintProgress)** | 🟢 `01-domain/hint-progress.md`, ADR-0020 | ⚪ | Не начато |
 | Code — редактирование автором | 🟢 | 🔵 | `code/service` — CRUD реализован. Уникальность в пределах Level (ADR-0004) и поле `codeIndex` (ADR-0005) реализованы (`0.5.18`) |
@@ -41,7 +41,7 @@
 0. ✅ **Реализовать эндпоинты публикации и завершения Quest** (`DRAFT → REGISTRATION`, `RUNNING → FINISHED`) — реализовано.
 1. ✅ **Закрыть найденную уязвимость в проде: открытый JDWP debug-порт** — закрыто (порт убран из `docker-compose.prod.yml`).
 2. ✅ Реализовать `CodeSubmission` по модели ADR-0005 — реализовано (`V13__create_code_submissions_table.sql`, атомарный порог, unit+controller+IT+конкурентный тест). Начисление эффекта BONUS/PENALTY к итоговому времени — отдельно, п. 6.
-3. Спроектировать и реализовать `Job 1`/`Job 2` из `03-architecture/scheduling.md`, подключив уже готовую оркестрацию `completeLevel()`/`advanceAfterLevelCompleted()`.
+3. ✅ Спроектировать и реализовать `Job 1`/`Job 2` из `03-architecture/scheduling.md` — реализовано (`dn.questenginev2.scheduling`, атомарные переходы, Сценарии 5 и 7, IT-тест реальной гонки Job2 vs CodeSubmission).
 4. Закрыть подтверждённые гонки в `approveTeam()` и `enterQuest()` (ADR-0010).
 5. Реализовать `HintProgress` (auto-reveal, ADR-0020) — включая добавление полей `Hint.type`/`bonusPenaltySeconds`.
 6. Реализовать три источника Bonus/Penalty (ADR-0007) — `ManualTimeAdjustment`, эффект кода, эффект подсказки.
@@ -62,7 +62,7 @@
 - **🔴 JDWP debug-порт (5004) в `docker-compose.prod.yml`** — **✅ Исправлено в `0.5.18`**: проброс порта наружу убран. Сам debug-агент в `Dockerfile` пока остаётся общим для local/prod (порт просто не пробрасывается наружу через compose) — разделение Dockerfile на local/prod варианты остаётся желательным улучшением, но не критичным, раз порт больше не достижим извне.
 - `docker-compose.prod.yml` пробрасывает наружу порт PostgreSQL (`5432`) — обычно не нужно в проде, если приложение обращается к БД через внутреннюю docker-сеть; лишняя поверхность атаки.
 - `.github/workflows/deploy.yml` **осознанно отключён** автором до выхода в продакшен (`# ВЫКЛЮЧЕН ДО МОМЕНТА ВЫХОДА В ПРОДАКШЕН`, `workflow_run`-триггер закомментирован, оставлен только ручной `workflow_dispatch`) — правильное решение на этом этапе. **При последующем включении** не забыть также поправить: условие `if: ${{ github.event.workflow_run.conclusion == 'success' }}` всегда ложно при ручном запуске (`github.event.workflow_run` не существует для `workflow_dispatch`) — если просто раскомментировать `workflow_run`-триггер, ручной запуск через `workflow_dispatch` продолжит молча пропускать деплой. Строка `cd ~/ts-wc-scores` (путь от другого проекта) уже закомментирована — при включении нужно заменить на актуальный путь, а не просто раскомментировать.
-- `LevelProgressServiceImpl.autoTransitionLevel()` реализован, но нигде не вызывается — заготовка под Job 2 планировщика, которую можно переиспользовать при реализации `scheduling.md`.
+- `LevelProgressServiceImpl.autoTransitionLevel()` помечен `@Deprecated` — небезопасен для конкурентного вызова (Сценарий 5), планировщик использует новый атомарный `LevelProgressRepository.tryAutoTransition` напрямую. Метод оставлен для обратной совместимости существующих тестов.
 
 ## Статус документации
 

@@ -15,3 +15,6 @@ spring:
 jwt:
   secret: OMGItsQuestEngineV2JWTSuperSecureTokenMadeByDN
   expiration: 86400000
+
+scheduling:
+  enabled: false

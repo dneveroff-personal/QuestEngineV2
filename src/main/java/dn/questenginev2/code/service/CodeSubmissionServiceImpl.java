@@ -27,6 +27,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @Transactional
+@AllArgsConstructor
 public class CodeSubmissionServiceImpl implements CodeSubmissionService {
 
   private final CodeSubmissionRepository codeSubmissionRepository;
@@ -70,25 +72,6 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
         Clock.systemUTC());
   }
 
-  public CodeSubmissionServiceImpl(
-      CodeSubmissionRepository codeSubmissionRepository,
-      CodeRepository codeRepository,
-      QuestProgressRepository questProgressRepository,
-      LevelProgressRepository levelProgressRepository,
-      TeamMemberRepository teamMemberRepository,
-      QuestProgressService questProgressService,
-      UserService userService,
-      Clock clock) {
-    this.codeSubmissionRepository = codeSubmissionRepository;
-    this.codeRepository = codeRepository;
-    this.questProgressRepository = questProgressRepository;
-    this.levelProgressRepository = levelProgressRepository;
-    this.teamMemberRepository = teamMemberRepository;
-    this.questProgressService = questProgressService;
-    this.userService = userService;
-    this.clock = clock;
-  }
-
   @Override
   public CodeSubmissionResponse submitCode(
       Long questId, Long teamId, SubmitCodeRequest request, Authentication auth) {
@@ -99,7 +82,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
 
     LevelProgress levelProgress =
         levelProgressRepository
-            .findByQuestProgressIdAndStatus(questProgress.getId(), LevelProgressStatus.ACTIVE)
+            .findFirstByQuestProgressIdOrderByOpenedAtDesc(questProgress.getId())
             .orElseThrow(
                 () ->
                     new ForbiddenOperationException(
@@ -128,10 +111,12 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
     boolean levelCompleted = false;
     boolean questFinished = false;
 
-    if (result == CodeSubmissionResult.CORRECT_MAIN) {
+    if (result == CodeSubmissionResult.CORRECT_MAIN
+        && levelProgress.getStatus() == LevelProgressStatus.ACTIVE) {
       long requiredCount = resolveRequiredCount(level, levelCodes);
       int updatedRows =
-          levelProgressRepository.tryCompleteByCodes(levelProgress.getId(), requiredCount, now);
+          levelProgressRepository.tryCompleteByCodesThreshold(
+              levelProgress.getId(), requiredCount, now);
 
       if (updatedRows == 1) {
         levelCompleted = true;
@@ -213,13 +198,11 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
     if (totalMainCodes == 0) {
       return null;
     }
-
     long required =
         level.getRequiredMainCodesCount() != null
             ? level.getRequiredMainCodesCount()
             : totalMainCodes;
     long solved = codeSubmissionRepository.countDistinctSolvedCodeIndexes(levelProgressId);
-
     return (int) Math.max(0, required - solved);
   }
 

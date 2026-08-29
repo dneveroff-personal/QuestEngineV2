@@ -5,10 +5,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import dn.questenginev2.code.repository.CodeRepository;
+import dn.questenginev2.code.repository.CodeSubmissionRepository;
 import dn.questenginev2.config.containers.BaseIntegrationTest;
 import dn.questenginev2.hint.repository.HintRepository;
+import dn.questenginev2.level.repository.LevelProgressRepository;
 import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.repository.QuestAuthorRepository;
+import dn.questenginev2.quest.repository.QuestProgressRepository;
+import dn.questenginev2.quest.repository.QuestRegistrationRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
 import dn.questenginev2.team.dto.CreateTeamRequest;
 import dn.questenginev2.team.entity.Team;
@@ -43,6 +47,14 @@ class TeamControllerIT extends BaseIntegrationTest {
 
   @Autowired private CodeRepository codeRepository;
 
+  @Autowired private CodeSubmissionRepository codeSubmissionRepository;
+
+  @Autowired private LevelProgressRepository levelProgressRepository;
+
+  @Autowired private QuestProgressRepository questProgressRepository;
+
+  @Autowired private QuestRegistrationRepository questRegistrationRepository;
+
   @Autowired private QuestRepository questRepository;
 
   private User testUser;
@@ -50,9 +62,13 @@ class TeamControllerIT extends BaseIntegrationTest {
 
   @BeforeEach
   void setUp() throws Exception {
+    codeSubmissionRepository.deleteAll();
+    levelProgressRepository.deleteAll();
+    questProgressRepository.deleteAll();
     teamJoinRequestRepository.deleteAll();
     teamMemberRepository.deleteAll();
     teamRepository.deleteAll();
+    questRegistrationRepository.deleteAll();
     questAuthorRepository.deleteAll();
     codeRepository.deleteAll();
     hintRepository.deleteAll();

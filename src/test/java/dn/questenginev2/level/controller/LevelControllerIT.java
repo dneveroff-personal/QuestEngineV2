@@ -4,14 +4,21 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import dn.questenginev2.code.repository.CodeRepository;
+import dn.questenginev2.code.repository.CodeSubmissionRepository;
 import dn.questenginev2.hint.repository.HintRepository;
+import dn.questenginev2.level.repository.LevelProgressRepository;
 import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.entity.Quest;
 import dn.questenginev2.quest.entity.QuestAuthor;
 import dn.questenginev2.quest.entity.QuestStatus;
 import dn.questenginev2.quest.entity.QuestType;
 import dn.questenginev2.quest.repository.QuestAuthorRepository;
+import dn.questenginev2.quest.repository.QuestProgressRepository;
+import dn.questenginev2.quest.repository.QuestRegistrationRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
+import dn.questenginev2.team.repository.TeamJoinRequestRepository;
+import dn.questenginev2.team.repository.TeamMemberRepository;
+import dn.questenginev2.team.repository.TeamRepository;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.repository.UserRepository;
@@ -42,6 +49,20 @@ class LevelControllerIT {
 
   @Autowired private CodeRepository codeRepository;
 
+  @Autowired private CodeSubmissionRepository codeSubmissionRepository;
+
+  @Autowired private LevelProgressRepository levelProgressRepository;
+
+  @Autowired private QuestProgressRepository questProgressRepository;
+
+  @Autowired private QuestRegistrationRepository questRegistrationRepository;
+
+  @Autowired private TeamRepository teamRepository;
+
+  @Autowired private TeamMemberRepository teamMemberRepository;
+
+  @Autowired private TeamJoinRequestRepository teamJoinRequestRepository;
+
   @Autowired private PasswordEncoder passwordEncoder;
 
   private User authorUser;
@@ -49,10 +70,17 @@ class LevelControllerIT {
 
   @BeforeEach
   void setUp() throws Exception {
+    codeSubmissionRepository.deleteAll();
+    levelProgressRepository.deleteAll();
+    questProgressRepository.deleteAll();
     codeRepository.deleteAll();
     hintRepository.deleteAll();
     levelRepository.deleteAll();
+    questRegistrationRepository.deleteAll();
     questAuthorRepository.deleteAll();
+    teamMemberRepository.deleteAll();
+    teamJoinRequestRepository.deleteAll();
+    teamRepository.deleteAll();
     questRepository.deleteAll();
     userRepository.deleteAll();
 
