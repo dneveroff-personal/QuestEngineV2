@@ -14,6 +14,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -60,11 +61,6 @@ public class LevelProgressServiceImpl implements LevelProgressService {
 
     validateLevelBelongsToQuest(level, questId);
 
-    if (levelProgressRepository.existsByQuestProgressIdAndLevelId(
-        questProgress.getId(), level.getId())) {
-      throw new ForbiddenOperationException("Уровень уже был сыгран этой командой");
-    }
-
     Instant openedAt = clock.instant();
     Instant autoTransitionAt = null;
     Integer timeOutTime = level.getTimeoutSeconds();
@@ -93,8 +89,20 @@ public class LevelProgressServiceImpl implements LevelProgressService {
             .autoTransitionAt(autoTransitionAt)
             .build();
 
-    LevelProgress saved = levelProgressRepository.save(levelProgress);
-    return buildLevelProgressResponse(saved);
+    // ADR-0010, Сценарий 2 (concurrency-scenarios.md): вместо read-then-write проверки "уже
+    // создан" перед вставкой — полагаемся на уникальный индекс (quest_progress_id, level_id) как
+    // источник истины и обрабатываем его нарушение идемпотентно (двойной клик, повтор запроса
+    // сетью — ожидаемый случай, не ошибка).
+    try {
+      LevelProgress saved = levelProgressRepository.saveAndFlush(levelProgress);
+      return buildLevelProgressResponse(saved);
+    } catch (DataIntegrityViolationException alreadyCreatedConcurrently) {
+      LevelProgress existing =
+          levelProgressRepository
+              .findByQuestProgressIdAndLevelId(questProgress.getId(), level.getId())
+              .orElseThrow(() -> alreadyCreatedConcurrently);
+      return buildLevelProgressResponse(existing);
+    }
   }
 
   @Override
@@ -110,11 +118,6 @@ public class LevelProgressServiceImpl implements LevelProgressService {
     }
 
     Level nextLevel = level.get();
-
-    if (levelProgressRepository.existsByQuestProgressIdAndLevelId(
-        questProgress.getId(), nextLevel.getId())) {
-      throw new ForbiddenOperationException("Уровень уже был сыгран этой командой");
-    }
 
     Instant openedAt = clock.instant();
     Instant autoTransitionAt = null;
@@ -135,8 +138,19 @@ public class LevelProgressServiceImpl implements LevelProgressService {
             .autoTransitionAt(autoTransitionAt)
             .build();
 
-    LevelProgress saved = levelProgressRepository.save(levelProgress);
-    return buildLevelProgressResponse(saved);
+    // См. createFirstLevelProgress() — тот же идемпотентный паттерн (ADR-0010, Сценарий 2):
+    // уникальный индекс (quest_progress_id, level_id) как источник истины вместо
+    // read-then-write проверки перед вставкой.
+    try {
+      LevelProgress saved = levelProgressRepository.saveAndFlush(levelProgress);
+      return buildLevelProgressResponse(saved);
+    } catch (DataIntegrityViolationException alreadyCreatedConcurrently) {
+      LevelProgress existing =
+          levelProgressRepository
+              .findByQuestProgressIdAndLevelId(questProgress.getId(), nextLevel.getId())
+              .orElseThrow(() -> alreadyCreatedConcurrently);
+      return buildLevelProgressResponse(existing);
+    }
   }
 
   @Override

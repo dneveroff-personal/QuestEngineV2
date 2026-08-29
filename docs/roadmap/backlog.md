@@ -42,7 +42,7 @@
 1. ✅ **Закрыть найденную уязвимость в проде: открытый JDWP debug-порт** — закрыто (порт убран из `docker-compose.prod.yml`).
 2. ✅ Реализовать `CodeSubmission` по модели ADR-0005 — реализовано (`V13__create_code_submissions_table.sql`, атомарный порог, unit+controller+IT+конкурентный тест). Начисление эффекта BONUS/PENALTY к итоговому времени — отдельно, п. 6.
 3. ✅ Спроектировать и реализовать `Job 1`/`Job 2` из `03-architecture/scheduling.md` — реализовано (`dn.questenginev2.scheduling`, атомарные переходы, Сценарии 5 и 7, IT-тест реальной гонки Job2 vs CodeSubmission).
-4. Закрыть подтверждённые гонки в `approveTeam()` и `enterQuest()` (ADR-0010).
+4. ✅ Закрыть подтверждённые гонки в `approveTeam()` и `enterQuest()` (ADR-0010) — реализовано: пессимистичная блокировка (`findByIdForUpdate`) в `approveTeam`, идемпотентный `saveAndFlush`+catch в `createFirstLevelProgress`/`createNextLevelProgress`. Проверено реальными конкурентными IT-тестами (`ApproveTeamRaceIT`).
 5. Реализовать `HintProgress` (auto-reveal, ADR-0020) — включая добавление полей `Hint.type`/`bonusPenaltySeconds`.
 6. Реализовать три источника Bonus/Penalty (ADR-0007) — `ManualTimeAdjustment`, эффект кода, эффект подсказки.
 7. Развести семантику HTTP-статусов ошибок (ADR-0011), добавить `PageResponse<T>` (ADR-0012).

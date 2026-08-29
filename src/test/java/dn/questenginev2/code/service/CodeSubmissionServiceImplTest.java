@@ -105,7 +105,7 @@ class CodeSubmissionServiceImplTest {
         .thenReturn(Optional.of(questProgress));
     when(teamMemberRepository.findByUserAndTeam(currentUser, team))
         .thenReturn(Optional.of(TeamMember.builder().id(1L).user(currentUser).team(team).build()));
-    when(levelProgressRepository.findFirstByQuestProgressIdOrderByOpenedAtDesc(500L))
+    when(levelProgressRepository.findByQuestProgressIdAndStatus(500L, LevelProgressStatus.ACTIVE))
         .thenReturn(Optional.of(levelProgress));
     when(clock.instant()).thenReturn(fixedNow);
     when(clock.getZone()).thenReturn(ZoneOffset.UTC);
@@ -231,7 +231,7 @@ class CodeSubmissionServiceImplTest {
 
   @Test
   void submitCode_throwsForbiddenOperationException_whenNoActiveLevelProgress() {
-    when(levelProgressRepository.findFirstByQuestProgressIdOrderByOpenedAtDesc(500L))
+    when(levelProgressRepository.findByQuestProgressIdAndStatus(500L, LevelProgressStatus.ACTIVE))
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(

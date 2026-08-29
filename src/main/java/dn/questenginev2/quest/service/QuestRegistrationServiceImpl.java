@@ -190,7 +190,13 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
   }
 
   private void validateApprovedTeamsLimit(Long questId) {
-    Quest quest = validateQuestExist(questId);
+    // ADR-0010, Сценарий 1: пессимистичная блокировка строки Quest сериализует конкурентные
+    // approveTeam() для одного и того же Quest — без неё count-then-check пропускает гонку
+    // (две параллельные заявки на последнее место обе проходят проверку).
+    Quest quest =
+        questRepository
+            .findByIdForUpdate(questId)
+            .orElseThrow(() -> new IllegalArgumentException("Квест не найден: " + questId));
     long approvedCount =
         questRegistrationRepository.countByQuestIdAndStatus(questId, RegistrationStatus.APPROVED);
 

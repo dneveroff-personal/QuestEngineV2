@@ -17,8 +17,6 @@ public interface LevelProgressRepository extends JpaRepository<LevelProgress, Lo
   Optional<LevelProgress> findByQuestProgressIdAndStatus(
       Long questProgressId, LevelProgressStatus status);
 
-  Optional<LevelProgress> findFirstByQuestProgressIdOrderByOpenedAtDesc(Long questProgressId);
-
   boolean existsByQuestProgressIdAndLevelId(Long questProgressId, Long levelId);
 
   // Кандидаты на автопереход (03-architecture/scheduling.md, Job 2)

@@ -79,7 +79,6 @@ class LevelProgressServiceImplTest {
     Instant enteredAt = Instant.parse("2024-01-01T21:30:00Z"); // 21:30
 
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
-    when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
 
     LevelProgress saved =
         LevelProgress.builder()
@@ -90,7 +89,7 @@ class LevelProgressServiceImplTest {
             .openedAt(enteredAt)
             .autoTransitionAt(Instant.parse("2024-01-01T22:00:00Z"))
             .build();
-    when(levelProgressRepository.save(any(LevelProgress.class))).thenReturn(saved);
+    when(levelProgressRepository.saveAndFlush(any(LevelProgress.class))).thenReturn(saved);
 
     LevelProgressResponse response = levelProgressService.createFirstLevelProgress(questProgress);
 
@@ -106,7 +105,6 @@ class LevelProgressServiceImplTest {
     Instant enteredAt = Instant.parse("2024-01-01T22:30:00Z"); // 22:30
 
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
-    when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
 
     LevelProgress saved =
         LevelProgress.builder()
@@ -118,7 +116,7 @@ class LevelProgressServiceImplTest {
             .completedAt(enteredAt)
             .autoTransitionAt(Instant.parse("2024-01-01T22:00:00Z"))
             .build();
-    when(levelProgressRepository.save(any(LevelProgress.class))).thenReturn(saved);
+    when(levelProgressRepository.saveAndFlush(any(LevelProgress.class))).thenReturn(saved);
 
     LevelProgressResponse response = levelProgressService.createFirstLevelProgress(questProgress);
 
@@ -130,14 +128,26 @@ class LevelProgressServiceImplTest {
   }
 
   @Test
-  void createFirstLevelProgress_throwsForbiddenOperationException_whenLevelAlreadyPlayed() {
+  void createFirstLevelProgress_returnsExisting_whenAlreadyCreatedConcurrently() {
+    // ADR-0010, Сценарий 2: конкурентный вызов уже создал LevelProgress — идемпотентный успех,
+    // а не ошибка. saveAndFlush бросает нарушение уникального индекса, мы перехватываем и
+    // возвращаем уже существующую запись.
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
-    when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(true);
+    when(levelProgressRepository.saveAndFlush(any()))
+        .thenThrow(new org.springframework.dao.DataIntegrityViolationException("duplicate"));
+    LevelProgress existingProgress =
+        LevelProgress.builder()
+            .id(99L)
+            .questProgress(questProgress)
+            .level(level1)
+            .status(LevelProgressStatus.ACTIVE)
+            .build();
+    when(levelProgressRepository.findByQuestProgressIdAndLevelId(1L, 1L))
+        .thenReturn(Optional.of(existingProgress));
 
-    assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(questProgress))
-        .isInstanceOf(ForbiddenOperationException.class)
-        .hasMessageContaining("уже был сыгран");
+    LevelProgressResponse response = levelProgressService.createFirstLevelProgress(questProgress);
 
+    assertThat(response).isNotNull();
     verify(levelProgressRepository, never()).save(any());
   }
 
@@ -457,10 +467,9 @@ class LevelProgressServiceImplTest {
             .build();
 
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(levelNoTimeout));
-    when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
 
     ArgumentCaptor<LevelProgress> captor = ArgumentCaptor.forClass(LevelProgress.class);
-    when(levelProgressRepository.save(captor.capture()))
+    when(levelProgressRepository.saveAndFlush(captor.capture()))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     LevelProgressResponse response = levelProgressService.createFirstLevelProgress(questProgress);
@@ -485,11 +494,10 @@ class LevelProgressServiceImplTest {
     Instant openedAt = autoTransitionAt; // exactly at deadline
 
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
-    when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
     when(clock.instant()).thenReturn(openedAt);
 
     ArgumentCaptor<LevelProgress> captor = ArgumentCaptor.forClass(LevelProgress.class);
-    when(levelProgressRepository.save(captor.capture()))
+    when(levelProgressRepository.saveAndFlush(captor.capture()))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     LevelProgressResponse response = levelProgressService.createFirstLevelProgress(questProgress);
@@ -514,12 +522,11 @@ class LevelProgressServiceImplTest {
     Instant openedAt = autoTransitionAt.plusSeconds(30); // 22:00:30, after deadline
 
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
-    when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
 
     when(clock.instant()).thenReturn(openedAt);
 
     ArgumentCaptor<LevelProgress> captor = ArgumentCaptor.forClass(LevelProgress.class);
-    when(levelProgressRepository.save(captor.capture()))
+    when(levelProgressRepository.saveAndFlush(captor.capture()))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     LevelProgressResponse response = levelProgressService.createFirstLevelProgress(questProgress);
@@ -541,10 +548,9 @@ class LevelProgressServiceImplTest {
         QuestProgress.builder().id(1L).quest(quest).questStartedAt(questStartedAt).build();
 
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(level1));
-    when(levelProgressRepository.existsByQuestProgressIdAndLevelId(1L, 1L)).thenReturn(false);
 
     ArgumentCaptor<LevelProgress> captor = ArgumentCaptor.forClass(LevelProgress.class);
-    when(levelProgressRepository.save(captor.capture()))
+    when(levelProgressRepository.saveAndFlush(captor.capture()))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     levelProgressService.createFirstLevelProgress(questProgress);
@@ -552,5 +558,62 @@ class LevelProgressServiceImplTest {
     LevelProgress saved = captor.getValue();
     // autoTransitionAt should be questStartedAt + timeoutSeconds (3600s) = 22:00:00Z
     assertThat(saved.getAutoTransitionAt()).isEqualTo(questStartedAt.plusSeconds(3600));
+  }
+
+  // ────── CREATE NEXT LEVEL PROGRESS ────────────────────────────────────────────
+
+  @Test
+  void createNextLevelProgress_returnsNull_whenNoMoreLevels() {
+    when(levelRepository.findByQuestIdAndOrderIndex(1L, 2)).thenReturn(Optional.empty());
+
+    LevelProgressResponse response =
+        levelProgressService.createNextLevelProgress(questProgress, 2);
+
+    assertThat(response).isNull();
+  }
+
+  @Test
+  void createNextLevelProgress_createsActiveProgress_whenNextLevelExists() {
+    Level level2 =
+        Level.builder().id(2L).quest(quest).title("Level 2").orderIndex(2).timeoutSeconds(1800).build();
+    when(levelRepository.findByQuestIdAndOrderIndex(1L, 2)).thenReturn(Optional.of(level2));
+
+    ArgumentCaptor<LevelProgress> captor = ArgumentCaptor.forClass(LevelProgress.class);
+    when(levelProgressRepository.saveAndFlush(captor.capture()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    LevelProgressResponse response =
+        levelProgressService.createNextLevelProgress(questProgress, 2);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(LevelProgressStatus.ACTIVE);
+    assertThat(captor.getValue().getLevel()).isEqualTo(level2);
+  }
+
+  @Test
+  void createNextLevelProgress_returnsExisting_whenAlreadyCreatedConcurrently() {
+    // ADR-0010, Сценарий 2 (то же самое, что и для первого уровня): двойной вызов
+    // advanceAfterLevelCompleted() (например, из-за гонки Job 2 vs CodeSubmission, если
+    // защита на уровне LevelProgress почему-либо не сработала бы) не должен приводить к ошибке.
+    Level level2 =
+        Level.builder().id(2L).quest(quest).title("Level 2").orderIndex(2).timeoutSeconds(1800).build();
+    when(levelRepository.findByQuestIdAndOrderIndex(1L, 2)).thenReturn(Optional.of(level2));
+    when(levelProgressRepository.saveAndFlush(any()))
+        .thenThrow(new org.springframework.dao.DataIntegrityViolationException("duplicate"));
+    LevelProgress existingProgress =
+        LevelProgress.builder()
+            .id(100L)
+            .questProgress(questProgress)
+            .level(level2)
+            .status(LevelProgressStatus.ACTIVE)
+            .build();
+    when(levelProgressRepository.findByQuestProgressIdAndLevelId(1L, 2L))
+        .thenReturn(Optional.of(existingProgress));
+
+    LevelProgressResponse response =
+        levelProgressService.createNextLevelProgress(questProgress, 2);
+
+    assertThat(response).isNotNull();
+    verify(levelProgressRepository, never()).save(any());
   }
 }

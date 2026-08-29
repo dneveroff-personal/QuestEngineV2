@@ -42,6 +42,8 @@ private void validateApprovedTeamsLimit(Long questId) {
 
 **Рекомендация**: пессимистичная блокировка через `SELECT ... FOR UPDATE` на строку `Quest` — самое простое и понятное решение, оправданное тем, что подтверждение заявок — не hot path (не сотни запросов в секунду), а разовое административное действие автора.
 
+**Статус реализации**: решено — `QuestRepository.findByIdForUpdate` (`@Lock(PESSIMISTIC_WRITE)`), используется в `QuestRegistrationServiceImpl.validateApprovedTeamsLimit`. Проверено реальным конкурентным IT-тестом (`ApproveTeamRaceIT` — 10 потоков одновременно подтверждают заявки при лимите 3, итог всегда ровно 3 `APPROVED`).
+
 ---
 
 ## Сценарий 2 — Двойной вход команды в Quest (двойное создание первого LevelProgress)
@@ -57,7 +59,6 @@ private void validateApprovedTeamsLimit(Long questId) {
 ```java
 validateProgressWaiting(progress);       // читает status
 progress.setStatus(RUNNING);             // пишет status
-...
 levelProgressService.createFirstLevelProgress(savedProgress.getId());
 ```
 
@@ -66,6 +67,8 @@ levelProgressService.createFirstLevelProgress(savedProgress.getId());
 **Смягчающий фактор**: `V12__create_level_progress_table.sql` содержит `UNIQUE (quest_progress_id, level_id)` — второй `INSERT` физически упадёт на уровне БД. Это **предотвращает дублирование данных**, но не даёт корректный пользовательский результат — второй запрос получит необработанное исключение ограничения БД, а не осмысленный ответ вроде «уже начали» или идемпотентно тот же результат, что и первый запрос.
 
 **Требуемое решение**: обернуть создание первого `LevelProgress` в обработку constraint violation → при перехвате возвращать уже существующий прогресс (то есть трактовать «уже начали» как успех, а не ошибку) — это правильная идемпотентная семантика для операции «войти в игру», где повторный вызов ожидаем (двойной клик, повтор запроса сетью).
+
+**Статус реализации**: решено — `LevelProgressServiceImpl.createFirstLevelProgress`/`createNextLevelProgress` используют `saveAndFlush` + перехват `DataIntegrityViolationException`, возвращая существующую запись вместо ошибки. Проверено unit-тестами (`LevelProgressServiceImplTest`).
 
 ---
 

@@ -82,7 +82,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
 
     LevelProgress levelProgress =
         levelProgressRepository
-            .findFirstByQuestProgressIdOrderByOpenedAtDesc(questProgress.getId())
+            .findByQuestProgressIdAndStatus(questProgress.getId(), LevelProgressStatus.ACTIVE)
             .orElseThrow(
                 () ->
                     new ForbiddenOperationException(
@@ -111,8 +111,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
     boolean levelCompleted = false;
     boolean questFinished = false;
 
-    if (result == CodeSubmissionResult.CORRECT_MAIN
-        && levelProgress.getStatus() == LevelProgressStatus.ACTIVE) {
+    if (result == CodeSubmissionResult.CORRECT_MAIN) {
       long requiredCount = resolveRequiredCount(level, levelCodes);
       int updatedRows =
           levelProgressRepository.tryCompleteByCodesThreshold(

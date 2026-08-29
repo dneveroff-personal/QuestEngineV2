@@ -297,6 +297,7 @@ class QuestRegistrationServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
     when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
+    when(questRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(quest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
 
     QuestRegistration registration =
@@ -349,7 +350,7 @@ class QuestRegistrationServiceImplTest {
   void approveTeam_throwsForbiddenOperationException_whenLimitReached() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
-    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
+    when(questRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(quest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
 
     QuestRegistration registration =
