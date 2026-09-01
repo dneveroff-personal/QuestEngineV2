@@ -10,8 +10,30 @@ permissions:
   packages: write
 
 jobs:
-  build:
+  # Определяет, какая часть монорепозитория менялась — чтобы коммит,
+  # трогающий только backend, не пересобирал и не публиковал новый образ
+  # frontend без необходимости, и наоборот.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'src/**'
+              - 'build.gradle.kts'
+              - 'Dockerfile'
+            frontend:
+              - 'frontend/**'
 
+  build-backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -89,3 +111,63 @@ jobs:
         with:
           name: test-report
           path: build/reports/tests
+
+  build-frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # --passWithNoTests: временно, пока не написан первый тест
+      # (docs/frontend/testing-strategy.md). Убрать флаг, когда появятся
+      # первые component-тесты — тогда отсутствие тестов должно ронять сборку.
+      - name: Test
+        run: npm run test -- --run --passWithNoTests
+
+      - name: Type-check & build
+        run: npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read version
+        id: version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Set lowercase repository name
+        run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}-frontend:${{ steps.version.outputs.VERSION }}
+            ghcr.io/${{ env.REPO_LOWER }}-frontend:latest

@@ -30,7 +30,8 @@ jobs:
             set -e
             echo "🚀 Starting deployment..."
 
-#            cd ~/ts-wc-scores
+            # !!! Change host app path below and uncomment !!! 
+            # cd ~/ts-wc-scores
 
             echo "📥 Pulling latest image..."
             docker compose -f docker-compose.prod.yml pull

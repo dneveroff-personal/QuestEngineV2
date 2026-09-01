@@ -20,6 +20,14 @@ Frontend-документация читается вместе с корнев�
 | [user-flows.md](user-flows.md) — пользовательские сценарии | 🟢 |
 | [testing-strategy.md](testing-strategy.md) — уровни тестов, MSW как основа разработки против неготового backend, DoD | 🟡 *(порог покрытия и CI — открытые вопросы)* |
 
+## Деплой
+
+Frontend разворачивается как отдельный Docker-образ (nginx + собранная
+статика), за общим reverse-proxy с backend — решение и вся топология
+зафиксированы в `../08-ops/deployment.md`. Локально `npm run dev`
+дополнительно проксирует `/api` и `/auth` на backend через
+`vite.config.ts`, чтобы same-origin выполнялся и в dev-режиме.
+
 ## Состояние реализации
 
 Frontend-код (`frontend/`) на данный момент — bootstrap-стадия: зависимости

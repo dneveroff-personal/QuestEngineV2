@@ -1,5 +1,7 @@
 # Quest Engine V2 (host-build)
 # Workflow: ./gradlew clean build -x test → docker compose -f docker-compose.local.yml up -d --build
+# Frontend собирается тем же up --build (frontend/Dockerfile — Node build + nginx serve).
+# Открыть приложение: http://localhost:8081 (не 5173 — это порт `npm run dev`, не контейнера)
 services:
 
   postgres:
@@ -41,6 +43,22 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_RESET_SECRET: ${ADMIN_RESET_SECRET}
+    networks:
+      - qe-v2-network
+    restart: unless-stopped
+
+  # Frontend отдаётся через nginx: статика + reverse proxy /api и /auth
+  # на app (docs/08-ops/deployment.md). Локально собирается из исходников
+  # — для прода см. docker-compose.prod.yml (готовый образ из registry).
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: qe-v2-frontend
+    ports:
+      - "8081:80"
+    depends_on:
+      - app
     networks:
       - qe-v2-network
     restart: unless-stopped

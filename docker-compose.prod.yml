@@ -1,5 +1,6 @@
-# Quest Engine V2 (host-build)
-# Workflow: ./gradlew clean build -x test → docker compose -f docker-compose.local.yml up -d --build
+# Quest Engine V2 (registry image)
+# Deploy: docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
+# Публичный вход — только frontend/nginx (порт 80). app доступен только внутри docker-сети.
 services:
 
   postgres:
@@ -27,8 +28,11 @@ services:
   app:
     image: ghcr.io/dneveroff-personal/questenginev2:${VERSION}
     container_name: qe-v2-app
-    ports:
-      - "8080:8080"
+    # Порт НЕ публикуется на хост намеренно — единственная публичная точка
+    # входа теперь frontend/nginx (см. ниже и docs/08-ops/deployment.md).
+    # app доступен другим сервисам сети только как app:8080.
+    expose:
+      - "8080"
     depends_on:
       - postgres
     environment:
@@ -38,6 +42,21 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_RESET_SECRET: ${ADMIN_RESET_SECRET}
+    networks:
+      - qe-v2-network
+    restart: unless-stopped
+
+  # Единственная публично открытая точка входа — см. docs/08-ops/deployment.md.
+  # app:8080 сознательно не публикуется наружу напрямую в проде — весь
+  # внешний трафик (и статика, и /api, и /auth) идёт через nginx, это и
+  # обеспечивает same-origin без CORS (threat-model.md).
+  frontend:
+    image: ghcr.io/dneveroff-personal/questenginev2-frontend:${FRONTEND_VERSION:-latest}
+    container_name: qe-v2-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - app
     networks:
       - qe-v2-network
     restart: unless-stopped

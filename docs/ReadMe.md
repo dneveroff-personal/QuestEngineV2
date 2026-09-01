@@ -88,6 +88,7 @@
 | Документ | Статус |
 |---|---|
 | [actuator.md](08-ops/actuator.md) | 🔵 |
+| [deployment.md](08-ops/deployment.md) — топология nginx + app + frontend, same-origin без CORS, раздельные образы | 🟢 *(закрывает открытый пункт CORS из 05-security/threat-model.md)* |
 
 ## Roadmap
 
