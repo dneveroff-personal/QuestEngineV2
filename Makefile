@@ -30,7 +30,7 @@ up:
 
 status:
 	@echo "$(YELLOW)Containers Status"
-	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Size}}"
 
 ## SHow last 100 rows of set CONTAINER (C)
 logs:
