@@ -13,5 +13,4 @@ public record CreateHintRequest(
         @Min(value = 0, message = "Задержка должна быть не менее 0 секунд")
         Integer delaySeconds,
     @NotBlank(message = "Содержимое подсказки не может быть пустым")
-        @Size(max = 2048, message = "Содержимое подсказки должно быть не более 2048 символов")
         String content) {}

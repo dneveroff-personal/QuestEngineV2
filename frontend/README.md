@@ -1,32 +1,34 @@
-# React + TypeScript + Vite
+# QuestEngine — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + TypeScript + Vite + TanStack Query + Tailwind CSS + shadcn/ui.
 
-Currently, two official plugins are available:
+Архитектурные и продуктовые решения задокументированы отдельно и являются
+источником истины — этот файл только про то, как запустить проект локально:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- [`../docs/frontend/architecture.md`](../docs/frontend/architecture.md) — технологии, слои, границы features, HTTP-клиент, SSE, формы.
+- [`../docs/frontend/design-system.md`](../docs/frontend/design-system.md) — визуальный язык, semantic tokens.
+- [`../docs/frontend/information-architecture.md`](../docs/frontend/information-architecture.md) — разделы приложения.
+- [`../docs/frontend/screens.md`](../docs/frontend/screens.md) — конкретные экраны.
+- [`../docs/frontend/user-flows.md`](../docs/frontend/user-flows.md) — пользовательские сценарии.
+- [`../docs/frontend/testing-strategy.md`](../docs/frontend/testing-strategy.md) — уровни тестов, MSW, Definition of Done.
 
-## React Compiler
+## Запуск
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Другие команды
+
+```bash
+npm run build     # tsc -b && vite build
+npm run lint       # oxlint
+npm run test        # vitest
+npm run test:e2e     # playwright test
+```
+
+## Состояние
+
+Актуальный статус реализации (что готово на backend, что заблокировано) —
+`../docs/roadmap/backlog.md`.
