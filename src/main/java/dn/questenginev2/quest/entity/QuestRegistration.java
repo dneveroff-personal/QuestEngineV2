@@ -39,5 +39,6 @@ public class QuestRegistration {
   private Instant createdAt = Instant.now();
 
   @Column(name = "updated_at", nullable = false)
-  private Instant updatedAt;
+  @Builder.Default
+  private Instant updatedAt = Instant.now();
 }

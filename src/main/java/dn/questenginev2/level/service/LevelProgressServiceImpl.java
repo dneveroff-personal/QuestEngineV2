@@ -8,7 +8,6 @@ import dn.questenginev2.level.entity.LevelProgressStatus;
 import dn.questenginev2.level.repository.LevelProgressRepository;
 import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.entity.QuestProgress;
-import dn.questenginev2.quest.repository.QuestProgressRepository;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.Instant;
@@ -23,25 +22,20 @@ public class LevelProgressServiceImpl implements LevelProgressService {
 
   private final LevelProgressRepository levelProgressRepository;
   private final LevelRepository levelRepository;
-  private final QuestProgressRepository questProgressRepository;
   private final Clock clock;
 
   @Autowired
   public LevelProgressServiceImpl(
-      LevelProgressRepository levelProgressRepository,
-      LevelRepository levelRepository,
-      QuestProgressRepository questProgressRepository) {
-    this(levelProgressRepository, levelRepository, questProgressRepository, Clock.systemUTC());
+      LevelProgressRepository levelProgressRepository, LevelRepository levelRepository) {
+    this(levelProgressRepository, levelRepository, Clock.systemUTC());
   }
 
   public LevelProgressServiceImpl(
       LevelProgressRepository levelProgressRepository,
       LevelRepository levelRepository,
-      QuestProgressRepository questProgressRepository,
       Clock clock) {
     this.levelProgressRepository = levelProgressRepository;
     this.levelRepository = levelRepository;
-    this.questProgressRepository = questProgressRepository;
     this.clock = clock;
   }
 

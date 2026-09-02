@@ -13,6 +13,7 @@ Frontend-документация читается вместе с корнев�
 
 | Документ | Статус |
 |---|---|
+| [roadmap.md](roadmap.md) — что готово, что можно делать сейчас, что ждёт backend | 🟢 *(основной документ по состоянию реализации)* |
 | [architecture.md](architecture.md) — технологический стек, слои, API-клиент, SSE, формы, границы features | 🟢 |
 | [design-system.md](design-system.md) — цвета, типографика, spacing, компоненты | 🟢 |
 | [information-architecture.md](information-architecture.md) — разделы приложения, роли, навигация | 🟢 |
@@ -30,10 +31,11 @@ Frontend разворачивается как отдельный Docker-обр�
 
 ## Состояние реализации
 
-Frontend-код (`frontend/`) на данный момент — bootstrap-стадия: зависимости
-и shadcn/ui подключены, но `src/` не содержит кода приложения (нет
-`main.tsx`/`App.tsx`). Актуальное состояние — в `roadmap/backlog.md`
-(корневой).
+Подробно — в [roadmap.md](roadmap.md). Коротко: Auth-шелл (Login/Register/
+ProtectedRoute) реализован и работает против реального backend. Экраны
+Quest/Team/Author-CRUD не блокируются backend — можно реализовывать сразу.
+Game Mode и Statistics полностью заблокированы (соответствующие
+backend-механики не реализованы).
 
 ## Известная зависимость от backend
 

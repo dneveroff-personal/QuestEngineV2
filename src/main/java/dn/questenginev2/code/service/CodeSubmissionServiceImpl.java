@@ -83,6 +83,10 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
     LevelProgress levelProgress =
         levelProgressRepository
             .findByQuestProgressIdAndStatus(questProgress.getId(), LevelProgressStatus.ACTIVE)
+            .or(
+                () ->
+                    levelProgressRepository.findTopByQuestProgressIdOrderByIdDesc(
+                        questProgress.getId()))
             .orElseThrow(
                 () ->
                     new ForbiddenOperationException(
