@@ -408,7 +408,7 @@ ADR-0015): access token живёт 15 минут, refresh — хранится �
   │
   ├── нет → вернуть ответ как есть
   │
-  └── да → POST /auth/refresh
+  └── да → POST /api/auth/refresh
               │
               ├── успех → сохранить новый access token
               │             → повторить исходный запрос один раз

@@ -1,5 +1,7 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/features/auth";
 import { cn } from "@/lib/utils";
 
 /**
@@ -14,10 +16,23 @@ const NAV_ITEMS = [
   { to: "/team", label: "Команда" },
   { to: "/profile", label: "Профиль" },
   // AUTHOR-пункт добавляется условно, по роли пользователя —
-  // architecture.md §14, Authorization и Role-based UI.
+  // architecture.md §14, Authorization и Role-based UI. Backend пока не
+  // отдаёт роли в LoginResponse — добавить, когда появится (roadmap/backlog.md).
 ];
 
 export function RootLayout() {
+  const { publicName, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    // TODO(ADR-0015): когда появится POST /api/auth/logout — вызвать его
+    // здесь (отзыв refresh-токена на backend), прежде чем очищать локальную
+    // сессию. Сейчас backend не хранит состояние сессии — logout только
+    // локальный.
+    logout();
+    navigate("/login", { replace: true });
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-border">
@@ -40,6 +55,11 @@ export function RootLayout() {
                 {item.label}
               </NavLink>
             ))}
+            <span className="text-border">|</span>
+            <span className="text-sm text-muted-foreground">{publicName}</span>
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
+              Выйти
+            </Button>
           </nav>
         </div>
       </header>

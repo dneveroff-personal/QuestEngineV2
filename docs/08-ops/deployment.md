@@ -32,7 +32,7 @@
           ┌─────────────┼─────────────┐
           │                            │
    отдаёт статику              proxy_pass
-   (index.html, /assets/)      /api/*, /auth/*
+   (index.html, /assets/)      /api/* (включая /api/auth/*)
           │                            │
           ▼                            ▼
    собранный React SPA          app:8080 (Spring Boot)
@@ -68,7 +68,8 @@ Frontend и backend — **два независимых Docker-образа**, �
 (`localhost:8080`, отдельно) технически разные origin, даже на одной
 машине. Same-origin из `threat-model.md` действует только за общим nginx
 в проде — в dev-режиме это решено иначе: `vite.config.ts` содержит
-`server.proxy` для `/api` и `/auth`, зеркалирующий маршрутизацию
+`server.proxy` для `/api` (auth-эндпоинты живут внутри `/api/auth/*`, не
+требуют отдельного правила), зеркалирующий маршрутизацию
 `nginx.conf`. С точки зрения браузера запросы всё равно идут на
 `localhost:5173`, Vite сам проксирует их на backend — CORS не нужен ни в
 dev, ни в проде, ни на одном из двух уровней (Vite proxy и prod nginx)

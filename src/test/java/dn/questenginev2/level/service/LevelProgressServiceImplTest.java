@@ -566,7 +566,8 @@ class LevelProgressServiceImplTest {
   void createNextLevelProgress_returnsNull_whenNoMoreLevels() {
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 2)).thenReturn(Optional.empty());
 
-    LevelProgressResponse response = levelProgressService.createNextLevelProgress(questProgress, 2);
+    LevelProgressResponse response =
+        levelProgressService.createNextLevelProgress(questProgress, 2);
 
     assertThat(response).isNull();
   }
@@ -574,20 +575,15 @@ class LevelProgressServiceImplTest {
   @Test
   void createNextLevelProgress_createsActiveProgress_whenNextLevelExists() {
     Level level2 =
-        Level.builder()
-            .id(2L)
-            .quest(quest)
-            .title("Level 2")
-            .orderIndex(2)
-            .timeoutSeconds(1800)
-            .build();
+        Level.builder().id(2L).quest(quest).title("Level 2").orderIndex(2).timeoutSeconds(1800).build();
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 2)).thenReturn(Optional.of(level2));
 
     ArgumentCaptor<LevelProgress> captor = ArgumentCaptor.forClass(LevelProgress.class);
     when(levelProgressRepository.saveAndFlush(captor.capture()))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    LevelProgressResponse response = levelProgressService.createNextLevelProgress(questProgress, 2);
+    LevelProgressResponse response =
+        levelProgressService.createNextLevelProgress(questProgress, 2);
 
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(LevelProgressStatus.ACTIVE);
@@ -600,13 +596,7 @@ class LevelProgressServiceImplTest {
     // advanceAfterLevelCompleted() (например, из-за гонки Job 2 vs CodeSubmission, если
     // защита на уровне LevelProgress почему-либо не сработала бы) не должен приводить к ошибке.
     Level level2 =
-        Level.builder()
-            .id(2L)
-            .quest(quest)
-            .title("Level 2")
-            .orderIndex(2)
-            .timeoutSeconds(1800)
-            .build();
+        Level.builder().id(2L).quest(quest).title("Level 2").orderIndex(2).timeoutSeconds(1800).build();
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 2)).thenReturn(Optional.of(level2));
     when(levelProgressRepository.saveAndFlush(any()))
         .thenThrow(new org.springframework.dao.DataIntegrityViolationException("duplicate"));
@@ -620,7 +610,8 @@ class LevelProgressServiceImplTest {
     when(levelProgressRepository.findByQuestProgressIdAndLevelId(1L, 2L))
         .thenReturn(Optional.of(existingProgress));
 
-    LevelProgressResponse response = levelProgressService.createNextLevelProgress(questProgress, 2);
+    LevelProgressResponse response =
+        levelProgressService.createNextLevelProgress(questProgress, 2);
 
     assertThat(response).isNotNull();
     verify(levelProgressRepository, never()).save(any());

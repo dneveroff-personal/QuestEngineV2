@@ -1,7 +1,9 @@
 import { createBrowserRouter } from "react-router-dom";
 
 import { RootLayout } from "@/app/layouts/RootLayout";
+import { ProtectedRoute } from "@/app/router/ProtectedRoute";
 import { LoginPage } from "@/pages/auth/LoginPage";
+import { RegisterPage } from "@/pages/auth/RegisterPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ProfilePage } from "@/pages/profile/ProfilePage";
 import { HomePage } from "@/pages/quests/HomePage";
@@ -24,8 +26,16 @@ export const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
+    path: "/register",
+    element: <RegisterPage />,
+  },
+  {
     path: "/",
-    element: <RootLayout />,
+    element: (
+      <ProtectedRoute>
+        <RootLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <HomePage /> },
       { path: "quests/:questId", element: <QuestDetailPage /> },

@@ -25,7 +25,7 @@ Frontend-документация читается вместе с корнев�
 Frontend разворачивается как отдельный Docker-образ (nginx + собранная
 статика), за общим reverse-proxy с backend — решение и вся топология
 зафиксированы в `../08-ops/deployment.md`. Локально `npm run dev`
-дополнительно проксирует `/api` и `/auth` на backend через
+дополнительно проксирует `/api` (включая `/api/auth/*`) на backend через
 `vite.config.ts`, чтобы same-origin выполнялся и в dev-режиме.
 
 ## Состояние реализации
@@ -39,7 +39,7 @@ Frontend-код (`frontend/`) на данный момент — bootstrap-ст�
 
 Часть экранов (игровой режим, статистика) блокируется неготовыми
 backend-эндпоинтами (`CodeSubmission` runtime, `HintProgress`,
-`statistics/`, `POST /auth/refresh`) — см. `04-api/endpoints.md` и
+`statistics/`, `POST /api/auth/refresh`) — см. `04-api/endpoints.md` и
 `roadmap/backlog.md`. Рекомендуемый порядок реализации frontend начинается
 с экранов, у которых backend уже готов (Quest, Team, Registration), и
 использует MSW-моки (`testing-strategy.md`) там, где backend ещё не
