@@ -196,7 +196,11 @@ public class TeamServiceImpl implements TeamService {
         .map(
             m ->
                 new TeamMemberDto(
-                    m.getId(), m.getUser().getUsername(), m.getRole(), m.getJoinedAt()))
+                    m.getId(),
+                    m.getUser().getId(),
+                    m.getUser().getUsername(),
+                    m.getRole(),
+                    m.getJoinedAt()))
         .collect(Collectors.toList());
   }
 

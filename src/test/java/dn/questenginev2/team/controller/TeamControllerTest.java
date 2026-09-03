@@ -45,7 +45,7 @@ class TeamControllerTest {
         new TeamResponse(1L, "Test Team", "Test User", Instant.now(), Collections.emptyList());
     joinResponse =
         new TeamJoinResponse(1L, "requester", JoinRequestType.JOIN_REQUEST, Instant.now());
-    memberDto = new TeamMemberDto(1L, "member", TeamRole.MEMBER, Instant.now());
+    memberDto = new TeamMemberDto(1L, 1L, "member", TeamRole.MEMBER, Instant.now());
   }
 
   @Test
