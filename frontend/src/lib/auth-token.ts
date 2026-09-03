@@ -17,9 +17,22 @@
  * (например, до монтирования компонентов).
  */
 
+import { decodeJwtPayload } from "@/lib/jwt";
+
 export interface AuthSession {
   token: string;
   publicName: string;
+  /**
+   * Из JWT (`sub`), не из LoginResponse — LoginResponse отдаёт только
+   * publicName, а вся Team-модель на backend оперирует username
+   * (TeamResponse.captainName, TeamMemberDto.name — оба
+   * `User.getUsername()`, не `getPublicName()`). Без этого поля
+   * невозможно было бы понять "это я?" в списке участников команды —
+   * см. features/teams/TeamMembersList.tsx.
+   */
+  username: string | null;
+  /** Из JWT (`role`) — только для UI (см. lib/jwt.ts). */
+  role: string | null;
 }
 
 let session: AuthSession | null = null;
@@ -33,8 +46,14 @@ export function getSession(): AuthSession | null {
   return session;
 }
 
-export function setSession(next: AuthSession): void {
-  session = next;
+export function setSession(token: string, publicName: string): void {
+  const payload = decodeJwtPayload(token);
+  session = {
+    token,
+    publicName,
+    username: payload?.sub ?? null,
+    role: payload?.role ?? null,
+  };
   notify();
 }
 

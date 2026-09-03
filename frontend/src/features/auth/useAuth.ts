@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-import { clearSession, getSession, setSession, subscribe } from "@/lib/auth-token";
+import { clearSession, getSession, subscribe } from "@/lib/auth-token";
 
 /**
  * Реактивная обёртка над module-singleton из lib/auth-token.ts.
@@ -16,7 +16,10 @@ export function useAuth() {
   return {
     isAuthenticated: session !== null,
     publicName: session?.publicName ?? null,
-    setSession,
+    /** Из JWT (`sub`) — см. lib/auth-token.ts. Нужен для сверки "это я?" в списках Team. */
+    username: session?.username ?? null,
+    /** Из JWT (`role`) — только для UI, не для авторизации (см. lib/jwt.ts). */
+    role: session?.role ?? null,
     logout: clearSession,
   };
 }

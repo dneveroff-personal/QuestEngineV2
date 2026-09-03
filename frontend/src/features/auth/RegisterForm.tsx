@@ -32,7 +32,7 @@ export function RegisterForm() {
     onSuccess: (response) => {
       // Регистрация сразу авторизует (backend возвращает LoginResponse) —
       // отдельного шага "теперь войдите" не требуется.
-      setSession({ token: response.token, publicName: response.publicName });
+      setSession(response.token, response.publicName);
       navigate("/", { replace: true });
     },
     onError: (error) => {

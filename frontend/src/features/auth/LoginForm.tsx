@@ -28,7 +28,7 @@ export function LoginForm() {
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: (response) => {
-      setSession({ token: response.token, publicName: response.publicName });
+      setSession(response.token, response.publicName);
       navigate("/", { replace: true });
     },
     onError: (error) => {
