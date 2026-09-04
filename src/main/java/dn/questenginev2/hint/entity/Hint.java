@@ -36,6 +36,14 @@ public class Hint {
   @Column(name = "content", nullable = false)
   private String content;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "type", nullable = false)
+  private HintType type;
+
+  // Требуется для BONUS/PENALTY, недопустимо для REGULAR (см. HintServiceImpl.validateHintData).
+  @Column(name = "bonus_penalty_seconds")
+  private Integer bonusPenaltySeconds;
+
   @Builder.Default
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();

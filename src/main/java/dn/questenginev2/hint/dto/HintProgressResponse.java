@@ -11,15 +11,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class HintResponse {
+public class HintProgressResponse {
 
-  private Long id;
-  private Long levelId;
+  private Long hintId;
   private Integer orderIndex;
-  private Integer delaySeconds;
   private String content;
   private HintType type;
   private Integer bonusPenaltySeconds;
-  private Instant createdAt;
-  private Instant updatedAt;
+  private Instant shownAt;
 }

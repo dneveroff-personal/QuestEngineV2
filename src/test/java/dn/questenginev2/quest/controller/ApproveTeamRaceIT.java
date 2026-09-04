@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.repository.LevelProgressRepository;
 import dn.questenginev2.level.repository.LevelRepository;
@@ -62,6 +63,8 @@ class ApproveTeamRaceIT {
   @Autowired private QuestProgressRepository questProgressRepository;
   @Autowired private LevelProgressRepository levelProgressRepository;
   @Autowired private LevelRepository levelRepository;
+  @Autowired private HintProgressRepository hintProgressRepository;
+
   @Autowired private HintRepository hintRepository;
   @Autowired private CodeRepository codeRepository;
   @Autowired private CodeSubmissionRepository codeSubmissionRepository;
@@ -77,6 +80,7 @@ class ApproveTeamRaceIT {
   @BeforeEach
   void setUp() throws Exception {
     codeSubmissionRepository.deleteAll();
+    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();

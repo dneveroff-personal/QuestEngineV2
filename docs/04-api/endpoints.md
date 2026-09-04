@@ -91,6 +91,8 @@
 | GET | `/quests/progress/{questId}/{teamId}` | 🔵 |
 | GET | `/quests/progress/{questId}` | 🔵 |
 | PUT | `/quests/progress/{questId}/{teamId}/finish` | 🟡 *(ручной override для форс-мажорных случаев — основной путь завершения теперь автоматический, ADR-0009)* |
+| POST | `/quests/progress/{questId}/{teamId}/codes` | 🔵 *(CodeSubmission, см. `code-submission.md`)* |
+| GET | `/quests/progress/{questId}/{teamId}/hints` | 🔵 *(показанные подсказки команды, auto-reveal, ADR-0020)* |
 | **DNF endpoint** | — | ⚪ Метод `setDnf()` существует в сервисе, но **не выведен ни в один контроллер** — вызвать через API невозможно. |
 
 ---
@@ -116,7 +118,7 @@ CRUD автором — см. `01-domain/hint-progress.md`. Игровая ме�
 | Метод | Путь | Статус |
 |---|---|---|
 | POST / GET / PUT / DELETE | (CRUD) | 🔵 *(только редактирование автором)* |
-| **Открытие подсказки командой** | — | ⚪ Не реализовано, см. `hint-progress.md` |
+| **Показ подсказки командой (auto-reveal)** | — | 🔵 Реализовано через Job 3 (`HintRevealScheduler`), не отдельный HTTP-эндпоинт для триггера — команда узнаёт о показанных подсказках через `GET /api/quests/progress/{questId}/{teamId}/hints` |
 
 ---
 

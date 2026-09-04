@@ -1,13 +1,14 @@
 # Scheduling — автоматизация по времени
 
-Статус: 🟢 Accepted, Implemented. Job 1 (`QuestStartScheduler`) и Job 2 (`LevelAutoTransitionScheduler`) реализованы в пакете `dn.questenginev2.scheduling` — `@Scheduled(fixedDelay = 1000)`, single-instance (ShedLock отложен, см. ниже). Отключается в тестах (`scheduling.enabled=false`), чтобы не мешать остальным `@SpringBootTest`.
+Статус: 🟢 Accepted, Implemented. Job 1 (`QuestStartScheduler`), Job 2 (`LevelAutoTransitionScheduler`) и Job 3 (`HintRevealScheduler`) реализованы в пакете `dn.questenginev2.scheduling` — `@Scheduled(fixedDelay = 1000)`, single-instance (ShedLock отложен, см. ниже). Отключается в тестах (`scheduling.enabled=false`), чтобы не мешать остальным `@SpringBootTest`.
 
 ## Назначение
 
-В движке есть два независимых процесса, управляемых **временем**, а не действием пользователя — то, что в описании Encounter называется «игра идёт сама», без нажатия кнопок:
+В движке есть три независимых процесса, управляемых **временем**, а не действием пользователя — то, что в описании Encounter называется «игра идёт сама», без нажатия кнопок:
 
 1. **Старт Quest** — переход `REGISTRATION → RUNNING` в момент `Quest.startTime`.
 2. **Автопереход уровня** — переход `LevelProgress.ACTIVE → AUTO_TRANSITIONED` в момент `LevelProgress.autoTransitionAt`.
+3. **Auto-reveal подсказки** — показ `Hint` команде в момент `LevelProgress.openedAt + Hint.delaySeconds` (ADR-0020).
 
 Оба процесса должны срабатывать **без участия автора или команды** — иначе вся идея честного игрового времени (ADR-002) не работает.
 
@@ -56,6 +57,22 @@
 ### Идемпотентность
 
 Аналогично Job 1: переход статуса через условный UPDATE (`WHERE status='ACTIVE'`), создание следующего `LevelProgress` защищено уникальным индексом `(quest_progress_id, level_id)` (`V12__create_level_progress_table.sql`).
+
+---
+
+## Job 3 — Hint Auto-Reveal (реализовано)
+
+`01-domain/hint-progress.md`, ADR-0020.
+
+### Триггер
+Для каждого `LevelProgress.status == ACTIVE`, для каждой подсказки его уровня: `LevelProgress.openedAt + Hint.delaySeconds <= now()` и подсказка ещё не показана.
+
+### Действие
+`HintRevealScheduler.revealDueHints()`: находит все `LevelProgress` в статусе `ACTIVE`, для каждого — подсказки уровня, для каждой ещё не показанной и с истёкшей задержкой создаёт `HintProgress`.
+
+### Отличие от Job 1/Job 2
+
+Здесь **нет конкурирующего пути** — показ подсказки не может произойти никаким другим способом, кроме этого планировщика (в отличие от Job 2, который конкурирует с `CodeSubmission` за один и тот же `LevelProgress`, Сценарий 5). Идемпотентность обеспечивается уникальным индексом `(level_progress_id, hint_id)` и перехватом нарушения — defense-in-depth, а не разрешение гонки между двумя разными путями.
 
 ---
 

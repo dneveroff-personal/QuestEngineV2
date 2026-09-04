@@ -36,9 +36,29 @@ class HintControllerTest {
 
   @BeforeEach
   void setUp() {
-    hintResponse = new HintResponse(1L, 1L, 1, 30, "Hint content", Instant.now(), Instant.now());
+    hintResponse =
+        new HintResponse(
+            1L,
+            1L,
+            1,
+            30,
+            "Hint content",
+            dn.questenginev2.hint.entity.HintType.REGULAR,
+            null,
+            Instant.now(),
+            Instant.now());
 
-    hintResponse2 = new HintResponse(2L, 1L, 2, 60, "Hint content 2", Instant.now(), Instant.now());
+    hintResponse2 =
+        new HintResponse(
+            2L,
+            1L,
+            2,
+            60,
+            "Hint content 2",
+            dn.questenginev2.hint.entity.HintType.REGULAR,
+            null,
+            Instant.now(),
+            Instant.now());
   }
 
   @Test
@@ -50,7 +70,9 @@ class HintControllerTest {
         .perform(
             post("/api/quests/1/levels/1/hints")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"orderIndex\":1,\"delaySeconds\":30,\"content\":\"Hint content\"}"))
+                .content(
+                    "{\"orderIndex\":1,\"delaySeconds\":30,\"content\":\"Hint"
+                        + " content\",\"type\":\"REGULAR\"}"))
         .andExpect(status().isCreated())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").value(1))
@@ -70,7 +92,9 @@ class HintControllerTest {
         .perform(
             post("/api/quests/1/levels/1/hints")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"orderIndex\":1,\"delaySeconds\":30,\"content\":\"Hint content\"}"))
+                .content(
+                    "{\"orderIndex\":1,\"delaySeconds\":30,\"content\":\"Hint"
+                        + " content\",\"type\":\"REGULAR\"}"))
         .andExpect(status().isConflict())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title", is("Forbidden Operation")));

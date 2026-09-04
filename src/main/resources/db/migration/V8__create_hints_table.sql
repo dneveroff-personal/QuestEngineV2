@@ -1,9 +1,11 @@
 CREATE TABLE hints (
-                         id              BIGSERIAL PRIMARY KEY,
-                         level_id        BIGINT           NOT NULL,
+                         id              BIGSERIAL       PRIMARY KEY,
+                         level_id        BIGINT          NOT NULL,
                          order_idx       INTEGER         NOT NULL,
                          delay_seconds   INTEGER         NOT NULL,
                          content         TEXT            NOT NULL,
+                         type            VARCHAR(20)     NOT NULL,
+                         bonus_penalty_seconds INTEGER,
                          created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                          updated_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

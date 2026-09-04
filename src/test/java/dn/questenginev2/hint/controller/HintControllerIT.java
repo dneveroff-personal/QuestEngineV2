@@ -50,6 +50,8 @@ class HintControllerIT {
 
   @Autowired private HintRepository hintRepository;
 
+  @Autowired private dn.questenginev2.hint.repository.HintProgressRepository hintProgressRepository;
+
   @Autowired private CodeRepository codeRepository;
 
   @Autowired private CodeSubmissionRepository codeSubmissionRepository;
@@ -74,6 +76,7 @@ class HintControllerIT {
   @BeforeEach
   void setUp() throws Exception {
     codeSubmissionRepository.deleteAll();
+    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();
@@ -138,7 +141,9 @@ class HintControllerIT {
             post("/api/quests/" + quest.getId() + "/levels/" + level.getId() + "/hints")
                 .header("Authorization", "Bearer " + authorToken)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"orderIndex\":1,\"delaySeconds\":30,\"content\":\"Hint content\"}"))
+                .content(
+                    "{\"orderIndex\":1,\"delaySeconds\":30,\"content\":\"Hint"
+                        + " content\",\"type\":\"REGULAR\"}"))
         .andExpect(status().isCreated())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.levelId").value(level.getId()))
@@ -168,7 +173,13 @@ class HintControllerIT {
     level = levelRepository.save(level);
 
     Hint hint =
-        Hint.builder().level(level).orderIndex(1).delaySeconds(30).content("Hint content").build();
+        Hint.builder()
+            .level(level)
+            .orderIndex(1)
+            .delaySeconds(30)
+            .content("Hint content")
+            .type(dn.questenginev2.hint.entity.HintType.REGULAR)
+            .build();
     hintRepository.save(hint);
 
     mockMvc

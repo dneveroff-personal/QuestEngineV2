@@ -19,7 +19,7 @@
 | **Автопереход уровня** (Job 2) | 🟢 `03-architecture/scheduling.md` | 🔵 | `LevelAutoTransitionScheduler` — реализовано, атомарный переход, разрешает Сценарий 5 (гонка с CodeSubmission), проверено реальным IT-тестом гонки |
 | **Оркестрация завершения уровня / перехода / завершения QuestProgress** | 🟢 ADR-0009 | 🔵 | `advanceAfterLevelCompleted()` переиспользуется `CodeSubmission` и Job 2 |
 | Hint — редактирование автором | 🟢 | 🔵 | `hint/service` — CRUD реализован. Поля `type`, `bonusPenaltySeconds` (ADR-0020) — не добавлены |
-| **Hint — auto-reveal показ во время игры (HintProgress)** | 🟢 `01-domain/hint-progress.md`, ADR-0020 | ⚪ | Не начато |
+| **Hint — auto-reveal показ во время игры (HintProgress)** | 🟢 `01-domain/hint-progress.md`, ADR-0020 | 🔵 | Реализовано: `Hint.type`/`bonusPenaltySeconds` (миграция V14), `HintProgress` (auto-reveal), Job 3 (`HintRevealScheduler`), `GET .../hints` для команды. Начисление эффекта BONUS/PENALTY к итоговому времени — вне scope, см. п. 6 |
 | Code — редактирование автором | 🟢 | 🔵 | `code/service` — CRUD реализован. Уникальность в пределах Level (ADR-0004) и поле `codeIndex` (ADR-0005) реализованы (`0.5.18`) |
 | **Code — ввод командой во время игры (CodeSubmission)** | 🟢 `01-domain/code-submission.md`, ADR-0005 | 🔵 | Реализовано: `CodeSubmission` (аудит попыток), атомарный condition-UPDATE для порога (Сценарий 6, частичный индекс), нормализация (регистр+пробелы), BONUS/PENALTY фиксируются в аудите (эффект — отдельная фича, п. 6). Unit+controller+IT тесты, включая реальный конкурентный тест на 30 потоков |
 | **Bonus/Penalty Time** | 🟢 `01-domain/bonus-penalty.md`, ADR-0007 | ⚪ | Ни один из трёх источников (manual/code/hint) не реализован |
@@ -44,7 +44,7 @@
 2. ✅ Реализовать `CodeSubmission` по модели ADR-0005 — реализовано (`V13__create_code_submissions_table.sql`, атомарный порог, unit+controller+IT+конкурентный тест). Начисление эффекта BONUS/PENALTY к итоговому времени — отдельно, п. 6.
 3. ✅ Спроектировать и реализовать `Job 1`/`Job 2` из `03-architecture/scheduling.md` — реализовано (`dn.questenginev2.scheduling`, атомарные переходы, Сценарии 5 и 7, IT-тест реальной гонки Job2 vs CodeSubmission).
 4. ✅ Закрыть подтверждённые гонки в `approveTeam()` и `enterQuest()` (ADR-0010) — реализовано: пессимистичная блокировка (`findByIdForUpdate`) в `approveTeam`, идемпотентный `saveAndFlush`+catch в `createFirstLevelProgress`/`createNextLevelProgress`. Проверено реальными конкурентными IT-тестами (`ApproveTeamRaceIT`).
-5. Реализовать `HintProgress` (auto-reveal, ADR-0020) — включая добавление полей `Hint.type`/`bonusPenaltySeconds`.
+5. ✅ Реализовать `HintProgress` (auto-reveal, ADR-0020) — реализовано: поля `Hint.type`/`bonusPenaltySeconds`, `HintProgress`, Job 3 (`HintRevealScheduler`), `GET /api/quests/progress/{questId}/{teamId}/hints`. Unit+controller+сквозной IT тесты.
 6. Реализовать три источника Bonus/Penalty (ADR-0007) — `ManualTimeAdjustment`, эффект кода, эффект подсказки.
 7. Развести семантику HTTP-статусов ошибок (ADR-0011), добавить `PageResponse<T>` (ADR-0012).
 8. Вывести `setDnf()` в контроллер.

@@ -59,6 +59,7 @@ private void validateApprovedTeamsLimit(Long questId) {
 ```java
 validateProgressWaiting(progress);       // читает status
 progress.setStatus(RUNNING);             // пишет status
+...
 levelProgressService.createFirstLevelProgress(savedProgress.getId());
 ```
 

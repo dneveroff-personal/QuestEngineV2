@@ -37,7 +37,7 @@
 | [invariants.md](01-domain/invariants.md) | 🟢 |
 | [statistics-ranking.md](01-domain/statistics-ranking.md) | 🟢 *(модель ranking полностью формализована, включая первый уровень; дублирующий раздел устранён)* |
 | [code-submission.md](01-domain/code-submission.md) — коды, синонимы, порог | 🟢 *(модель полностью решена — ADR-0004/0005/0006, rate limiting, видимость статистики, формат прогресса)* |
-| [hint-progress.md](01-domain/hint-progress.md) — auto-reveal, типы Regular/Bonus/Penalty | 🟢 *(модель решена ADR-0020; ручное досрочное открытие — не в MVP, персональные подсказки — будущее улучшение)* |
+| [hint-progress.md](01-domain/hint-progress.md) — auto-reveal, типы Regular/Bonus/Penalty | 🔵 *(реализовано — Job 3, GET-эндпоинт; персональные подсказки — будущее улучшение)* |
 | [bonus-penalty.md](01-domain/bonus-penalty.md) — три источника бонус/штрафа, аудит | 🟢 *(модель решена ADR-0007/0020; видимость reason и отсутствие лимитов решены)* |
 
 ## 02. Processes — бизнес-процессы ("как", без привязки к транспорту)

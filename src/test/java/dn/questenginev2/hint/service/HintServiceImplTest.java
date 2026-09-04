@@ -9,6 +9,7 @@ import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.hint.dto.CreateHintRequest;
 import dn.questenginev2.hint.dto.HintResponse;
 import dn.questenginev2.hint.entity.Hint;
+import dn.questenginev2.hint.entity.HintType;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.repository.LevelRepository;
@@ -106,7 +107,8 @@ class HintServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
 
-    CreateHintRequest request = new CreateHintRequest(1, 30, "Hint content");
+    CreateHintRequest request =
+        new CreateHintRequest(1, 30, "Hint content", HintType.REGULAR, null);
 
     Hint savedHint =
         Hint.builder()
@@ -141,7 +143,8 @@ class HintServiceImplTest {
         .when(questService)
         .validateAuthorOrAdmin(playerUser);
 
-    CreateHintRequest request = new CreateHintRequest(1, 30, "Hint content");
+    CreateHintRequest request =
+        new CreateHintRequest(1, 30, "Hint content", HintType.REGULAR, null);
 
     assertThatThrownBy(() -> hintService.createHint(1L, request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
@@ -156,7 +159,8 @@ class HintServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(levelRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
-    CreateHintRequest request = new CreateHintRequest(1, 30, "Hint content");
+    CreateHintRequest request =
+        new CreateHintRequest(1, 30, "Hint content", HintType.REGULAR, null);
 
     assertThatThrownBy(() -> hintService.createHint(999L, request, authentication))
         .isInstanceOf(IllegalArgumentException.class)
@@ -245,7 +249,7 @@ class HintServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(hintRepository.findById(1L)).thenReturn(java.util.Optional.of(hint));
 
-    CreateHintRequest request = new CreateHintRequest(2, 45, "New content");
+    CreateHintRequest request = new CreateHintRequest(2, 45, "New content", HintType.REGULAR, null);
 
     Hint updatedHint =
         Hint.builder()
@@ -302,5 +306,62 @@ class HintServiceImplTest {
         .hasMessageContaining("Подсказка не найдена");
 
     verify(hintRepository, never()).delete(any(Hint.class));
+  }
+
+  // ────── HINT TYPE VALIDATION (ADR-0020) ────────────────────────────────────
+
+  @Test
+  void createHint_createsBonusHint_whenBonusPenaltySecondsProvided() {
+    when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
+    when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
+
+    CreateHintRequest request = new CreateHintRequest(1, 30, "Bonus hint", HintType.BONUS, 60);
+
+    Hint savedHint =
+        Hint.builder()
+            .id(1L)
+            .level(testLevel)
+            .orderIndex(1)
+            .delaySeconds(30)
+            .content("Bonus hint")
+            .type(HintType.BONUS)
+            .bonusPenaltySeconds(60)
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .build();
+    when(hintRepository.save(any(Hint.class))).thenReturn(savedHint);
+
+    HintResponse response = hintService.createHint(1L, request, authentication);
+
+    assertThat(response.getType()).isEqualTo(HintType.BONUS);
+    assertThat(response.getBonusPenaltySeconds()).isEqualTo(60);
+  }
+
+  @Test
+  void createHint_throwsIllegalArgumentException_whenBonusTypeMissingSeconds() {
+    when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
+    when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
+
+    CreateHintRequest request = new CreateHintRequest(1, 30, "Bonus hint", HintType.BONUS, null);
+
+    assertThatThrownBy(() -> hintService.createHint(1L, request, authentication))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("bonusPenaltySeconds");
+
+    verify(hintRepository, never()).save(any(Hint.class));
+  }
+
+  @Test
+  void createHint_throwsIllegalArgumentException_whenRegularTypeHasSeconds() {
+    when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
+    when(levelRepository.findById(1L)).thenReturn(java.util.Optional.of(testLevel));
+
+    CreateHintRequest request = new CreateHintRequest(1, 30, "Regular hint", HintType.REGULAR, 60);
+
+    assertThatThrownBy(() -> hintService.createHint(1L, request, authentication))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("REGULAR");
+
+    verify(hintRepository, never()).save(any(Hint.class));
   }
 }

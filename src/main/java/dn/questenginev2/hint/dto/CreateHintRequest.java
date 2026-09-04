@@ -1,5 +1,6 @@
 package dn.questenginev2.hint.dto;
 
+import dn.questenginev2.hint.entity.HintType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,4 +12,6 @@ public record CreateHintRequest(
     @NotNull(message = "Задержка не может быть пустой")
         @Min(value = 0, message = "Задержка должна быть не менее 0 секунд")
         Integer delaySeconds,
-    @NotBlank(message = "Содержимое подсказки не может быть пустым") String content) {}
+    @NotBlank(message = "Содержимое подсказки не может быть пустым") String content,
+    @NotNull(message = "Тип подсказки не может быть пустым") HintType type,
+    Integer bonusPenaltySeconds) {}

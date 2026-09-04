@@ -3,6 +3,7 @@ package dn.questenginev2.hint.service;
 import dn.questenginev2.hint.dto.CreateHintRequest;
 import dn.questenginev2.hint.dto.HintResponse;
 import dn.questenginev2.hint.entity.Hint;
+import dn.questenginev2.hint.entity.HintType;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.repository.LevelRepository;
@@ -34,6 +35,7 @@ public class HintServiceImpl implements HintService {
     Level level = validateLevelExist(levelId);
     questService.validateQuestAuthor(currentUser, level.getQuest().getId());
 
+    validateHintData(request);
     Hint hint = buildHint(request, level);
     Hint savedHint = hintRepository.save(hint);
 
@@ -64,6 +66,10 @@ public class HintServiceImpl implements HintService {
     hint.setDelaySeconds(request.delaySeconds());
     hint.setContent(request.content());
     hint.setUpdatedAt(Instant.now());
+
+    validateHintData(request);
+    hint.setType(request.type());
+    hint.setBonusPenaltySeconds(request.bonusPenaltySeconds());
 
     Hint savedHint = hintRepository.save(hint);
     return buildHintResponse(savedHint);
@@ -98,6 +104,22 @@ public class HintServiceImpl implements HintService {
         .orElseThrow(() -> new IllegalArgumentException("Подсказка не найдена: " + hintId));
   }
 
+  /**
+   * ADR-0020: bonusPenaltySeconds обязателен для BONUS/PENALTY, недопустим для REGULAR
+   * (симметрично validateCodeData в CodeServiceImpl для MAIN-кодов).
+   */
+  private void validateHintData(CreateHintRequest request) {
+    if (request.type() != HintType.REGULAR && request.bonusPenaltySeconds() == null) {
+      throw new IllegalArgumentException(
+          "Для подсказки типа " + request.type() + " необходимо указать bonusPenaltySeconds");
+    }
+
+    if (request.type() == HintType.REGULAR && request.bonusPenaltySeconds() != null) {
+      throw new IllegalArgumentException(
+          "bonusPenaltySeconds недопустим для подсказки типа REGULAR");
+    }
+  }
+
   // ────── BUILDERS ───────────────────────────────────────────────────────────
   private HintResponse buildHintResponse(Hint hint) {
     return HintResponse.builder()
@@ -106,6 +128,8 @@ public class HintServiceImpl implements HintService {
         .orderIndex(hint.getOrderIndex())
         .delaySeconds(hint.getDelaySeconds())
         .content(hint.getContent())
+        .type(hint.getType())
+        .bonusPenaltySeconds(hint.getBonusPenaltySeconds())
         .createdAt(hint.getCreatedAt())
         .updatedAt(hint.getUpdatedAt())
         .build();
@@ -118,6 +142,8 @@ public class HintServiceImpl implements HintService {
         .orderIndex(hint.getOrderIndex())
         .delaySeconds(hint.getDelaySeconds())
         .content(hint.getContent())
+        .type(hint.getType())
+        .bonusPenaltySeconds(hint.getBonusPenaltySeconds())
         .createdAt(hint.getCreatedAt())
         .updatedAt(hint.getUpdatedAt())
         .build();
@@ -129,6 +155,8 @@ public class HintServiceImpl implements HintService {
         .orderIndex(request.orderIndex())
         .delaySeconds(request.delaySeconds())
         .content(request.content())
+        .type(request.type())
+        .bonusPenaltySeconds(request.bonusPenaltySeconds())
         .createdAt(Instant.now())
         .updatedAt(Instant.now())
         .build();
