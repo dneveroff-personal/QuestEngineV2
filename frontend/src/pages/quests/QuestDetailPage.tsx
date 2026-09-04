@@ -1,6 +1,7 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { useQuest, useQuestRegistrations, RegistrationPanel } from "@/features/quests";
+import { useAuth } from "@/features/auth";
 import { formatDateTime } from "@/lib/format";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -19,6 +20,7 @@ const QUEST_TYPE_LABEL: Record<string, string> = {
 export function QuestDetailPage() {
   const { questId: questIdParam } = useParams<{ questId: string }>();
   const questId = Number(questIdParam);
+  const { role } = useAuth();
 
   const questQuery = useQuest(questId);
   const registrationsQuery = useQuestRegistrations(questId);
@@ -44,7 +46,17 @@ export function QuestDetailPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{quest.title}</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">{quest.title}</h1>
+          {(role === "AUTHOR" || role === "ADMIN") && (
+            <Link
+              to={`/author/quests/${quest.id}/edit`}
+              className="text-primary text-sm underline underline-offset-4"
+            >
+              Редактировать
+            </Link>
+          )}
+        </div>
         <div className="text-muted-foreground flex gap-3 text-sm">
           <span>{QUEST_STATUS_LABEL[quest.status] ?? quest.status}</span>
           <span>·</span>

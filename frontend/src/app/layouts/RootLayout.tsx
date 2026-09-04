@@ -15,13 +15,10 @@ const NAV_ITEMS = [
   { to: "/my-quests", label: "Мои квесты" },
   { to: "/team", label: "Команда" },
   { to: "/profile", label: "Профиль" },
-  // AUTHOR-пункт добавляется условно, по роли пользователя —
-  // architecture.md §14, Authorization и Role-based UI. Backend пока не
-  // отдаёт роли в LoginResponse — добавить, когда появится (roadmap/backlog.md).
 ];
 
 export function RootLayout() {
-  const { publicName, logout } = useAuth();
+  const { publicName, role, logout } = useAuth();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -33,6 +30,13 @@ export function RootLayout() {
     navigate("/login", { replace: true });
   }
 
+  // role — из JWT (см. lib/jwt.ts), только для UI. Реальная проверка —
+  // всегда на backend (validateAuthorOrAdmin), это не граница безопасности.
+  const navItems =
+    role === "AUTHOR" || role === "ADMIN"
+      ? [...NAV_ITEMS, { to: "/author", label: "Авторская" }]
+      : NAV_ITEMS;
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-border">
@@ -41,7 +45,7 @@ export function RootLayout() {
             QuestEngine
           </NavLink>
           <nav className="flex items-center gap-4">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
