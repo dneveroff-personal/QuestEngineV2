@@ -7,6 +7,7 @@ import { RegisterPage } from "@/pages/auth/RegisterPage";
 import { AuthorQuestsPage } from "@/pages/author/AuthorQuestsPage";
 import { CreateQuestPage } from "@/pages/author/CreateQuestPage";
 import { EditQuestPage } from "@/pages/author/EditQuestPage";
+import { GamePage } from "@/pages/game/GamePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ProfilePage } from "@/pages/profile/ProfilePage";
 import { HomePage } from "@/pages/quests/HomePage";
@@ -22,8 +23,10 @@ import { TeamPage } from "@/pages/team/TeamPage";
  * backend (validateAuthorOrAdmin/validateQuestAuthor), роутер только
  * прячет лишнее из UI, не является границей безопасности.
  *
- * Ещё не добавлены: /quests/:questId/play — Game Mode, отдельный layout
- * без RootLayout; /quests/:questId/statistics — зависит от backend
+ * /quests/:questId/play — Game Mode, намеренно вне RootLayout (без общей
+ * навигации, architecture.md §16).
+ *
+ * Ещё не добавлен: /quests/:questId/statistics — зависит от backend
  * statistics/ (не реализован, см. roadmap/backlog.md).
  */
 export const router = createBrowserRouter([
@@ -34,6 +37,14 @@ export const router = createBrowserRouter([
   {
     path: "/register",
     element: <RegisterPage />,
+  },
+  {
+    path: "/quests/:questId/play",
+    element: (
+      <ProtectedRoute>
+        <GamePage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/",

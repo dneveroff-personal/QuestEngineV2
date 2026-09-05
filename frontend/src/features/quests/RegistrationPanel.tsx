@@ -100,11 +100,21 @@ export function RegistrationPanel({ quest, registrations }: RegistrationPanelPro
       )}
 
       {myRegistration?.status === "APPROVED" && (
-        <p className="text-success text-sm font-medium">
-          Ваша команда участвует в этом квесте.
-          {/* TODO: ссылка на игровой режим — заблокировано backend
-              (docs/frontend/roadmap.md, раздел 4.1: CodeSubmission/HintProgress runtime не реализованы). */}
-        </p>
+        <div className="space-y-2">
+          <p className="text-success text-sm font-medium">Ваша команда участвует в этом квесте.</p>
+          {quest.status === "RUNNING" ? (
+            <Link
+              to={`/quests/${quest.id}/play`}
+              className="text-primary text-sm underline underline-offset-4"
+            >
+              Войти в игру
+            </Link>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              Игра начнётся, когда квест перейдёт в статус "Идёт".
+            </p>
+          )}
+        </div>
       )}
 
       {myRegistration?.status === "REJECTED" && (

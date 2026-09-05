@@ -7,6 +7,7 @@ export type JoinRequestType = "JOIN_REQUEST" | "CAPTAIN_INVITE";
 
 export interface TeamMember {
   id: number;
+  userId: number;
   name: string;
   role: TeamRole;
   joinedAt: string;

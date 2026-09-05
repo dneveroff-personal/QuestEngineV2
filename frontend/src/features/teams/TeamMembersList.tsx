@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { searchUsersByUsername } from "@/api/users";
-import { transferCaptain, type Team, type TeamMember } from "@/api/teams";
+import { transferCaptain, type Team } from "@/api/teams";
 import { ApiError } from "@/api/errors";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth";
@@ -18,6 +17,12 @@ const ROLE_LABEL: Record<string, string> = {
  * backend заполняется через User.getUsername(), НЕ getPublicName()
  * (TeamServiceImpl.teamMemberstoDto). publicName из LoginResponse для
  * этого сравнения не подходит — разные поля.
+ *
+ * ОБНОВЛЕНО (backend 0.6.11): TeamMemberDto теперь отдаёт userId напрямую
+ * — резолв через /api/users/search (как раньше) больше не нужен для
+ * transferCaptain. Раньше это было реальным риском (неоднозначный поиск
+ * мог привести к передаче капитанства не тому человеку) — теперь просто
+ * используем член команды напрямую.
  */
 export function TeamMembersList({ team }: { team: Team }) {
   const { username } = useAuth();
@@ -26,39 +31,14 @@ export function TeamMembersList({ team }: { team: Team }) {
   const isCaptain = isCaptainOf(team, username);
 
   const transferMutation = useMutation({
-    /**
-     * transferCaptain принимает userId, а TeamMemberDto.id — это id
-     * записи TeamMember, НЕ User.id (TeamServiceImpl.teamMemberstoDto:
-     * `m.getId()` — id самого TeamMember). Резолвим userId через
-     * /api/users/search?username=... — но это LIKE-поиск, и UserResponse
-     * не возвращает username обратно, так что при неоднозначном
-     * совпадении НЕЛЬЗЯ молча брать первый результат (можно случайно
-     * передать капитанство не тому человеку). См. docs/roadmap/backlog.md
-     * — правильное решение: добавить username в UserResponse и/или
-     * userId в TeamMemberDto на backend.
-     */
-    mutationFn: async (member: TeamMember) => {
-      const candidates = await searchUsersByUsername(member.name);
-      if (candidates.length !== 1) {
-        throw new Error(
-          candidates.length === 0
-            ? `Не удалось найти пользователя "${member.name}".`
-            : `Найдено несколько пользователей с похожим именем — не могу однозначно определить, кому передать капитанство. Обратитесь к администратору.`,
-        );
-      }
-      return transferCaptain(candidates[0].id);
-    },
+    mutationFn: transferCaptain,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["teams", "my"] });
     },
   });
 
   const errorMessage =
-    transferMutation.error instanceof ApiError
-      ? transferMutation.error.message
-      : transferMutation.error instanceof Error
-        ? transferMutation.error.message
-        : null;
+    transferMutation.error instanceof ApiError ? transferMutation.error.message : null;
 
   return (
     <div className="space-y-2">
@@ -74,7 +54,7 @@ export function TeamMembersList({ team }: { team: Team }) {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => transferMutation.mutate(member)}
+                  onClick={() => transferMutation.mutate(member.userId)}
                   disabled={transferMutation.isPending}
                 >
                   Сделать капитаном
