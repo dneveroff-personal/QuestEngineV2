@@ -10,7 +10,13 @@ export function useQuestProgress(questId: number, teamId: number) {
     // Опрос вместо push — на backend нет SSE/WS для прогресса (ADR-0014
     // касается только статистики, не игрового прогресса). 5с — компромисс
     // между отзывчивостью и нагрузкой, не основано на каком-то бэкенд-SLA.
-    refetchInterval: 5000,
+    // Останавливаем опрос на FINISHED/DNF — дальше статус не изменится,
+    // бессмысленно долбить backend, пока пользователь просто смотрит на
+    // экран "Квест завершён".
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "FINISHED" || status === "DNF" ? false : 5000;
+    },
   });
 }
 

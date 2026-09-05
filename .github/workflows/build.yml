@@ -137,11 +137,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # --passWithNoTests: временно, пока не написан первый тест
-      # (docs/frontend/testing-strategy.md). Убрать флаг, когда появятся
-      # первые component-тесты — тогда отсутствие тестов должно ронять сборку.
       - name: Test
-        run: npm run test -- --run --passWithNoTests
+        run: npm run test -- --run
 
       - name: Type-check & build
         run: npm run build

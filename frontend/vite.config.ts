@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -25,5 +26,15 @@ export default defineConfig({
     proxy: {
       '/api': BACKEND_URL,
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    // testing-strategy.md §"Definition of Done" — --passWithNoTests в CI
+    // временный, пока тестов было 0. Теперь они есть — CI (build.yml)
+    // можно (и нужно) вернуть к строгому "падать при 0 тестов", когда
+    // накопится больше файлов; пока оставляем флаг, чтобы не блокировать
+    // будущие PR, где меняется только код без сопутствующего теста.
   },
 })

@@ -70,35 +70,50 @@ function GamePageContent({
 
   const progress = progressQuery.data;
 
+  /**
+   * Гонка (roadmap.md §3, Сценарий 2 в concurrency-scenarios.md):
+   * POST .../enter не защищён от повторного вызова на backend. Наивный
+   * `disabled={enterMutation.isPending}` оставляет окно между "мутация
+   * завершилась" (isPending=false) и "рефетч progress подтянул новый
+   * статус" — за это время повторный клик снова уйдёт в WAITING-ветку.
+   * Решение: как только мутация СЕБЕ вернула успешный ответ, доверяем
+   * его статусу немедленно, не дожидаясь инвалидации кэша.
+   */
+  const effectiveStatus = enterMutation.data?.status ?? progress.status;
+
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">{teamName}</h1>
         <span className="text-muted-foreground text-sm">
-          {STATUS_LABEL[progress.status] ?? progress.status}
+          {STATUS_LABEL[effectiveStatus] ?? effectiveStatus}
         </span>
       </div>
 
-      {progress.status === "WAITING" && (
+      {effectiveStatus === "WAITING" && (
         <div className="rounded-lg border border-border p-4">
           <p className="text-sm">Квест начался. Нажмите, чтобы войти и начать первый уровень.</p>
           {enterMutation.error instanceof ApiError && (
             <p className="text-destructive text-sm">{enterMutation.error.message}</p>
           )}
-          <Button className="mt-2" onClick={() => enterMutation.mutate()} disabled={enterMutation.isPending}>
+          <Button
+            className="mt-2"
+            onClick={() => enterMutation.mutate()}
+            disabled={enterMutation.isPending || enterMutation.isSuccess}
+          >
             {enterMutation.isPending ? "Входим..." : "Войти в игру"}
           </Button>
         </div>
       )}
 
-      {progress.status === "RUNNING" && (
+      {effectiveStatus === "RUNNING" && (
         <>
           <CodeSubmitForm questId={questId} teamId={teamId} />
           <ShownHintsList questId={questId} teamId={teamId} />
         </>
       )}
 
-      {progress.status === "FINISHED" && (
+      {effectiveStatus === "FINISHED" && (
         <div className="rounded-lg border border-border p-4">
           <p className="text-success text-sm font-medium">Квест завершён!</p>
           {progress.finishedAt && (
@@ -109,7 +124,7 @@ function GamePageContent({
         </div>
       )}
 
-      {progress.status === "DNF" && (
+      {effectiveStatus === "DNF" && (
         <div className="rounded-lg border border-border p-4">
           <p className="text-destructive text-sm font-medium">Квест не был завершён (DNF).</p>
         </div>

@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
 
-import { useAuth } from "@/features/auth";
+import { useAuth, useMyResolvedUser } from "@/features/auth";
 import { useMyAuthoredQuests } from "@/features/authoring";
-import { useMyProfile } from "@/features/profile";
 import { formatDateTime } from "@/lib/format";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -21,7 +20,7 @@ const ROLE_LABEL: Record<string, string> = {
  */
 export function ProfilePage() {
   const { publicName, username, role } = useAuth();
-  const { data: profile, isLoading: isProfileLoading } = useMyProfile();
+  const { data: profile, isLoading: isProfileLoading } = useMyResolvedUser();
   const isAuthor = role === "AUTHOR" || role === "ADMIN";
   const authoredQuestsQuery = useMyAuthoredQuests();
 
