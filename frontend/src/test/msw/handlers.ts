@@ -1,15 +1,6 @@
 import { http, HttpResponse } from "msw";
 
-/**
- * Валидный по форме (header.payload.signature), но не подписанный
- * настоящим секретом JWT — для тестов достаточно, decodeJwtPayload
- * (lib/jwt.ts) не проверяет подпись, только читает payload.
- */
-function fakeJwt(payload: Record<string, unknown>): string {
-  const base64url = (obj: object) =>
-    btoa(JSON.stringify(obj)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  return `${base64url({ alg: "HS256" })}.${base64url(payload)}.fake-signature`;
-}
+import { fakeJwt } from "@/test/fixtures";
 
 export const handlers = [
   http.post("/api/auth/login", async ({ request }) => {

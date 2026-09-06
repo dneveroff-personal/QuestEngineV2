@@ -123,10 +123,25 @@ MSW перехватывает запрос (dev/test)
   `setupWorker` — тесты выполняются в Node/jsdom, не в браузере),
   `onUnhandledRequest: "error"` — тест провалится явно, если компонент
   дёрнёт эндпоинт без зарегистрированного handler'а.
-- Написанные тесты покрывают unit-уровень (`jwt.ts`, `errors.ts`) и один
-  полный component-тест (`LoginForm` — успех, 401 без field-level ошибки,
-  клиентская валидация без обращения к сети) как образец для дальнейших
-  тестов features. Остальные features (`teams`, `quests`, `authoring`,
-  `gameplay`) тестами пока не покрыты — следующий кандидат по объёму
-  пользы на вложенное усилие: `RegistrationPanel`/`RegistrationReviewPanel`
-  (там больше всего условной логики по статусам).
+- Написанные тесты покрывают unit-уровень (`jwt.ts`, `errors.ts`, `format.ts`)
+  и component-уровень по одному наиболее сложному компоненту на каждую
+  feature: `auth` (`LoginForm`, `RegisterForm`), `teams` (`TeamMembersList`
+  — передача капитанства), `quests` (`RegistrationPanel` — вся матрица
+  статусов регистрации), `authoring` (`QuestLifecycleActions` — publish/
+  finish/delete, включая type-to-confirm), `gameplay` (`CodeSubmitForm` —
+  все 4 исхода `CodeSubmissionResult`). Остальные компоненты каждой
+  feature (формы Team — `CreateTeamForm`/`SearchTeamsForm`/
+  `TeamManagementPanel`/`JoinRequestsPanel`; Author — `QuestForm`/
+  `LevelsEditor`/`HintsPanel`/`CodesPanel`/`RegistrationReviewPanel`;
+  Gameplay — `ShownHintsList`) — без тестов, следующий шаг в том же
+  направлении, не новый вид работы.
+- **`src/test/fixtures.ts`** — общие тестовые helper'ы (`fakeJwt`,
+  `loginAs`) для компонентов, которым нужен залогиненный `useAuth()`, без
+  реального похода в `/api/auth/login`.
+- Побочная находка при написании тестов: `Quest.startTime`/`finishTime`
+  (`api/quests.ts`) были типизированы как non-nullable `string`, хотя
+  `QuestResponse.java` не гарантирует это (`@NotNull` нет), и наша же
+  `QuestForm.tsx` осознанно отправляет `null` для незаполненных дат.
+  `formatDateTime(null)` до фикса тихо показал бы 1 января 1970 года
+  (`new Date(null)` не бросает исключение) — реальный, хоть и мелкий, баг,
+  пойманный тестом, а не найденный вручную.

@@ -19,8 +19,8 @@ export interface Quest {
   type: QuestType;
   status: QuestStatus;
   createdAt: string;
-  startTime: string;
-  finishTime: string;
+  startTime: string | null;
+  finishTime: string | null;
 }
 
 export interface QuestRegistration {
