@@ -21,9 +21,9 @@ export function getHintsByLevel(questId: number, levelId: number): Promise<Hint[
 }
 
 export function createHint(
-    questId: number,
-    levelId: number,
-    request: CreateHintRequest,
+  questId: number,
+  levelId: number,
+  request: CreateHintRequest,
 ): Promise<Hint> {
   return apiFetch<Hint>(`/api/quests/${questId}/levels/${levelId}/hints`, {
     method: "POST",

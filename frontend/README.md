@@ -2,9 +2,8 @@
 
 React + TypeScript + Vite + TanStack Query + Tailwind CSS + shadcn/ui.
 
-**Что готово, что можно делать прямо сейчас и что ждёт backend —
-[`../docs/frontend/roadmap.md`](../docs/frontend/roadmap.md).** Это
-основной документ для того, "что делать дальше".
+**Задачи — что можно делать сейчас, что ждёт backend —
+[`../docs/frontend/roadmap.md`](../docs/frontend/roadmap.md).**
 
 Архитектурные и продуктовые решения задокументированы отдельно и являются
 источником истины:
@@ -26,14 +25,7 @@ npm run dev
 ## Другие команды
 
 ```bash
-npm run build     # tsc -b && vite build
-npm run lint       # oxlint
-npm run test        # vitest
-npm run test:e2e     # playwright test
+npm run build   # tsc -b && vite build
+npm run lint    # oxlint
+npm run test    # vitest
 ```
-
-## Состояние
-
-Что реализовано, что можно делать прямо сейчас (backend готов) и что
-заблокировано — [`../docs/frontend/roadmap.md`](../docs/frontend/roadmap.md).
-Состояние backend в целом — `../docs/roadmap/backlog.md`.

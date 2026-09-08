@@ -9,40 +9,21 @@ Frontend-документация читается вместе с корнев�
 - 🟢 **Accepted** — согласовано, можно проектировать/реализовывать поверх этого.
 - 🟡 **Draft** — основа есть, но требует уточнений.
 - ⚪ **TBD** — раздел выделен, содержание ещё не написано.
-- 🔵 **Implemented** — помимо описания, уже реализовано в коде и покрыто тестами.
 
 | Документ | Статус |
 |---|---|
-| [roadmap.md](roadmap.md) — что готово, что можно делать сейчас, что ждёт backend | 🟢 *(основной документ по состоянию реализации)* |
+| [roadmap.md](roadmap.md) — задачи: что можно делать сейчас, что ждёт backend | 🟢 |
 | [architecture.md](architecture.md) — технологический стек, слои, API-клиент, SSE, формы, границы features | 🟢 |
 | [design-system.md](design-system.md) — цвета, типографика, spacing, компоненты | 🟢 |
 | [information-architecture.md](information-architecture.md) — разделы приложения, роли, навигация | 🟢 |
 | [screens.md](screens.md) — конкретные экраны | 🟢 |
 | [user-flows.md](user-flows.md) — пользовательские сценарии | 🟢 |
-| [testing-strategy.md](testing-strategy.md) — уровни тестов, MSW как основа разработки против неготового backend, DoD | 🟡 *(порог покрытия и CI — открытые вопросы)* |
+| [testing-strategy.md](testing-strategy.md) — уровни тестов, MSW, DoD | 🟢 |
 
 ## Деплой
 
 Frontend разворачивается как отдельный Docker-образ (nginx + собранная
 статика), за общим reverse-proxy с backend — решение и вся топология
 зафиксированы в `../08-ops/deployment.md`. Локально `npm run dev`
-дополнительно проксирует `/api` (включая `/api/auth/*`) на backend через
-`vite.config.ts`, чтобы same-origin выполнялся и в dev-режиме.
-
-## Состояние реализации
-
-Подробно — в [roadmap.md](roadmap.md). Коротко: Auth-шелл (Login/Register/
-ProtectedRoute) реализован и работает против реального backend. Экраны
-Quest/Team/Author-CRUD не блокируются backend — можно реализовывать сразу.
-Game Mode и Statistics полностью заблокированы (соответствующие
-backend-механики не реализованы).
-
-## Известная зависимость от backend
-
-Часть экранов (игровой режим, статистика) блокируется неготовыми
-backend-эндпоинтами (`CodeSubmission` runtime, `HintProgress`,
-`statistics/`, `POST /api/auth/refresh`) — см. `04-api/endpoints.md` и
-`roadmap/backlog.md`. Рекомендуемый порядок реализации frontend начинается
-с экранов, у которых backend уже готов (Quest, Team, Registration), и
-использует MSW-моки (`testing-strategy.md`) там, где backend ещё не
-существует.
+дополнительно проксирует `/api` на backend через `vite.config.ts`, чтобы
+same-origin выполнялся и в dev-режиме.
