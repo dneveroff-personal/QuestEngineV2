@@ -76,10 +76,10 @@ class HintControllerIT {
   @BeforeEach
   void setUp() throws Exception {
     codeSubmissionRepository.deleteAll();
-    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();
+    hintProgressRepository.deleteAll();
     hintRepository.deleteAll();
     levelRepository.deleteAll();
     questRegistrationRepository.deleteAll();

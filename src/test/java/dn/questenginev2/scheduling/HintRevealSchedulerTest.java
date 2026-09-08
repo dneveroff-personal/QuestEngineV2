@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 
 import dn.questenginev2.hint.entity.Hint;
 import dn.questenginev2.hint.entity.HintProgress;
+import dn.questenginev2.hint.entity.HintType;
 import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.Level;
@@ -68,6 +69,7 @@ class HintRevealSchedulerTest {
 
     hintRevealScheduler.revealDueHints();
 
+    verify(hintProgressRepository, never()).findByLevelProgressIdOrderByShownAt(any());
     verify(hintProgressRepository, never()).saveAndFlush(any());
   }
 
@@ -76,7 +78,14 @@ class HintRevealSchedulerTest {
     // openedAt = now - 120s, delaySeconds = 60 -> hintAvailableAt = now - 60s <= now: должна быть
     // показана.
     Hint hint =
-        Hint.builder().id(1L).level(level).orderIndex(1).delaySeconds(60).content("Hint").build();
+        Hint.builder()
+            .id(1L)
+            .level(level)
+            .orderIndex(1)
+            .delaySeconds(60)
+            .content("Hint")
+            .type(HintType.REGULAR)
+            .build();
     when(levelProgressRepository.findByStatus(LevelProgressStatus.ACTIVE))
         .thenReturn(List.of(levelProgress));
     when(hintRepository.findByLevelIdOrderByOrderIndex(1000L)).thenReturn(List.of(hint));
@@ -94,7 +103,14 @@ class HintRevealSchedulerTest {
   void revealDueHints_doesNotReveal_whenDelayNotYetElapsed() {
     // delaySeconds = 300 -> hintAvailableAt = openedAt + 300s = now + 180s (в будущем).
     Hint hint =
-        Hint.builder().id(1L).level(level).orderIndex(1).delaySeconds(300).content("Hint").build();
+        Hint.builder()
+            .id(1L)
+            .level(level)
+            .orderIndex(1)
+            .delaySeconds(300)
+            .content("Hint")
+            .type(HintType.REGULAR)
+            .build();
     when(levelProgressRepository.findByStatus(LevelProgressStatus.ACTIVE))
         .thenReturn(List.of(levelProgress));
     when(hintRepository.findByLevelIdOrderByOrderIndex(1000L)).thenReturn(List.of(hint));
@@ -108,7 +124,14 @@ class HintRevealSchedulerTest {
   @Test
   void revealDueHints_skipsHint_whenAlreadyShown() {
     Hint hint =
-        Hint.builder().id(1L).level(level).orderIndex(1).delaySeconds(60).content("Hint").build();
+        Hint.builder()
+            .id(1L)
+            .level(level)
+            .orderIndex(1)
+            .delaySeconds(60)
+            .content("Hint")
+            .type(HintType.REGULAR)
+            .build();
     HintProgress existingProgress =
         HintProgress.builder()
             .id(99L)
@@ -130,7 +153,14 @@ class HintRevealSchedulerTest {
   @Test
   void revealDueHints_toleratesConcurrentDuplicate_whenSaveAndFlushThrows() {
     Hint hint =
-        Hint.builder().id(1L).level(level).orderIndex(1).delaySeconds(60).content("Hint").build();
+        Hint.builder()
+            .id(1L)
+            .level(level)
+            .orderIndex(1)
+            .delaySeconds(60)
+            .content("Hint")
+            .type(HintType.REGULAR)
+            .build();
     when(levelProgressRepository.findByStatus(LevelProgressStatus.ACTIVE))
         .thenReturn(List.of(levelProgress));
     when(hintRepository.findByLevelIdOrderByOrderIndex(1000L)).thenReturn(List.of(hint));
@@ -140,5 +170,39 @@ class HintRevealSchedulerTest {
 
     // Не должно бросить исключение наружу.
     hintRevealScheduler.revealDueHints();
+  }
+
+  @Test
+  void revealDueHints_neverAutoRevealsBonusOrPenaltyHints_evenWhenDelayElapsed() {
+    // ADR-0021: BONUS/PENALTY требуют явного взятия командой, Job 3 их не трогает.
+    Hint bonusHint =
+        Hint.builder()
+            .id(1L)
+            .level(level)
+            .orderIndex(1)
+            .delaySeconds(60)
+            .content("Bonus hint")
+            .type(HintType.BONUS)
+            .bonusPenaltySeconds(60)
+            .build();
+    Hint penaltyHint =
+        Hint.builder()
+            .id(2L)
+            .level(level)
+            .orderIndex(2)
+            .delaySeconds(60)
+            .content("Penalty hint")
+            .type(HintType.PENALTY)
+            .bonusPenaltySeconds(600)
+            .build();
+    when(levelProgressRepository.findByStatus(LevelProgressStatus.ACTIVE))
+        .thenReturn(List.of(levelProgress));
+    when(hintRepository.findByLevelIdOrderByOrderIndex(1000L))
+        .thenReturn(List.of(bonusHint, penaltyHint));
+    when(hintProgressRepository.findByLevelProgressIdOrderByShownAt(2000L)).thenReturn(List.of());
+
+    hintRevealScheduler.revealDueHints();
+
+    verify(hintProgressRepository, never()).saveAndFlush(any());
   }
 }

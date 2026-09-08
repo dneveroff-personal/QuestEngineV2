@@ -87,12 +87,13 @@
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST | `/quests/progress/{questId}/enter` | 🟡 *(есть незащищённый повторный вызов — см. `concurrency-scenarios.md` Сценарий 2)* |
+| POST | `/quests/progress/{questId}/enter` | 🔵 *(Сценарий 2 закрыт — идемпотентно, см. `concurrency-scenarios.md`)* |
 | GET | `/quests/progress/{questId}/{teamId}` | 🔵 |
 | GET | `/quests/progress/{questId}` | 🔵 |
 | PUT | `/quests/progress/{questId}/{teamId}/finish` | 🟡 *(ручной override для форс-мажорных случаев — основной путь завершения теперь автоматический, ADR-0009)* |
 | POST | `/quests/progress/{questId}/{teamId}/codes` | 🔵 *(CodeSubmission, см. `code-submission.md`)* |
-| GET | `/quests/progress/{questId}/{teamId}/hints` | 🔵 *(показанные подсказки команды, auto-reveal, ADR-0020)* |
+| GET | `/quests/progress/{questId}/{teamId}/hints` | 🔵 *(видимые подсказки команды — три состояния, ADR-0020/ADR-0021)* |
+| POST | `/quests/progress/{questId}/{teamId}/hints/{hintId}/take` | 🔵 *(явное взятие BONUS/PENALTY-подсказки, ADR-0021)* |
 | **DNF endpoint** | — | ⚪ Метод `setDnf()` существует в сервисе, но **не выведен ни в один контроллер** — вызвать через API невозможно. |
 
 ---
@@ -118,7 +119,7 @@ CRUD автором — см. `01-domain/hint-progress.md`. Игровая ме�
 | Метод | Путь | Статус |
 |---|---|---|
 | POST / GET / PUT / DELETE | (CRUD) | 🔵 *(только редактирование автором)* |
-| **Показ подсказки командой (auto-reveal)** | — | 🔵 Реализовано через Job 3 (`HintRevealScheduler`), не отдельный HTTP-эндпоинт для триггера — команда узнаёт о показанных подсказках через `GET /api/quests/progress/{questId}/{teamId}/hints` |
+| **Показ подсказки командой** | — | 🔵 REGULAR — автоматически через Job 3 (`HintRevealScheduler`); BONUS/PENALTY — явно через `POST .../hints/{hintId}/take` (ADR-0021). Видимость — `GET /api/quests/progress/{questId}/{teamId}/hints`, три состояния (не наступило время / показана-взята / доступна-но-не-взята) |
 
 ---
 

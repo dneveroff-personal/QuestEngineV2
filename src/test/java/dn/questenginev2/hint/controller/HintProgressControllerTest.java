@@ -1,8 +1,10 @@
 package dn.questenginev2.hint.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
@@ -28,7 +30,7 @@ class HintProgressControllerTest {
   @MockitoBean private HintProgressService hintProgressService;
 
   @Test
-  void getShownHints_returnsShownHints_whenTeamHasActiveLevel() throws Exception {
+  void getVisibleHints_returnsShownHints_whenTeamHasActiveLevel() throws Exception {
     HintProgressResponse hint =
         HintProgressResponse.builder()
             .hintId(1L)
@@ -37,8 +39,7 @@ class HintProgressControllerTest {
             .type(HintType.REGULAR)
             .shownAt(Instant.now())
             .build();
-    when(hintProgressService.getShownHints(eq(1L), eq(2L), org.mockito.ArgumentMatchers.any()))
-        .thenReturn(List.of(hint));
+    when(hintProgressService.getVisibleHints(eq(1L), eq(2L), any())).thenReturn(List.of(hint));
 
     mockMvc
         .perform(get("/api/quests/progress/1/2/hints"))
@@ -49,9 +50,22 @@ class HintProgressControllerTest {
   }
 
   @Test
-  void getShownHints_returnsEmptyList_whenNoHintsShown() throws Exception {
-    when(hintProgressService.getShownHints(eq(1L), eq(2L), org.mockito.ArgumentMatchers.any()))
-        .thenReturn(List.of());
+  void getVisibleHints_returnsAvailableNotTakenHint_withoutContent() throws Exception {
+    HintProgressResponse hint =
+        HintProgressResponse.builder().hintId(1L).orderIndex(1).type(HintType.PENALTY).build();
+    when(hintProgressService.getVisibleHints(eq(1L), eq(2L), any())).thenReturn(List.of(hint));
+
+    mockMvc
+        .perform(get("/api/quests/progress/1/2/hints"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].type").value("PENALTY"))
+        .andExpect(jsonPath("$[0].content").doesNotExist())
+        .andExpect(jsonPath("$[0].bonusPenaltySeconds").doesNotExist());
+  }
+
+  @Test
+  void getVisibleHints_returnsEmptyList_whenNoHintsShown() throws Exception {
+    when(hintProgressService.getVisibleHints(eq(1L), eq(2L), any())).thenReturn(List.of());
 
     mockMvc
         .perform(get("/api/quests/progress/1/2/hints"))
@@ -60,13 +74,44 @@ class HintProgressControllerTest {
   }
 
   @Test
-  void getShownHints_returnsConflict_whenUserNotTeamMember() throws Exception {
-    when(hintProgressService.getShownHints(eq(1L), eq(2L), org.mockito.ArgumentMatchers.any()))
+  void getVisibleHints_returnsConflict_whenUserNotTeamMember() throws Exception {
+    when(hintProgressService.getVisibleHints(eq(1L), eq(2L), any()))
         .thenThrow(
             new ForbiddenOperationException("Видеть подсказки может только участник этой команды"));
 
     mockMvc
         .perform(get("/api/quests/progress/1/2/hints"))
+        .andExpect(status().isConflict())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void takeHint_returnsRevealedHint_whenAvailable() throws Exception {
+    HintProgressResponse revealed =
+        HintProgressResponse.builder()
+            .hintId(1L)
+            .orderIndex(1)
+            .type(HintType.PENALTY)
+            .content("The password is on the door")
+            .bonusPenaltySeconds(600)
+            .shownAt(Instant.now())
+            .build();
+    when(hintProgressService.takeHint(eq(1L), eq(2L), eq(1L), any())).thenReturn(revealed);
+
+    mockMvc
+        .perform(post("/api/quests/progress/1/2/hints/1/take"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content").value("The password is on the door"))
+        .andExpect(jsonPath("$.bonusPenaltySeconds").value(600));
+  }
+
+  @Test
+  void takeHint_returnsConflict_whenNotYetAvailable() throws Exception {
+    when(hintProgressService.takeHint(eq(1L), eq(2L), eq(1L), any()))
+        .thenThrow(new ForbiddenOperationException("Подсказка ещё не стала доступна"));
+
+    mockMvc
+        .perform(post("/api/quests/progress/1/2/hints/1/take"))
         .andExpect(status().isConflict())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }

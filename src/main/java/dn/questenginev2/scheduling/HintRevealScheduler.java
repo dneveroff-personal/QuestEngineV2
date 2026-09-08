@@ -2,6 +2,7 @@ package dn.questenginev2.scheduling;
 
 import dn.questenginev2.hint.entity.Hint;
 import dn.questenginev2.hint.entity.HintProgress;
+import dn.questenginev2.hint.entity.HintType;
 import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.LevelProgress;
@@ -32,6 +33,11 @@ import org.springframework.stereotype.Component;
  * <p>Начисление эффекта BONUS/PENALTY-подсказки к итоговому времени команды — вне scope: здесь
  * только фиксируется факт показа, агрегация — отдельная фича (см. roadmap/backlog.md, п. 6,
  * ADR-0007).
+ *
+ * <p>ADR-0021: этот планировщик показывает только подсказки типа {@code REGULAR}. Подсказки
+ * {@code BONUS}/{@code PENALTY} не показываются автоматически — команда должна явно "взять" их
+ * (см. {@code HintProgressServiceImpl#takeHint}), т.к. взятие такой подсказки — осознанный выбор
+ * (жертвовать временем ради помощи или нет), а не то, что можно навязать против воли команды.
  */
 @Component
 @AllArgsConstructor
@@ -75,6 +81,10 @@ public class HintRevealScheduler {
             .collect(Collectors.toSet());
 
     for (Hint hint : hints) {
+      if (hint.getType() != HintType.REGULAR) {
+        // ADR-0021: BONUS/PENALTY показываются только по явному взятию командой, не Job 3.
+        continue;
+      }
       if (alreadyShownHintIds.contains(hint.getId())) {
         continue;
       }

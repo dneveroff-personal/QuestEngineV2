@@ -1,5 +1,6 @@
 package dn.questenginev2.hint.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dn.questenginev2.hint.entity.HintType;
 import java.time.Instant;
 import lombok.AllArgsConstructor;
@@ -11,6 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class HintProgressResponse {
 
   private Long hintId;

@@ -44,8 +44,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Сквозной тест auto-reveal подсказок (ADR-0020): Job 3 показывает подсказку с истёкшей задержкой,
- * ещё не показанную — не показывает будущую, GET-эндпоинт видит показанную.
+ * Сквозной тест видимости подсказок (ADR-0020, ADR-0021): REGULAR auto-reveal через Job 3,
+ * BONUS/PENALTY доступны, но требуют явного взятия через {@code POST .../hints/{hintId}/take}.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -69,8 +69,9 @@ class HintProgressControllerIT {
   private Quest quest;
   private Team team;
   private LevelProgress levelProgress;
-  private Hint dueHint;
-  private Hint futureHint;
+  private Hint regularHint;
+  private Hint penaltyHint;
+  private Hint futureBonusHint;
   private String teamMemberToken;
 
   @BeforeEach
@@ -129,27 +130,39 @@ class HintProgressControllerIT {
         levelRepository.save(
             Level.builder().quest(quest).title("L1").orderIndex(1).timeoutSeconds(3600).build());
 
-    // Задержка уже истекла (openedAt - 120с назад, delay 60с) — должна быть показана.
-    dueHint =
+    // REGULAR, задержка истекла — auto-reveal через Job 3.
+    regularHint =
         hintRepository.save(
             Hint.builder()
                 .level(level)
                 .orderIndex(1)
                 .delaySeconds(60)
-                .content("First hint: check the map")
+                .content("Regular hint: check the map")
                 .type(HintType.REGULAR)
                 .build());
 
-    // Задержка ещё не истекла (delay 3600с) — НЕ должна быть показана.
-    futureHint =
+    // PENALTY, задержка истекла — доступна, но требует явного взятия (ADR-0021).
+    penaltyHint =
         hintRepository.save(
             Hint.builder()
                 .level(level)
                 .orderIndex(2)
+                .delaySeconds(60)
+                .content("The code is written on the wall")
+                .type(HintType.PENALTY)
+                .bonusPenaltySeconds(600)
+                .build());
+
+    // BONUS, задержка ещё не истекла — не должна быть видна вообще.
+    futureBonusHint =
+        hintRepository.save(
+            Hint.builder()
+                .level(level)
+                .orderIndex(3)
                 .delaySeconds(3600)
-                .content("Second hint: much later")
+                .content("Bonus hint: much later")
                 .type(HintType.BONUS)
-                .bonusPenaltySeconds(30)
+                .bonusPenaltySeconds(120)
                 .build());
 
     QuestProgress questProgress =
@@ -172,42 +185,25 @@ class HintProgressControllerIT {
   }
 
   @Test
-  void getShownHints_returnsEmptyList_beforeSchedulerRuns() throws Exception {
-    mockMvc
-        .perform(
-            get("/api/quests/progress/" + quest.getId() + "/" + team.getId() + "/hints")
-                .header("Authorization", "Bearer " + teamMemberToken))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$").isEmpty());
-  }
-
-  @Test
-  void getShownHints_returnsOnlyDueHint_afterSchedulerRuns() throws Exception {
-    hintRevealScheduler.revealDueHints();
-
+  void getVisibleHints_returnsPenaltyTypeOnly_beforeSchedulerRuns() throws Exception {
+    // Job 3 ещё не запускался: REGULAR (истёкшая задержка) не показана — не включаем в ответ
+    // (ADR-0020: content не палим до момента показа). PENALTY (истёкшая задержка) — доступна, но не
+    // взята: виден только тип, content/bonusPenaltySeconds отсутствуют (ADR-0021). BONUS с
+    // неистёкшей задержкой — не виден вообще.
     mockMvc
         .perform(
             get("/api/quests/progress/" + quest.getId() + "/" + team.getId() + "/hints")
                 .header("Authorization", "Bearer " + teamMemberToken))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(1)))
-        .andExpect(jsonPath("$[0].content").value("First hint: check the map"))
-        .andExpect(jsonPath("$[0].type").value("REGULAR"));
-
-    // Подсказка с ещё не истёкшей задержкой не должна быть показана.
-    assertThat(
-            hintProgressRepository.existsByLevelProgressIdAndHintId(
-                levelProgress.getId(), futureHint.getId()))
-        .isFalse();
-    assertThat(
-            hintProgressRepository.existsByLevelProgressIdAndHintId(
-                levelProgress.getId(), dueHint.getId()))
-        .isTrue();
+        .andExpect(jsonPath("$[0].type").value("PENALTY"))
+        .andExpect(jsonPath("$[?(@.type=='REGULAR')]").doesNotExist())
+        .andExpect(jsonPath("$[?(@.type=='BONUS')]").doesNotExist());
   }
 
   @Test
-  void schedulerRun_isIdempotent_whenRunTwice() throws Exception {
-    hintRevealScheduler.revealDueHints();
+  void getVisibleHints_showsRegularAutoRevealed_andPenaltyTypeOnly_afterSchedulerRuns()
+      throws Exception {
     hintRevealScheduler.revealDueHints();
 
     mockMvc
@@ -215,11 +211,98 @@ class HintProgressControllerIT {
             get("/api/quests/progress/" + quest.getId() + "/" + team.getId() + "/hints")
                 .header("Authorization", "Bearer " + teamMemberToken))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$", hasSize(1)));
+        .andExpect(jsonPath("$", hasSize(2)))
+        // REGULAR — auto-revealed, full content.
+        .andExpect(jsonPath("$[?(@.type=='REGULAR')].content").value("Regular hint: check the map"))
+        // PENALTY — available but not taken: type visible, content/cost hidden.
+        .andExpect(jsonPath("$[?(@.type=='PENALTY')].content").isEmpty())
+        .andExpect(jsonPath("$[?(@.type=='PENALTY')].bonusPenaltySeconds").isEmpty());
+
+    // BONUS с неистёкшей задержкой не должен быть создан Job 3 (он его вообще не трогает).
+    assertThat(
+            hintProgressRepository.existsByLevelProgressIdAndHintId(
+                levelProgress.getId(), futureBonusHint.getId()))
+        .isFalse();
+    // PENALTY не должен быть авто-показан Job 3 — только REGULAR.
+    assertThat(
+            hintProgressRepository.existsByLevelProgressIdAndHintId(
+                levelProgress.getId(), penaltyHint.getId()))
+        .isFalse();
   }
 
   @Test
-  void getShownHints_returnsConflict_whenUserNotTeamMember() throws Exception {
+  void takeHint_revealsContent_andPersistsHintProgress() throws Exception {
+    hintRevealScheduler.revealDueHints(); // REGULAR auto-revealed, PENALTY остаётся нетронутым
+
+    mockMvc
+        .perform(
+            post("/api/quests/progress/"
+                    + quest.getId()
+                    + "/"
+                    + team.getId()
+                    + "/hints/"
+                    + penaltyHint.getId()
+                    + "/take")
+                .header("Authorization", "Bearer " + teamMemberToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content").value("The code is written on the wall"))
+        .andExpect(jsonPath("$.bonusPenaltySeconds").value(600));
+
+    assertThat(
+            hintProgressRepository.existsByLevelProgressIdAndHintId(
+                levelProgress.getId(), penaltyHint.getId()))
+        .isTrue();
+
+    // После взятия GET должен возвращать полный content для этой подсказки.
+    mockMvc
+        .perform(
+            get("/api/quests/progress/" + quest.getId() + "/" + team.getId() + "/hints")
+                .header("Authorization", "Bearer " + teamMemberToken))
+        .andExpect(
+            jsonPath("$[?(@.type=='PENALTY')].content").value("The code is written on the wall"));
+  }
+
+  @Test
+  void takeHint_returnsConflict_whenHintNotYetAvailable() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/quests/progress/"
+                    + quest.getId()
+                    + "/"
+                    + team.getId()
+                    + "/hints/"
+                    + futureBonusHint.getId()
+                    + "/take")
+                .header("Authorization", "Bearer " + teamMemberToken))
+        .andExpect(status().isConflict())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void takeHint_isIdempotent_whenCalledTwice() throws Exception {
+    String path =
+        "/api/quests/progress/"
+            + quest.getId()
+            + "/"
+            + team.getId()
+            + "/hints/"
+            + penaltyHint.getId()
+            + "/take";
+
+    mockMvc
+        .perform(post(path).header("Authorization", "Bearer " + teamMemberToken))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(post(path).header("Authorization", "Bearer " + teamMemberToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content").value("The code is written on the wall"));
+
+    assertThat(hintProgressRepository.findByLevelProgressIdOrderByShownAt(levelProgress.getId()))
+        .hasSize(1);
+  }
+
+  @Test
+  void getVisibleHints_returnsConflict_whenUserNotTeamMember() throws Exception {
     User outsider = new User();
     outsider.setUsername("hintoutsider");
     outsider.setPublicName("Outsider");

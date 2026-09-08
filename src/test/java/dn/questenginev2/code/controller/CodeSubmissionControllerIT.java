@@ -9,7 +9,6 @@ import dn.questenginev2.code.entity.CodeSubmission;
 import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
-import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
@@ -64,8 +63,6 @@ class CodeSubmissionControllerIT {
   @Autowired private TeamMemberRepository teamMemberRepository;
   @Autowired private QuestProgressRepository questProgressRepository;
   @Autowired private LevelProgressRepository levelProgressRepository;
-  @Autowired private HintProgressRepository hintProgressRepository;
-
   @Autowired private HintRepository hintRepository;
   @Autowired private QuestAuthorRepository questAuthorRepository;
   @Autowired private QuestRegistrationRepository questRegistrationRepository;
@@ -81,7 +78,6 @@ class CodeSubmissionControllerIT {
   @BeforeEach
   void setUp() throws Exception {
     codeSubmissionRepository.deleteAll();
-    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();

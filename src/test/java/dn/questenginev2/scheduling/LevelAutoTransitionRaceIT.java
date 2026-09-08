@@ -8,7 +8,6 @@ import dn.questenginev2.code.entity.Code;
 import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
-import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
@@ -70,7 +69,6 @@ class LevelAutoTransitionRaceIT {
   @Autowired private QuestAuthorRepository questAuthorRepository;
   @Autowired private QuestRegistrationRepository questRegistrationRepository;
   @Autowired private HintRepository hintRepository;
-  @Autowired private HintProgressRepository hintProgressRepository;
 
   private Quest quest;
   private Team team;
@@ -80,14 +78,13 @@ class LevelAutoTransitionRaceIT {
   @BeforeEach
   void setUp() throws Exception {
     codeSubmissionRepository.deleteAll();
-    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();
-    hintRepository.deleteAll();
     levelRepository.deleteAll();
     teamMemberRepository.deleteAll();
     teamRepository.deleteAll();
+    hintRepository.deleteAll();
     questRegistrationRepository.deleteAll();
     questAuthorRepository.deleteAll();
     questRepository.deleteAll();

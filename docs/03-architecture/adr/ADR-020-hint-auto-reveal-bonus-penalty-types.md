@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted — пункт 3 (безусловное применение эффекта BONUS/PENALTY) амендирован ADR-0021: для BONUS/PENALTY эффект теперь применяется только при явном взятии командой, не автоматически. Auto-reveal остаётся в силе только для REGULAR.
 
 ## Context
 

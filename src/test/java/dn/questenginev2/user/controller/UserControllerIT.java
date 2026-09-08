@@ -5,7 +5,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
-import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.repository.LevelProgressRepository;
 import dn.questenginev2.level.repository.LevelRepository;
@@ -44,8 +43,6 @@ class UserControllerIT {
 
   @Autowired private LevelRepository levelRepository;
 
-  @Autowired private HintProgressRepository hintProgressRepository;
-
   @Autowired private HintRepository hintRepository;
 
   @Autowired private CodeRepository codeRepository;
@@ -67,7 +64,6 @@ class UserControllerIT {
   void setUp() throws Exception {
     // Clean up in correct order to avoid foreign key constraints
     codeSubmissionRepository.deleteAll();
-    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
     questProgressRepository.deleteAll();
     teamJoinRequestRepository.deleteAll();

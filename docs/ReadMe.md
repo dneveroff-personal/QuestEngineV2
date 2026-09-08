@@ -37,7 +37,7 @@
 | [invariants.md](01-domain/invariants.md) | 🟢 |
 | [statistics-ranking.md](01-domain/statistics-ranking.md) | 🟢 *(модель ranking полностью формализована, включая первый уровень; дублирующий раздел устранён)* |
 | [code-submission.md](01-domain/code-submission.md) — коды, синонимы, порог | 🟢 *(модель полностью решена — ADR-0004/0005/0006, rate limiting, видимость статистики, формат прогресса)* |
-| [hint-progress.md](01-domain/hint-progress.md) — auto-reveal, типы Regular/Bonus/Penalty | 🔵 *(реализовано — Job 3, GET-эндпоинт; персональные подсказки — будущее улучшение)* |
+| [hint-progress.md](01-domain/hint-progress.md) — auto-reveal (REGULAR), явное взятие (BONUS/PENALTY) | 🔵 *(реализовано — Job 3 + take-эндпоинт, ADR-0020/ADR-0021; персональные подсказки — будущее улучшение)* |
 | [bonus-penalty.md](01-domain/bonus-penalty.md) — три источника бонус/штрафа, аудит | 🟢 *(модель решена ADR-0007/0020; видимость reason и отсутствие лимитов решены)* |
 
 ## 02. Processes — бизнес-процессы ("как", без привязки к транспорту)
@@ -88,7 +88,6 @@
 | Документ | Статус |
 |---|---|
 | [actuator.md](08-ops/actuator.md) | 🔵 |
-| [deployment.md](08-ops/deployment.md) — топология nginx + app + frontend, same-origin без CORS, раздельные образы | 🟢 *(закрывает открытый пункт CORS из 05-security/threat-model.md)* |
 
 ## Roadmap
 
@@ -120,9 +119,10 @@
 | [ADR-017](03-architecture/adr/ADR-017-jacoco-coverage-threshold.md) | Порог покрытия 70% (сервисный слой), проваливает сборку | 🟢 Accepted |
 | [ADR-018](03-architecture/adr/ADR-018-clock-injection-required-for-time-dependent-services.md) | `Clock`-инъекция обязательна для time-dependent сервисов | 🟢 Accepted |
 | [ADR-019](03-architecture/adr/ADR-019-single-entity-model-for-all-game-formats.md) | Одна модель данных для всех форматов игры, без offline/online split | 🟢 Accepted |
-| [ADR-020](03-architecture/adr/ADR-020-hint-auto-reveal-bonus-penalty-types.md) | Hint: auto-reveal, типы Regular/Bonus/Penalty | 🟢 Accepted |
+| [ADR-020](03-architecture/adr/ADR-020-hint-auto-reveal-bonus-penalty-types.md) | Hint: auto-reveal (REGULAR), типы Regular/Bonus/Penalty | 🟢 Accepted *(п.3 амендирован ADR-0021)* |
+| [ADR-021](03-architecture/adr/ADR-021-hint-take-action-for-bonus-penalty.md) | Hint: явное взятие для BONUS/PENALTY — тип виден, число и content скрыты до взятия | 🟢 Accepted |
 
-**Все 19 ADR приняты (Accepted).** Открытых архитектурных вопросов не осталось.
+**Все 20 ADR приняты (Accepted).** Открытых архитектурных вопросов не осталось.
 
 ---
 
