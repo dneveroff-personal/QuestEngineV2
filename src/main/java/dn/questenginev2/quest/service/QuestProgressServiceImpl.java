@@ -1,5 +1,6 @@
 package dn.questenginev2.quest.service;
 
+import dn.questenginev2.bonuspenalty.service.BonusPenaltyService;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.LevelProgressNotFoundException;
 import dn.questenginev2.common.exceptions.TeamNotFoundException;
@@ -45,6 +46,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
   private final QuestAuthorRepository questAuthorRepository;
   private final UserService userService;
   private final LevelProgressService levelProgressService;
+  private final BonusPenaltyService bonusPenaltyService;
   private final Clock clock;
   private LevelProgressRepository levelProgressRepository;
   private LevelRepository levelRepository;
@@ -59,6 +61,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
       QuestAuthorRepository questAuthorRepository,
       UserService userService,
       LevelProgressService levelProgressService,
+      BonusPenaltyService bonusPenaltyService,
       LevelProgressRepository levelProgressRepository,
       LevelRepository levelRepository) {
     this(
@@ -70,6 +73,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
         questAuthorRepository,
         userService,
         levelProgressService,
+        bonusPenaltyService,
         Clock.systemUTC());
     this.levelProgressRepository = levelProgressRepository;
     this.levelRepository = levelRepository;
@@ -84,6 +88,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
       QuestAuthorRepository questAuthorRepository,
       UserService userService,
       LevelProgressService levelProgressService,
+      BonusPenaltyService bonusPenaltyService,
       Clock clock) {
     this.questProgressRepository = questProgressRepository;
     this.questRepository = questRepository;
@@ -93,6 +98,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     this.questAuthorRepository = questAuthorRepository;
     this.userService = userService;
     this.levelProgressService = levelProgressService;
+    this.bonusPenaltyService = bonusPenaltyService;
     this.clock = clock;
   }
 
@@ -325,11 +331,13 @@ public class QuestProgressServiceImpl implements QuestProgressService {
   // ────── BUILDERS ───────────────────────────────────────────────────────────
   private QuestProgressResponse buildQuestProgressResponse(QuestProgress progress) {
     return QuestProgressResponse.builder()
+        .id(progress.getId())
         .teamName(progress.getTeam().getName())
         .status(progress.getStatus())
         .questStartedAt(progress.getQuestStartedAt())
         .endedAt(progress.getEnteredAt())
         .finishedAt(progress.getFinishedAt())
+        .bonusPenaltySeconds(bonusPenaltyService.getTotalAdjustmentSeconds(progress))
         .build();
   }
 }

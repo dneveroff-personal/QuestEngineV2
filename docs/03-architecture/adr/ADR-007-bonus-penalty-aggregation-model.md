@@ -19,6 +19,10 @@ Accepted
 
 Итоговое время `QuestProgress` вычисляется как агрегат (сумма), а не денормализованное перезаписываемое поле:
 
+> **Amendment (ADR-0021):** формула ниже дополнена третьим источником —
+> эффектом BONUS/PENALTY-подсказок (`HintProgress`/`Hint.bonusPenaltySeconds`).
+> На момент принятия этого ADR подсказки такого эффекта ещё не имели.
+
 ```
 finalTime =
     фактическое игровое время
@@ -26,6 +30,8 @@ finalTime =
   + Σ секунд по зачтённым CodeSubmission типа CORRECT_PENALTY
   − Σ секунд по неотозванным ManualTimeAdjustment типа BONUS
   + Σ секунд по неотозванным ManualTimeAdjustment типа PENALTY
+  − Σ секунд по показанным HintProgress с Hint.type = BONUS
+  + Σ секунд по показанным HintProgress с Hint.type = PENALTY
 ```
 
 Ручная корректировка отзывается (soft-revoke) только до перевода Quest в `FINISHED`; после — становится неизменным историческим фактом.

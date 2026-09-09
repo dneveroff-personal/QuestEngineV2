@@ -4,7 +4,9 @@ import dn.questenginev2.bonuspenalty.dto.CreateManualTimeAdjustmentRequest;
 import dn.questenginev2.bonuspenalty.dto.ManualTimeAdjustmentResponse;
 import dn.questenginev2.bonuspenalty.entity.ManualTimeAdjustment;
 import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
+import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.quest.entity.QuestProgress;
+import dn.questenginev2.quest.entity.QuestStatus;
 import dn.questenginev2.quest.repository.QuestProgressRepository;
 import dn.questenginev2.quest.service.QuestService;
 import dn.questenginev2.user.entity.User;
@@ -64,6 +66,14 @@ public class ManualTimeAdjustmentServiceImpl implements ManualTimeAdjustmentServ
 
     if (adjustment.getRevokedAt() != null) {
       throw new IllegalArgumentException("Корректировка уже отозвана: " + adjustmentId);
+    }
+
+    // bonus-penalty.md, "Ручная корректировка": отзыв запрещён после
+    // официального завершения Quest — иначе итоговая статистика/место
+    // менялись бы задним числом уже после того, как результат объявлен.
+    if (adjustment.getQuestProgress().getQuest().getStatus() == QuestStatus.FINISHED) {
+      throw new ForbiddenOperationException(
+          "Нельзя отозвать корректировку после завершения квеста: " + adjustmentId);
     }
 
     adjustment.setRevokedAt(Instant.now());

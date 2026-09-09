@@ -61,4 +61,12 @@ public final class Routes {
   // Code
   public static final String CODES = API + "/codes";
   public static final String CODE_ID = "/{codeId:\\d+}";
+
+  // Bonus / Penalty — Manual Time Adjustment (ADR-0007)
+  public static final String QUEST_PROGRESS_BASE = API + "/quest-progress";
+  public static final String QUEST_PROGRESS_ID_PATH = "/{questProgressId:\\d+}";
+  public static final String ADJUSTMENTS = QUEST_PROGRESS_ID_PATH + "/adjustments";
+  public static final String ADJUSTMENTS_ROOT = API + "/adjustments";
+  public static final String ADJUSTMENT_ID = "/{adjustmentId:\\d+}";
+  public static final String REVOKE_ADJUSTMENT = ADJUSTMENT_ID + "/revoke";
 }

@@ -114,23 +114,35 @@
 
 ## Hints — `/api/quests/{questId}/levels/{levelId}/hints`, `/api/hints`
 
-CRUD автором — см. `01-domain/hint-progress.md`. Игровая механика открытия командой не реализована (см. тот же документ).
+CRUD автором и игровая механика показа — см. `01-domain/hint-progress.md`.
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST / GET / PUT / DELETE | (CRUD) | 🔵 *(только редактирование автором)* |
+| POST / GET / PUT / DELETE | (CRUD) | 🔵 *(редактирование автором)* |
 | **Показ подсказки командой** | — | 🔵 REGULAR — автоматически через Job 3 (`HintRevealScheduler`); BONUS/PENALTY — явно через `POST .../hints/{hintId}/take` (ADR-0021). Видимость — `GET /api/quests/progress/{questId}/{teamId}/hints`, три состояния (не наступило время / показана-взята / доступна-но-не-взята) |
 
 ---
 
 ## Codes — `/api/quests/{questId}/levels/{levelId}/codes`, `/api/codes`
 
-CRUD автором — см. `01-domain/code-submission.md`. Игровой ввод кода командой не реализован.
+CRUD автором и игровой ввод командой — см. `01-domain/code-submission.md`.
 
 | Метод | Путь | Статус |
 |---|---|---|
 | POST / GET / PUT / DELETE | (CRUD) | 🟡 *(CRUD работает, но с проблемой глобальной уникальности значения — см. `code-submission.md`)* |
-| **Ввод кода командой** | — | ⚪ Не реализовано, см. `code-submission.md` |
+| **Ввод кода командой** | — | 🔵 `POST /api/quests/progress/{questId}/{teamId}/codes` — см. раздел Quest Progress выше |
+
+---
+
+## Bonus / Penalty — `/api/quest-progress`, `/api/adjustments`
+
+Ручная корректировка автора — один из трёх источников, см. `01-domain/bonus-penalty.md`, ADR-0007. Эффект кода и подсказки виден в `QuestProgressResponse.bonusPenaltySeconds` (агрегат всех трёх источников), отдельных эндпоинтов для них не требуется — сами события уже видны через существующие Code/Hint эндпоинты.
+
+| Метод | Путь | Статус |
+|---|---|---|
+| POST | `/quest-progress/{questProgressId}/adjustments` | 🟡 *(реализовано, тестов пока нет)* |
+| GET | `/quest-progress/{questProgressId}/adjustments` | 🟡 *(реализовано, тестов пока нет)* |
+| POST | `/adjustments/{adjustmentId}/revoke` | 🟡 *(реализовано, тестов пока нет; запрещено после `Quest.status = FINISHED`)* |
 
 ---
 
@@ -148,7 +160,7 @@ CRUD автором — см. `01-domain/code-submission.md`. Игровой в�
 
 ## Сводка по крупным пробелам, не отражённым построчно выше
 
-1. Нет эндпоинтов публикации (`DRAFT → REGISTRATION`) и финального завершения Quest (`RUNNING → FINISHED`) автором.
-2. `setDnf()` реализован в сервисе, но не достижим через API.
-3. Вся статистика (`statistic/`) не реализована.
+1. `setDnf()` реализован в сервисе, но не достижим через API.
+2. Вся статистика (`statistic/`) не реализована.
+3. Auth — модель одного JWT на 24ч, не access+refresh (ADR-0015).
 4. Игровые механики `CodeSubmission` и `HintProgress` (ввод кода/открытие подсказки командой во время игры) не реализованы — есть только редактирование автором.
