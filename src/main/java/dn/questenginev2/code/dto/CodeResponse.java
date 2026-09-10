@@ -17,7 +17,7 @@ public class CodeResponse {
   private Long levelId;
   private String value;
   private CodeType type;
-  private Integer points;
+  private Integer bonusPenaltySeconds;
   private Integer codeIndex;
   private Instant createdAt;
 }

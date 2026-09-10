@@ -20,13 +20,10 @@ public interface CodeSubmissionRepository extends JpaRepository<CodeSubmission, 
 
   /**
    * Эффект BONUS/PENALTY-кодов для агрегации итогового времени (ADR-0007,
-   * bonus-penalty.md). Поле называется `points` в Code (переименование в
-   * `bonusPenaltySeconds` — открытый пункт в backlog, не выполнено, т.к.
-   * потребовало бы правки существующих тестов, см. backlog.md), но
-   * семантически это уже секунды, а не очки.
+   * bonus-penalty.md).
    */
   @Query(
-      "SELECT COALESCE(SUM(cs.matchedCode.points), 0) FROM CodeSubmission cs "
+      "SELECT COALESCE(SUM(cs.matchedCode.bonusPenaltySeconds), 0) FROM CodeSubmission cs "
           + "WHERE cs.levelProgress.questProgress.id = :questProgressId AND cs.result = :result")
   long sumEffectSecondsByQuestProgressIdAndResult(
       @Param("questProgressId") Long questProgressId, @Param("result") CodeSubmissionResult result);

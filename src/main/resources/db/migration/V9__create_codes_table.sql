@@ -4,7 +4,7 @@ CREATE TABLE codes (
                          code_value      VARCHAR(255)     NOT NULL,
                          code_index     INTEGER,
                          type            VARCHAR(255)     NOT NULL,
-                         points          INTEGER,
+                         bonus_penalty_seconds          INTEGER,
                          created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

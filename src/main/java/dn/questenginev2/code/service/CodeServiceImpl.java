@@ -73,7 +73,7 @@ public class CodeServiceImpl implements CodeService {
 
     code.setValue(request.value());
     code.setType(request.type());
-    code.setPoints(request.points());
+    code.setBonusPenaltySeconds(request.bonusPenaltySeconds());
     code.setCodeIndex(request.codeIndex());
 
     Code savedCode = codeRepository.save(code);
@@ -126,7 +126,7 @@ public class CodeServiceImpl implements CodeService {
         .levelId(code.getLevel().getId())
         .value(code.getValue())
         .type(code.getType())
-        .points(code.getPoints())
+        .bonusPenaltySeconds(code.getBonusPenaltySeconds())
         .codeIndex(code.getCodeIndex())
         .createdAt(code.getCreatedAt())
         .build();
@@ -138,7 +138,7 @@ public class CodeServiceImpl implements CodeService {
         .levelId(levelId)
         .value(code.getValue())
         .type(code.getType())
-        .points(code.getPoints())
+        .bonusPenaltySeconds(code.getBonusPenaltySeconds())
         .codeIndex(code.getCodeIndex())
         .createdAt(code.getCreatedAt())
         .build();
@@ -149,7 +149,7 @@ public class CodeServiceImpl implements CodeService {
         .level(level)
         .value(request.value())
         .type(request.type())
-        .points(request.points())
+        .bonusPenaltySeconds(request.bonusPenaltySeconds())
         .codeIndex(request.codeIndex())
         .createdAt(Instant.now())
         .build();

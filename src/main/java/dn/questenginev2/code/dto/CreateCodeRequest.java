@@ -12,4 +12,4 @@ public record CreateCodeRequest(
         String value,
     @NotNull(message = "Тип кода не может быть пустым") CodeType type,
     @Min(value = 1, message = "Индекс кода должен быть не менее 1") Integer codeIndex,
-    Integer points) {}
+    Integer bonusPenaltySeconds) {}

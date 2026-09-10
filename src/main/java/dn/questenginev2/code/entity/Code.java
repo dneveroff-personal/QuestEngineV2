@@ -35,8 +35,9 @@ public class Code {
   @Column(name = "type", nullable = false)
   private CodeType type;
 
-  @Column(name = "points")
-  private Integer points;
+  /** Семантика — секунды, начисляемые/вычитаемые из итогового времени для BONUS/PENALTY (ADR-0007, bonus-penalty.md). Для MAIN не используется. */
+  @Column(name = "bonus_penalty_seconds")
+  private Integer bonusPenaltySeconds;
 
   @Builder.Default
   @Column(name = "created_at", nullable = false)
