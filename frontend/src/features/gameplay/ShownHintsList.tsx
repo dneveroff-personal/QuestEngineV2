@@ -1,5 +1,6 @@
 import { formatDateTime } from "@/lib/format";
 import { useShownHints } from "@/features/gameplay/useGameplay";
+import type { ShownHint } from "@/api/hints";
 
 const TYPE_LABEL: Record<string, string> = {
   REGULAR: "Подсказка",
@@ -35,8 +36,8 @@ export function ShownHintsList({ questId, teamId }: { questId: number; teamId: n
       <ul className="space-y-2">
         {hints
           .slice()
-          .sort((a, b) => a.orderIndex - b.orderIndex)
-          .map((hint) => (
+          .sort((a: ShownHint, b: ShownHint) => a.orderIndex - b.orderIndex)
+          .map((hint: ShownHint) => (
             <li key={hint.hintId} className="text-sm">
               <p className="text-muted-foreground text-xs">
                 {TYPE_LABEL[hint.type] ?? hint.type} · {formatDateTime(hint.shownAt)}
