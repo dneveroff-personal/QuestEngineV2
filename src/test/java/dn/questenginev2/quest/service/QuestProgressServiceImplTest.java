@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import dn.questenginev2.bonuspenalty.service.BonusPenaltyService;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.TeamNotFoundException;
 import dn.questenginev2.level.dto.LevelProgressResponse;
@@ -56,6 +57,7 @@ class QuestProgressServiceImplTest {
   @Mock private UserService userService;
   @Mock private Authentication authentication;
   @Mock private LevelProgressService levelProgressService;
+  @Mock private BonusPenaltyService bonusPenaltyService;
   @Mock private LevelProgressRepository levelProgressRepository;
   @Mock private LevelRepository levelRepository;
   @Mock private Clock clock;
@@ -79,6 +81,7 @@ class QuestProgressServiceImplTest {
   void setUp() {
     Instant fixedNow = Instant.parse("2024-01-01T10:01:00Z");
     when(clock.instant()).thenReturn(fixedNow);
+    when(bonusPenaltyService.getTotalAdjustmentSeconds(any())).thenReturn(0L);
 
     authorUser = new User();
     authorUser.setId(1L);

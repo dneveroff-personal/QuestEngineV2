@@ -116,7 +116,7 @@ class CodeServiceImplTest {
             .level(testLevel)
             .value("CODE123")
             .type(CodeType.MAIN)
-            .points(100)
+            .bonusPenaltySeconds(100)
             .createdAt(Instant.now())
             .build();
     when(codeRepository.save(any(Code.class))).thenReturn(savedCode);
@@ -128,7 +128,7 @@ class CodeServiceImplTest {
     assertThat(response.getLevelId()).isEqualTo(1L);
     assertThat(response.getValue()).isEqualTo("CODE123");
     assertThat(response.getType()).isEqualTo(CodeType.MAIN);
-    assertThat(response.getPoints()).isEqualTo(100);
+    assertThat(response.getBonusPenaltySeconds()).isEqualTo(100);
 
     verify(codeRepository).save(any(Code.class));
   }
@@ -177,7 +177,7 @@ class CodeServiceImplTest {
             .level(testLevel)
             .value("CODE1")
             .type(CodeType.MAIN)
-            .points(100)
+            .bonusPenaltySeconds(100)
             .createdAt(Instant.now())
             .build();
 
@@ -187,7 +187,7 @@ class CodeServiceImplTest {
             .level(testLevel)
             .value("CODE2")
             .type(CodeType.BONUS)
-            .points(50)
+            .bonusPenaltySeconds(50)
             .createdAt(Instant.now())
             .build();
 
@@ -208,7 +208,7 @@ class CodeServiceImplTest {
             .level(testLevel)
             .value("CODE123")
             .type(CodeType.MAIN)
-            .points(100)
+            .bonusPenaltySeconds(100)
             .createdAt(Instant.now())
             .build();
 
@@ -238,7 +238,7 @@ class CodeServiceImplTest {
             .level(testLevel)
             .value("OLDCODE")
             .type(CodeType.MAIN)
-            .points(100)
+            .bonusPenaltySeconds(100)
             .createdAt(Instant.now())
             .build();
 
@@ -254,7 +254,7 @@ class CodeServiceImplTest {
             .level(testLevel)
             .value("NEWCODE")
             .type(CodeType.BONUS)
-            .points(200)
+            .bonusPenaltySeconds(200)
             .codeIndex(null)
             .createdAt(Instant.now())
             .build();
@@ -266,7 +266,7 @@ class CodeServiceImplTest {
     assertThat(response.getValue()).isEqualTo("NEWCODE");
     assertThat(response.getType()).isEqualTo(CodeType.BONUS);
     assertThat(response.getCodeIndex()).isNull();
-    assertThat(response.getPoints()).isEqualTo(200);
+    assertThat(response.getBonusPenaltySeconds()).isEqualTo(200);
 
     verify(codeRepository).save(any(Code.class));
   }
@@ -279,7 +279,7 @@ class CodeServiceImplTest {
             .level(testLevel)
             .value("CODE123")
             .type(CodeType.MAIN)
-            .points(100)
+            .bonusPenaltySeconds(100)
             .createdAt(Instant.now())
             .build();
 

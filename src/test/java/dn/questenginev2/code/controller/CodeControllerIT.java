@@ -140,13 +140,13 @@ class CodeControllerIT {
                 .header("Authorization", "Bearer " + authorToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"value\":\"CODE123\",\"type\":\"MAIN\",\"codeIndex\":1,\"points\":100}"))
+                    "{\"value\":\"CODE123\",\"type\":\"MAIN\",\"codeIndex\":1,\"bonusPenaltySeconds\":100}"))
         .andExpect(status().isCreated())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.levelId").value(level.getId()))
         .andExpect(jsonPath("$.value").value("CODE123"))
         .andExpect(jsonPath("$.type").value("MAIN"))
-        .andExpect(jsonPath("$.points").value(100));
+        .andExpect(jsonPath("$.bonusPenaltySeconds").value(100));
   }
 
   @Test
@@ -170,7 +170,12 @@ class CodeControllerIT {
     level = levelRepository.save(level);
 
     Code code =
-        Code.builder().level(level).value("CODE123").type(CodeType.MAIN).points(100).build();
+        Code.builder()
+            .level(level)
+            .value("CODE123")
+            .type(CodeType.MAIN)
+            .bonusPenaltySeconds(100)
+            .build();
     codeRepository.save(code);
 
     mockMvc
@@ -182,6 +187,6 @@ class CodeControllerIT {
         .andExpect(jsonPath("$[0].levelId").value(level.getId()))
         .andExpect(jsonPath("$[0].value").value("CODE123"))
         .andExpect(jsonPath("$[0].type").value("MAIN"))
-        .andExpect(jsonPath("$[0].points").value(100));
+        .andExpect(jsonPath("$[0].bonusPenaltySeconds").value(100));
   }
 }

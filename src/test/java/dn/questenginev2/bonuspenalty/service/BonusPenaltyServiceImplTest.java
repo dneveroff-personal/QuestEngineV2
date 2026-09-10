@@ -5,6 +5,8 @@ import static org.mockito.Mockito.*;
 
 import dn.questenginev2.bonuspenalty.entity.TimeAdjustmentType;
 import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
+import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.quest.entity.QuestProgress;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,13 +19,18 @@ class BonusPenaltyServiceImplTest {
 
   @Mock private ManualTimeAdjustmentRepository repository;
 
+  @Mock private CodeSubmissionRepository codeSubmissionRepository;
+
+  @Mock private HintProgressRepository hintProgressRepository;
+
   private BonusPenaltyServiceImpl service;
 
   private QuestProgress questProgress;
 
   @BeforeEach
   void setUp() {
-    service = new BonusPenaltyServiceImpl(repository);
+    service =
+        new BonusPenaltyServiceImpl(repository, codeSubmissionRepository, hintProgressRepository);
 
     questProgress = QuestProgress.builder().id(100L).build();
   }

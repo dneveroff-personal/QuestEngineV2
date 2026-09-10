@@ -55,7 +55,7 @@ class CodeControllerTest {
         .andExpect(jsonPath("$.levelId").value(1))
         .andExpect(jsonPath("$.value").value("CODE123"))
         .andExpect(jsonPath("$.type").value("MAIN"))
-        .andExpect(jsonPath("$.points").value(100));
+        .andExpect(jsonPath("$.bonusPenaltySeconds").value(100));
   }
 
   @Test
@@ -101,6 +101,6 @@ class CodeControllerTest {
         .andExpect(jsonPath("$.id").value(1))
         .andExpect(jsonPath("$.value").value("CODE123"))
         .andExpect(jsonPath("$.type").value("MAIN"))
-        .andExpect(jsonPath("$.points").value(100));
+        .andExpect(jsonPath("$.bonusPenaltySeconds").value(100));
   }
 }
