@@ -38,6 +38,8 @@ public class SecurityConfig {
                     .permitAll()
                     .anyRequest()
                     .authenticated())
+        // Rate limit login before JWT filter (ADR-0016)
+        .addFilterBefore(loginRateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
     return http.build();
   }
@@ -45,5 +47,10 @@ public class SecurityConfig {
   @Bean
   public Filter jwtAuthFilter() {
     return new JwtAuthFilter(jwtService);
+  }
+
+  @Bean
+  public Filter loginRateLimitFilter() {
+    return new LoginRateLimitFilter();
   }
 }

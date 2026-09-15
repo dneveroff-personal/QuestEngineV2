@@ -69,7 +69,7 @@
 | Документ | Статус |
 |---|---|
 | [permissions.md](05-security/permissions.md) | 🟢 |
-| [threat-model.md](05-security/threat-model.md) — access+refresh токены, rate limiting (только login), CORS (same-origin) | 🟢 *(все решения приняты, реализация ещё не выполнена)* |
+| [threat-model.md](05-security/threat-model.md) — access+refresh токены, rate limiting (только login), CORS (same-origin) | 🟢 *(rate limiting реализован в 0.7.6 — `LoginRateLimitFilter`; access+refresh ещё нет)* |
 
 ## 06. NFR — нефункциональные требования
 
@@ -115,7 +115,7 @@
 | [ADR-013](03-architecture/adr/ADR-013-quest-start-time-display-timezone.md) | `startTime` всегда отображается в поясе устройства пользователя | 🟢 Accepted |
 | [ADR-014](03-architecture/adr/ADR-014-sse-for-live-statistics.md) | SSE как транспорт live-статистики, без искусственной задержки | 🟢 Accepted |
 | [ADR-015](03-architecture/adr/ADR-015-access-refresh-token-pattern.md) | Access (15 мин) + refresh (в БД, с ротацией) токены | 🟢 Accepted |
-| [ADR-016](03-architecture/adr/ADR-016-rate-limiting-bucket4j.md) | Rate limiting через `bucket4j` — только для `/auth/login`, явно НЕ для ввода кода | 🟢 Accepted |
+| [ADR-016](03-architecture/adr/ADR-016-rate-limiting-bucket4j.md) | Rate limiting через `bucket4j` — только для `/auth/login`, явно НЕ для ввода кода | 🟢 Accepted *(реализовано 0.7.6)* |
 | [ADR-017](03-architecture/adr/ADR-017-jacoco-coverage-threshold.md) | Порог покрытия 70% (сервисный слой), проваливает сборку | 🟢 Accepted |
 | [ADR-018](03-architecture/adr/ADR-018-clock-injection-required-for-time-dependent-services.md) | `Clock`-инъекция обязательна для time-dependent сервисов | 🟢 Accepted |
 | [ADR-019](03-architecture/adr/ADR-019-single-entity-model-for-all-game-formats.md) | Одна модель данных для всех форматов игры, без offline/online split | 🟢 Accepted |
@@ -144,7 +144,7 @@
 - Метод `setDnf()` реализован в сервисе, но не выведен ни в один контроллер.
 - Пакет `statistic/` создан пустым — статистика не реализована совсем.
 - Оставлен диагностический `GET /api/test/secure` — решить, удалять перед релизом или документировать намеренно.
-- В проекте нет ни одной библиотеки rate limiting — уязвимо как минимум `/auth/login` (ADR-0016 принят, не реализован).
+- ✅ Rate limiting для `/auth/login` реализован (0.7.6, ADR-0016).
 - `JwtService` и `GlobalExceptionHandler` не имеют собственных unit-тестов.
 - CORS не требуется по решённой архитектуре (same-origin), но стоит явно проверить конфигурацию reverse-proxy при первом деплое.
 - `.github/workflows/deploy.yml` осознанно отключён до продакшена; при включении не забыть поправить `if`-условие + путь `cd` — см. `roadmap/backlog.md`.
