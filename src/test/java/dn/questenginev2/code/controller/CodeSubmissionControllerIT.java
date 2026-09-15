@@ -24,6 +24,7 @@ import dn.questenginev2.quest.repository.QuestAuthorRepository;
 import dn.questenginev2.quest.repository.QuestProgressRepository;
 import dn.questenginev2.quest.repository.QuestRegistrationRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
+import dn.questenginev2.security.LoginRateLimitFilter;
 import dn.questenginev2.team.entity.Team;
 import dn.questenginev2.team.entity.TeamMember;
 import dn.questenginev2.team.entity.TeamRole;
@@ -68,6 +69,7 @@ class CodeSubmissionControllerIT {
   @Autowired private QuestRegistrationRepository questRegistrationRepository;
   @Autowired private TeamJoinRequestRepository teamJoinRequestRepository;
   @Autowired private PasswordEncoder passwordEncoder;
+  @Autowired private LoginRateLimitFilter loginRateLimitFilter;
 
   private Quest quest;
   private Team team;
@@ -77,6 +79,7 @@ class CodeSubmissionControllerIT {
 
   @BeforeEach
   void setUp() throws Exception {
+    loginRateLimitFilter.clear();
     codeSubmissionRepository.deleteAll();
     levelProgressRepository.deleteAll();
     questProgressRepository.deleteAll();

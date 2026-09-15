@@ -19,6 +19,7 @@ import dn.questenginev2.quest.repository.QuestAuthorRepository;
 import dn.questenginev2.quest.repository.QuestProgressRepository;
 import dn.questenginev2.quest.repository.QuestRegistrationRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
+import dn.questenginev2.security.LoginRateLimitFilter;
 import dn.questenginev2.team.repository.TeamJoinRequestRepository;
 import dn.questenginev2.team.repository.TeamMemberRepository;
 import dn.questenginev2.team.repository.TeamRepository;
@@ -69,12 +70,14 @@ class HintControllerIT {
   @Autowired private TeamJoinRequestRepository teamJoinRequestRepository;
 
   @Autowired private PasswordEncoder passwordEncoder;
+  @Autowired private LoginRateLimitFilter loginRateLimitFilter;
 
   private User authorUser;
   private String authorToken;
 
   @BeforeEach
   void setUp() throws Exception {
+    loginRateLimitFilter.clear();
     codeSubmissionRepository.deleteAll();
     levelProgressRepository.deleteAll();
     questProgressRepository.deleteAll();

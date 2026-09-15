@@ -25,6 +25,7 @@ import dn.questenginev2.quest.entity.QuestType;
 import dn.questenginev2.quest.repository.QuestProgressRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
 import dn.questenginev2.scheduling.HintRevealScheduler;
+import dn.questenginev2.security.LoginRateLimitFilter;
 import dn.questenginev2.team.entity.Team;
 import dn.questenginev2.team.entity.TeamMember;
 import dn.questenginev2.team.entity.TeamRole;
@@ -65,6 +66,7 @@ class HintProgressControllerIT {
   @Autowired private LevelProgressRepository levelProgressRepository;
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private HintRevealScheduler hintRevealScheduler;
+  @Autowired private LoginRateLimitFilter loginRateLimitFilter;
 
   private Quest quest;
   private Team team;
@@ -76,6 +78,7 @@ class HintProgressControllerIT {
 
   @BeforeEach
   void setUp() throws Exception {
+    loginRateLimitFilter.clear();
     hintProgressRepository.deleteAll();
     codeSubmissionRepository.deleteAll();
     levelProgressRepository.deleteAll();

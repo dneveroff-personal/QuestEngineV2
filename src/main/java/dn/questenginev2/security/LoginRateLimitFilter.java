@@ -30,6 +30,13 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
 
   private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
+  /**
+   * Очистить все бакеты (используется в тестах для сброса лимита между тестами).
+   */
+  public void clear() {
+    buckets.clear();
+  }
+
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
     return !("POST".equalsIgnoreCase(request.getMethod())
