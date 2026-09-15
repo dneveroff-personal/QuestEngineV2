@@ -2,7 +2,7 @@
 
 Статус: 🟡 Draft.
 
-Это не полный контракт (поля запросов/ответов, коды ошибок по каждому полю) — для этого используйте сгенерированную OpenAPI-спеку (`/api-docs`, UI на `/swagger-ui`), которая всегда актуальна относительно кода. Здесь — карта ресурсов по группам, их статус и связь с доменной документацией, чтобы ориентироваться, не читая контроллеры целиком.
+Это не полный контракт — для полей запросов/ответов используйте сгенерированную OpenAPI-спеку. Здесь — карта ресурсов по группам, их статус и связь с доменной документацией.
 
 Соглашения (формат ошибок, аутентификация, пагинация, версионирование) — в `04-api/conventions.md`.
 
@@ -15,8 +15,8 @@
 | POST | `/auth/login` | 🟡 *(будет возвращать пару access+refresh вместо одного токена — ADR-0015)* |
 | POST | `/auth/register` | 🔵 |
 | POST | `/auth/reset-admin-password` | 🔵 |
-| **POST `/auth/refresh`** | — | ⚪ **Отсутствует.** Обмен refresh-токена на новый access-токен, с ротацией (ADR-0015). |
-| **POST `/auth/logout`** | — | ⚪ **Отсутствует.** Отзыв refresh-токена текущей сессии (ADR-0015). |
+| POST | `/auth/refresh` | ⚪ **Отсутствует.** Обмен refresh-токена на новый access-токен, с ротацией (ADR-0015). |
+| POST | `/auth/logout` | ⚪ **Отсутствует.** Отзыв refresh-токена текущей сессии (ADR-0015). |
 
 ---
 
@@ -24,9 +24,10 @@
 
 | Метод | Путь | Статус |
 |---|---|---|
+| GET | `/users/me` | ⚪ **Отсутствует.** Нужен frontend для профиля и role-based UI. |
 | PUT | `/users/{userId}/role` | 🔵 |
 | POST | `/users/{userId}/reset-password` | 🔵 |
-| GET | `/users/search` | 🔵 *(пагинация принимается, но не возвращается — см. `conventions.md`)* |
+| GET | `/users/search` | 🟡 *(пагинация реализована; остаются вопросы по доступности поиска и составу `UserResponse`)* |
 
 ---
 
@@ -40,8 +41,9 @@
 | GET | `/teams/{teamId}` | 🔵 |
 | GET | `/teams/my` | 🔵 |
 | GET | `/teams/{teamId}/members` | 🔵 |
-| GET | `/teams/search` | 🔵 *(та же проблема пагинации)* |
-| POST | `/teams/{teamId}/request` | 🔵 | заявка на вступление
+| GET | `/teams/{teamId}/quests` | ⚪ **Отсутствует.** Нужен frontend для списка квестов/регистраций команды без N+1. |
+| GET | `/teams/search` | 🔵 *(пагинация реализована)* |
+| POST | `/teams/{teamId}/request` | 🔵 |
 | GET | `/teams/requests` | 🔵 |
 | POST | `/teams/requests/{requestId}/approve` | 🔵 |
 | POST | `/teams/requests/{requestId}/reject` | 🔵 |
@@ -61,9 +63,9 @@
 | GET | `/quests/authors/{authorId}` | 🔵 |
 | GET | `/quests/upcoming` | 🔵 |
 | PUT | `/quests/{questId}` | 🔵 |
-| DELETE | `/quests/{questId}` | 🔵 |
-| POST | `/quests/{questId}/publish` | 🔵 *(`DRAFT → REGISTRATION`, с валидацией "аномальных" уровней по ADR-0005)* |
-| POST | `/quests/{questId}/finish` | 🔵 *(`RUNNING → FINISHED`, автор; незавершённые QuestProgress получают DNF)* |
+| DELETE | `/quests/{questId}` | 🟡 *(технически работает во всех статусах; бизнес-правило удаления `RUNNING/FINISHED` требует решения)* |
+| POST | `/quests/{questId}/publish` | 🔵 *(DRAFT → REGISTRATION, с валидацией уровней по ADR-0005)* |
+| POST | `/quests/{questId}/finish` | 🔵 *(RUNNING → FINISHED, автор; незавершённые QuestProgress получают DNF)* |
 
 ---
 
@@ -73,10 +75,10 @@
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST | `/quests/register/{questId}/{teamId}` | 🔵 |
+| POST | `/quests/register/{questId}/{teamId}` | 🟡 *(реализовано; backend пока разрешает регистрацию в любом статусе кроме `FINISHED` — требуется решение о допустимых статусах)* |
 | GET | `/quests/register/{questId}` | 🔵 |
-| DELETE | `/quests/register/{questId}` | 🔵 | отмена своей заявки |
-| PUT | `/quests/register/{questId}/approve/{teamId}` | 🟡 *(есть подтверждённая гонка на лимите команд — см. `concurrency-scenarios.md` Сценарий 1)* |
+| DELETE | `/quests/register/{questId}` | 🔵 |
+| PUT | `/quests/register/{questId}/approve/{teamId}` | 🔵 *(конкурентная гонка лимита команд закрыта)* |
 | PUT | `/quests/register/{questId}/teams/{teamId}/reject` | 🔵 |
 
 ---
@@ -87,14 +89,14 @@
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST | `/quests/progress/{questId}/enter` | 🔵 *(Сценарий 2 закрыт — идемпотентно, см. `concurrency-scenarios.md`)* |
+| POST | `/quests/progress/{questId}/enter` | 🔵 |
 | GET | `/quests/progress/{questId}/{teamId}` | 🔵 |
 | GET | `/quests/progress/{questId}` | 🔵 |
-| PUT | `/quests/progress/{questId}/{teamId}/finish` | 🟡 *(ручной override для форс-мажорных случаев — основной путь завершения теперь автоматический, ADR-0009)* |
+| PUT | `/quests/progress/{questId}/{teamId}/finish` | 🟡 *(ручной override для форс-мажорных случаев — основной путь завершения автоматический)* |
 | POST | `/quests/progress/{questId}/{teamId}/codes` | 🔵 *(CodeSubmission, см. `code-submission.md`)* |
-| GET | `/quests/progress/{questId}/{teamId}/hints` | 🔵 *(видимые подсказки команды — три состояния, ADR-0020/ADR-0021)* |
-| POST | `/quests/progress/{questId}/{teamId}/hints/{hintId}/take` | 🔵 *(явное взятие BONUS/PENALTY-подсказки, ADR-0021)* |
-| PUT | `/quests/progress/{questId}/{teamId}/dnf` | 🟡 *(реализовано; не проверяет `Quest.status` как прекондицию — открытый вопрос, см. `roadmap/backlog.md`)* |
+| GET | `/quests/progress/{questId}/{teamId}/hints` | 🔵 *(три состояния видимости)* |
+| POST | `/quests/progress/{questId}/{teamId}/hints/{hintId}/take` | 🔵 *(явное взятие BONUS/PENALTY-подсказки)* |
+| PUT | `/quests/progress/{questId}/{teamId}/dnf` | 🟡 *(реализовано; момент допустимого вызова ещё требует бизнес-решения)* |
 
 ---
 
@@ -119,7 +121,7 @@ CRUD автором и игровая механика показа — см. `0
 | Метод | Путь | Статус |
 |---|---|---|
 | POST / GET / PUT / DELETE | (CRUD) | 🔵 *(редактирование автором)* |
-| **Показ подсказки командой** | — | 🔵 REGULAR — автоматически через Job 3 (`HintRevealScheduler`); BONUS/PENALTY — явно через `POST .../hints/{hintId}/take` (ADR-0021). Видимость — `GET /api/quests/progress/{questId}/{teamId}/hints`, три состояния (не наступило время / показана-взята / доступна-но-не-взята) |
+| **Показ подсказки командой** | — | 🔵 REGULAR — автоматически через Job 3; BONUS/PENALTY — явно через `POST .../hints/{hintId}/take` |
 
 ---
 
@@ -129,37 +131,41 @@ CRUD автором и игровой ввод командой — см. `01-do
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST / GET / PUT / DELETE | (CRUD) | 🟡 *(CRUD работает, но с проблемой глобальной уникальности значения — см. `code-submission.md`)* |
-| **Ввод кода командой** | — | 🔵 `POST /api/quests/progress/{questId}/{teamId}/codes` — см. раздел Quest Progress выше |
+| POST / GET / PUT / DELETE | (CRUD) | 🔵 *(уникальность `code_value` проверяется в пределах Level)* |
+| **Ввод кода командой** | — | 🔵 `POST /api/quests/progress/{questId}/{teamId}/codes` |
 
 ---
 
 ## Bonus / Penalty — `/api/quest-progress`, `/api/adjustments`
 
-Ручная корректировка автора — один из трёх источников, см. `01-domain/bonus-penalty.md`, ADR-0007. Эффект кода и подсказки виден в `QuestProgressResponse.bonusPenaltySeconds` (агрегат всех трёх источников), отдельных эндпоинтов для них не требуется — сами события уже видны через существующие Code/Hint эндпоинты.
+Ручная корректировка автора — один из трёх источников, см. `01-domain/bonus-penalty.md`. Эффект кода и подсказки виден в `QuestProgressResponse.bonusPenaltySeconds`.
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST | `/quest-progress/{questProgressId}/adjustments` | 🟡 *(реализовано, тестов пока нет)* |
-| GET | `/quest-progress/{questProgressId}/adjustments` | 🟡 *(реализовано, тестов пока нет)* |
-| POST | `/adjustments/{adjustmentId}/revoke` | 🟡 *(реализовано, тестов пока нет; запрещено после `Quest.status = FINISHED`)* |
+| POST | `/quest-progress/{questProgressId}/adjustments` | 🟡 *(реализовано; unit-покрытие агрегатора есть, API/integration coverage ещё требуется)* |
+| GET | `/quest-progress/{questProgressId}/adjustments` | 🟡 *(реализовано; API/integration coverage ещё требуется)* |
+| POST | `/adjustments/{adjustmentId}/revoke` | 🟡 *(реализовано; API/integration coverage ещё требуется; запрещено после `Quest.status = FINISHED`)* |
 
 ---
 
 ## Statistics — не существует
 
-Пакет `statistic/` в проекте создан пустым (нет ни одного файла). Весь `01-domain/statistics-ranking.md` описывает механику, для которой нет вообще никакого кода — ни модели, ни сервиса, ни эндпоинта.
+Пакет `statistic/` в проекте создан пустым. `01-domain/statistics-ranking.md` описывает механику, для которой ещё нет модели, сервиса и эндпоинтов.
 
 ---
 
-## Служебный/тестовый эндпоинт, требующий внимания
+## Служебный/тестовый эндпоинт
 
-`GET /api/test/secure` (`TestController`) — судя по названию и расположению (`auth/controller/TestController.java`), это диагностический эндпоинт для ручной проверки JWT-аутентификации на этапе разработки. Нужно решить: удалить перед первым релизом или явно задокументировать как оставленный намеренно (например, health-check для аутентификации) — иначе он останется в контракте API как "лишняя" незадокументированная поверхность.
+`GET /api/test/secure` (`TestController`) — диагностический эндпоинт для ручной проверки JWT-аутентификации на этапе разработки. Перед первым публичным релизом нужно решить: удалить его или явно оставить и задокументировать назначение.
 
 ---
 
-## Сводка по крупным пробелам, не отражённым построчно выше
+## Сводка по крупным пробелам
 
-1. Вся статистика (`statistic/`) не реализована.
-2. Auth — модель одного JWT на 24ч, не access+refresh (ADR-0015).
-3. `Quest.maximumTeams` существует на entity, но не выставлен ни в одном DTO — см. `roadmap/backlog.md`.
+1. Statistics / Ranking (`statistic/`) не реализованы.
+2. Auth всё ещё использует один JWT вместо access+refresh (ADR-0015).
+3. Отсутствует `GET /api/users/me`.
+4. Отсутствует получение квестов текущей команды одним API-запросом.
+5. `QuestResponse` не содержит автора.
+6. `Quest.maximumTeams` не прокинут в DTO.
+7. Требуется решение по статусам регистрации, DNF и удалению Quest.

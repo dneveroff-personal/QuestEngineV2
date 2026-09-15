@@ -1,75 +1,152 @@
 # Roadmap / Backlog
 
-Трекер соответствия "специфицировано → реализовано → протестировано". Не заменяет issue-tracker, но даёт единый снимок состояния движка относительно документации в `docs/`.
+Единый рабочий список: что уже реализовано и проверено, что ещё нужно сделать. Завершённые находки и разовые заметки сюда не переносятся — после исправления они исчезают из backlog.
 
 Статусы:
-- ⚪ Specified — правила описаны в `docs/`, кода нет.
-- 🟡 In Progress — есть частичная реализация (например, только редактирование, без runtime-механики).
-- 🔵 Implemented — реализовано и покрыто тестами.
+- 🔵 Done — реализовано и покрыто соответствующими тестами.
+- 🟡 In Progress — работа начата, но ещё не завершена.
+- ⚪ Planned — задача ещё не реализована.
+- 🟣 Decision — требуется сначала принять бизнес-решение.
+- 💤 Deferred — осознанно отложено за пределы MVP.
 
-| Механика | Специфицировано | Реализация | Комментарий |
+## Состояние реализованной части
+
+| Механика | Спецификация | Статус | Комментарий |
 |---|---|---|---|
-| Quest CRUD, статусы, lifecycle | 🟢 `01-domain/quest.md` | 🔵 | `quest/` — CRUD реализован |
-| Level CRUD | 🟢 `01-domain/level.md` | 🔵 | `level/` — CRUD реализован. Поля `codeIndex` (ADR-0005), `requiredMainCodesCount` — ещё не добавлены |
-| Team, Captain, membership | 🟢 `01-domain/team.md` | 🔵 | `team/` реализован |
-| QuestRegistration (заявки команд) | 🟢 `01-domain/registration.md` | 🔵 | `quest/` registration flow |
-| **Автоматический старт Quest** (Job 1) | 🟢 `01-domain/progress.md`, ADR-002 | 🔵 | `QuestStartScheduler` — реализовано, атомарный переход + Сценарий 7 (гонка с `approveTeam`) |
-| **Публикация Quest** (`DRAFT → REGISTRATION`) | 🟢 `02-processes/quest-lifecycle.md` шаг 3 | 🔵 | `POST /api/quests/{id}/publish` — реализовано: проверка статуса DRAFT, валидация "аномальных" уровней (ADR-0005), unit+controller+IT тесты |
-| Завершение Quest автором (`RUNNING → FINISHED`) | 🟢 `02-processes/quest-lifecycle.md` шаг 13 | 🔵 | `POST /api/quests/{id}/finish` — реализовано: проверка статуса RUNNING, незавершённые QuestProgress получают DNF, unit+controller+IT тесты |
-| **Автопереход уровня** (Job 2) | 🟢 `03-architecture/scheduling.md` | 🔵 | `LevelAutoTransitionScheduler` — реализовано, атомарный переход, разрешает Сценарий 5 (гонка с CodeSubmission), проверено реальным IT-тестом гонки |
-| **Оркестрация завершения уровня / перехода / завершения QuestProgress** | 🟢 ADR-0009 | 🔵 | `advanceAfterLevelCompleted()` переиспользуется `CodeSubmission` и Job 2 |
-| Hint — редактирование автором | 🟢 | 🔵 | `hint/service` — CRUD реализован (поля `type`/`bonusPenaltySeconds` — см. следующую строку) |
-| **Hint — auto-reveal (REGULAR) / явное взятие (BONUS/PENALTY)** | 🟢 `01-domain/hint-progress.md`, ADR-0020, ADR-0021 | 🔵 | Реализовано: `Hint.type`/`bonusPenaltySeconds` (миграция V14), `HintProgress`, Job 3 (`HintRevealScheduler` — только REGULAR), `POST .../hints/{hintId}/take` (BONUS/PENALTY, ADR-0021), `GET .../hints` — три состояния видимости. Начисление эффекта к итоговому времени — см. следующий пункт |
-| Code — редактирование автором | 🟢 | 🔵 | `code/service` — CRUD реализован. Уникальность в пределах Level (ADR-0004) и поле `codeIndex` (ADR-0005) реализованы (`0.5.18`) |
-| **Code — ввод командой во время игры (CodeSubmission)** | 🟢 `01-domain/code-submission.md`, ADR-0005 | 🔵 | Реализовано: `CodeSubmission` (аудит попыток), атомарный condition-UPDATE для порога (Сценарий 6, частичный индекс), нормализация (регистр+пробелы). Unit+controller+IT тесты, включая реальный конкурентный тест на 30 потоков |
-| **Bonus/Penalty Time** | 🟢 `01-domain/bonus-penalty.md`, ADR-0007 | 🟡 | Все три источника реализованы и агрегируются в `QuestProgressResponse.bonusPenaltySeconds` (`BonusPenaltyServiceImpl`, миграция V15). `ManualTimeAdjustmentController` — create/list/revoke. `Code.points → bonusPenaltySeconds` переименовано (V16). Тестов пока нет — пишутся отдельно, намеренно вне scope этого захода |
-| Statistics / Ranking | 🟡 `01-domain/statistics-ranking.md` | ⚪ | Пакет `statistic/` пуст |
-| Permissions / Security | 🟢 `05-security/permissions.md` | 🔵 | Базовая ролевая модель реализована |
-| API-контракт | 🟢 `04-api/conventions.md`, `04-api/endpoints.md` | 🟡 | Swagger/OpenAPI подключён; решения по статусам/пагинации приняты и реализованы (ADR-0011/0012) — `ConflictException`/`ResourceNotFoundException`, `PageResponse<T>` на `/users/search` и `/teams/search`. Тестов пока нет (пишутся отдельно) |
-| DNF для команды | 🟢 `01-domain/registration.md`, `progress.md` | 🟡 | `PUT /api/quests/progress/{questId}/{teamId}/dnf` реализован (`QuestProgressController.setDnf`). Открытый вопрос по прекондиции — см. находки ниже. Тестов пока нет |
-| Live-статистика (транспорт) | 🟢 `06-nfr/requirements.md`, ADR-0014 | ⚪ | SSE выбран, без искусственной задержки, не реализован |
-| Rate limiting | 🟢 `05-security/threat-model.md`, ADR-0016 | 🔵 | `bucket4j` — `LoginRateLimitFilter` (5/мин на IP) только для `POST /api/auth/login`. In-memory. CodeSubmission намеренно не ограничен. Unit-тесты фильтра. (0.7.6) |
-| JWT: access+refresh токены | 🟢 `05-security/threat-model.md`, ADR-0015 | ⚪ | Заменяет старую модель «единый JWT на 24ч» — текущий код (`JwtService`) реализует именно старую модель, требует переработки |
-| Нагрузочный k6-смок-тест (Сценарий 6) | 🟢 `07-quality/testing-strategy.md` | 🔵 | Опциональный ручной smoke (`load-tests/k6/`), не CI-gate. Корректность Сценария 6 уже закрыта concurrent IT |
-| Тестовое покрытие (JaCoCo) | 🟢 `07-quality/testing-strategy.md`, ADR-0017 | 🔵 | Отчёты JaCoCo есть; **жёсткий порог и fail-the-build отменены** (ADR-0017 amended) |
-| Персональные подсказки (будущее улучшение) | 🟡 `01-domain/hint-progress.md` | ⚪ | Осознанно отложено за пределы MVP |
-| CI (сборка, тесты, Docker-образ) | — | 🔵 | `.github/workflows/build.yml` — spotless, тесты, публикация образа в GHCR, JaCoCo-артефакт. Хорошо реализовано |
-| CD (деплой на VPS) | — | 🟡 | Осознанно отключён автором до выхода в продакшен (явный комментарий в файле). `if`-условие всё ещё некорректно для случая, когда workflow будет включён — см. находки ниже |
+| Quest CRUD, статусы, lifecycle | `01-domain/quest.md` | 🔵 | CRUD и lifecycle реализованы |
+| Level CRUD | `01-domain/level.md`, ADR-0005 | 🔵 | `requiredMainCodesCount` реализован; `codeIndex` относится к `Code`, а не к `Level` |
+| Team, Captain, membership | `01-domain/team.md` | 🔵 | Реализовано |
+| QuestRegistration | `01-domain/registration.md` | 🔵 | Регистрация, approve/reject и лимит команд реализованы; подтверждённая гонка закрыта |
+| Автоматический старт Quest (Job 1) | `01-domain/progress.md`, ADR-002 | 🔵 | `QuestStartScheduler`, атомарный переход, конкурентный тест |
+| Публикация Quest | `02-processes/quest-lifecycle.md` | 🔵 | `POST /api/quests/{id}/publish`, включая проверку конфигурации уровней |
+| Завершение Quest автором | `02-processes/quest-lifecycle.md` | 🔵 | `POST /api/quests/{id}/finish`, незавершённые QuestProgress получают DNF |
+| Автопереход уровня (Job 2) | `03-architecture/scheduling.md` | 🔵 | Атомарный переход, конкурентный тест Job 2 vs CodeSubmission |
+| Оркестрация завершения уровня / QuestProgress | ADR-0009 | 🔵 | `advanceAfterLevelCompleted()` используется реальными точками входа |
+| Hint CRUD и runtime | ADR-0020, ADR-0021 | 🔵 | REGULAR auto-reveal, BONUS/PENALTY take, три состояния видимости |
+| Code CRUD | ADR-0004, ADR-0005 | 🔵 | Уникальность `code_value` в пределах Level и `codeIndex` реализованы |
+| CodeSubmission | ADR-0004/0005/0006 | 🔵 | Аудит попыток, нормализация, атомарный порог, unit/controller/IT и конкурентные тесты |
+| Bonus/Penalty | ADR-0007 | 🟡 | Все три источника и агрегация реализованы; есть unit-тесты агрегатора, но ещё нужна проверка полного runtime/API-контракта и одноразового эффекта BONUS/PENALTY-кода |
+| Permissions / Security | `05-security/permissions.md` | 🔵 | Базовая ролевая модель реализована |
+| HTTP error semantics / pagination | ADR-0011, ADR-0012 | 🟡 | Реализованы `403/404/409` и `PageResponse<T>`; отдельное контрактное покрытие ещё стоит усилить |
+| DNF для команды | `01-domain/registration.md`, `progress.md` | 🟡 | `PUT /api/quests/progress/{questId}/{teamId}/dnf` есть; бизнес-семантика момента вызова ещё требует решения |
+| Rate limiting | ADR-0016 | 🔵 | `LoginRateLimitFilter`, 5/мин на IP; CodeSubmission намеренно не ограничивается |
+| CI | `.github/workflows/build.yml` | 🔵 | Spotless, тесты, Docker image, GHCR, JaCoCo/test artifacts |
+| JaCoCo + k6 smoke (Сценарий 6) | ADR-0017, `07-quality/testing-strategy.md` | 🔵 | ADR-0017 amended: жёсткий coverage threshold/fail-build отменены; JaCoCo отчёт и k6 smoke добавлены как проверочные инструменты, k6 не является CI-gate |
 
-## Немедленные блокеры реализации (по приоритету)
+## Текущие задачи
 
-0. ✅ **Реализовать эндпоинты публикации и завершения Quest** (`DRAFT → REGISTRATION`, `RUNNING → FINISHED`) — реализовано.
-1. ✅ **Закрыть найденную уязвимость в проде: открытый JDWP debug-порт** — закрыто (порт убран из `docker-compose.prod.yml`).
-2. ✅ Реализовать `CodeSubmission` по модели ADR-0005 — реализовано (`V13__create_code_submissions_table.sql`, атомарный порог, unit+controller+IT+конкурентный тест). Начисление эффекта BONUS/PENALTY к итоговому времени — отдельно, п. 6.
-3. ✅ Спроектировать и реализовать `Job 1`/`Job 2` из `03-architecture/scheduling.md` — реализовано (`dn.questenginev2.scheduling`, атомарные переходы, Сценарии 5 и 7, IT-тест реальной гонки Job2 vs CodeSubmission).
-4. ✅ Закрыть подтверждённые гонки в `approveTeam()` и `enterQuest()` (ADR-0010) — реализовано: пессимистичная блокировка (`findByIdForUpdate`) в `approveTeam`, идемпотентный `saveAndFlush`+catch в `createFirstLevelProgress`/`createNextLevelProgress`. Проверено реальными конкурентными IT-тестами (`ApproveTeamRaceIT`).
-5. ✅ Реализовать `HintProgress` (ADR-0020/ADR-0021) — реализовано: поля `Hint.type`/`bonusPenaltySeconds`, `HintProgress`, Job 3 (только REGULAR), `POST .../hints/{hintId}/take` (BONUS/PENALTY, явный выбор команды), `GET /api/quests/progress/{questId}/{teamId}/hints` с тремя состояниями видимости.
-6. ✅ Реализовать три источника Bonus/Penalty (ADR-0007) — реализовано: `ManualTimeAdjustment` (entity/repository/service/controller, миграция V15), эффект кода и эффект подсказки — агрегация через `BonusPenaltyServiceImpl` (`QuestProgressResponse.bonusPenaltySeconds`). Тестов пока нет (пишутся отдельно).
-7. ✅ Развести семантику HTTP-статусов ошибок (ADR-0011) — реализовано: `ForbiddenOperationException` теперь только 403 (было 409 — несоответствие названию), новый `ConflictException` (409, состояние-based), новый `ResourceNotFoundException` (404, заменяет generic `IllegalArgumentException` в ~25 местах). `PageResponse<T>` (ADR-0012) — `/users/search`, `/teams/search`. Тестов пока нет (пишутся отдельно).
-8. ✅ Вывести `setDnf()` в контроллер — `PUT /api/quests/progress/{questId}/{teamId}/dnf`, стиль и авторизация зеркалят соседний `finish`. Открытый вопрос по прекондиции — см. находки ниже.
-9. ✅ Внедрить rate limiting только для `/auth/login` (ADR-0016) — реализовано в 0.7.6 (`LoginRateLimitFilter`, 5/мин на IP). Переход на access+refresh токены (ADR-0015) — остаётся отдельной задачей до первого публичного релиза.
-10. ✅ Качество: ADR-0017 amended — без % порога и без fail build по coverage; k6-смок Сценария 6 добавлен как опциональный (`load-tests/k6/`), не CI-gate.
-11. Если/когда `deploy.yml` будет включаться обратно — поправить `if`-условие и путь `cd` (см. находки ниже), иначе CD молча не сработает даже при ручном запуске.
+### 1. Качество и тестирование
 
-## Находки при просмотре реализованного кода
+1. ⚪ **Расширить контрактные тесты API**
+   - отдельно проверить семантику `403/404/409`;
+   - проверить `PageResponse<T>` для listing endpoints;
+   - не дублировать уже существующие domain/integration tests.
 
-Хорошие новости:
-- **`completeLevel()`-оркестрация уже реализована и уже корректно соответствует ADR-0009** (переход `QuestProgress → FINISHED` без разбора CODES/AUTO_TRANSITION) — не нужно ничего переделывать, только подключить к реальным точкам входа (ввод кода, планировщик).
-- `Clock`-инъекция (ADR-0018) уже применяется в `LevelProgressServiceImpl`/`QuestProgressServiceImpl` — паттерн для будущего кода задан правильно.
-- CI (`build.yml`) — качественный современный пайплайн: `spotlessCheck` → тесты → сборка Docker-образа → публикация в GHCR → артефакты (JaCoCo, тестовые отчёты). Хорошая база для учебных целей проекта (максимально современный стек).
+2. ⚪ **Проверить runtime-семантику Bonus/Penalty**
+   - покрыть API/integration путь ручной корректировки;
+   - проверить одноразовое применение BONUS/PENALTY-кода;
+   - проверить агрегат кода + подсказки + ручной корректировки вместе.
 
-Проблемы, требующие внимания:
-- **🔴 JDWP debug-порт (5004) в `docker-compose.prod.yml`** — **✅ Исправлено в `0.5.18`**: проброс порта наружу убран. Сам debug-агент в `Dockerfile` пока остаётся общим для local/prod (порт просто не пробрасывается наружу через compose) — разделение Dockerfile на local/prod варианты остаётся желательным улучшением, но не критичным, раз порт больше не достижим извне.
-- `docker-compose.prod.yml` пробрасывает наружу порт PostgreSQL (`5432`) — обычно не нужно в проде, если приложение обращается к БД через внутреннюю docker-сеть; лишняя поверхность атаки.
-- `.github/workflows/deploy.yml` **осознанно отключён** автором до выхода в продакшен (`# ВЫКЛЮЧЕН ДО МОМЕНТА ВЫХОДА В ПРОДАКШЕН`, `workflow_run`-триггер закомментирован, оставлен только ручной `workflow_dispatch`) — правильное решение на этом этапе. **При последующем включении** не забыть также поправить: условие `if: ${{ github.event.workflow_run.conclusion == 'success' }}` всегда ложно при ручном запуске (`github.event.workflow_run` не существует для `workflow_dispatch`) — если просто раскомментировать `workflow_run`-триггер, ручной запуск через `workflow_dispatch` продолжит молча пропускать деплой. Строка `cd ~/ts-wc-scores` (путь от другого проекта) уже закомментирована — при включении нужно заменить на актуальный путь, а не просто раскомментировать.
-- `LevelProgressServiceImpl.autoTransitionLevel()` помечен `@Deprecated` — небезопасен для конкурентного вызова (Сценарий 5), планировщик использует новый атомарный `LevelProgressRepository.tryAutoTransition` напрямую. Метод оставлен для обратной совместимости существующих тестов.
-- **Отсутствует `GET /api/users/me`** — найдено при подготовке `docs/frontend/roadmap.md`. `UserController` реализует `PUT .../role`, `POST .../reset-password`, `GET /users/search`, но нет эндпоинта "получить свой профиль". `UserResponse` уже содержит нужные поля (`id`, `publicName`, `email`, `role`, `createdAt`) — не хватает только метода, отдающего его для текущего аутентифицированного пользователя (`Authentication` уже доступен в других методах контроллера как параметр — паттерн есть, добавить некуда сложно). Блокирует на frontend: полноценный экран Profile и Role-based UI (`architecture.md` §14) — frontend физически не может узнать роль собственного пользователя. **Открыто на 0.6.14.**
-- **Отсутствует обратный эндпоинт "квесты моей команды"** — найдено при реализации `MyQuestsPage.tsx` (frontend). Есть только `GET /api/quests/register/{questId}` (по квесту → список команд), нет `GET /api/teams/{teamId}/quests` или аналога (по команде → список её регистраций/квестов). Frontend сейчас обходит это N+1 запросами по всем `upcoming`-квестам (см. `docs/frontend/roadmap.md` §4.4) — работает, но не масштабируется и не показывает прошедшие (`FINISHED`) квесты вообще. Добавить нормальный эндпоинт — например, `QuestRegistrationRepository.findAllByTeamId(teamId)` уже почти наверняка возможен на уровне репозитория (по аналогии с `findAllByQuestId`, который уже используется в `getRegisteredTeams`), не хватает только контроллера/сервисного метода поверх него. **Открыто на 0.6.14.**
-- **`TeamMemberDto.name` / `TeamResponse.captainName` — это `username`, не `publicName`** — тоже найдено там же. `TeamServiceImpl.teamMemberstoDto`/`buildTeamResponse` используют `User.getUsername()`, а не `getPublicName()`, при том что вся остальная система (Auth `LoginResponse.publicName`, вероятно и другие экраны) ориентируется на `publicName` как на "отображаемое имя". Не обязательно баг — возможно, осознанный выбор (username стабильнее publicName для этой формы), но стоит явно решить и задокументировать, а не оставлять как непреднамеренное расхождение: сейчас Team — единственное место в системе, где напрямую виден username, и frontend вынужден заново декодировать JWT (`sub`-claim), чтобы вообще получить свой username и сравнить его с этим полем (LoginResponse его не отдаёт). **Открыто на 0.6.14.**
-- **`GET /api/users/search` не возвращает `username`, при этом ищет именно по нему (`LIKE %username%`, частичное совпадение)** — `UserResponse` содержит `publicName`, но не `username`, поэтому при неоднозначном результате поиска (несколько пользователей с похожим username) frontend не может понять, какой из результатов реально соответствует искомому username. Для действия "передать капитанство" (см. выше) это критично — молча взять первый результат означало бы риск передать капитанство не тому человеку. Frontend сейчас честно отказывается действовать при 0 или 2+ результатах вместо угадывания. Добавить `username` в `UserResponse` решит проблему полностью. **Открыто на 0.6.14.**
-- **`GET /api/users/search` не проверяет роль вызывающего** — в отличие от `setUserRole`/`resetPassword` в том же контроллере, которые вызывают `validateAdmin` внутри сервиса, `searchUsers` не проверяет ничего — любой аутентифицированный пользователь может искать. **Открыто на 0.6.14.**
-- Прочие находки (authorId в QuestResponse, delete без проверки статуса, maximumTeams в DTO, и т.д.) — сохранены в истории `main` / frontend roadmap; не удалялись намеренно в этом PR.
+3. ⚪ **Проверить повторную отправку CodeSubmission после потери соединения**
+   - отдельно зафиксировать контракт для повтора после успешного завершения уровня и перехода на следующий;
+   - не возвращаться автоматически к `CodeSubmissionOperation`/HTTP-idempotency ledger: сначала проверить, достаточно ли текущей бизнес-модели и какого минимального контракта не хватает.
 
-## Статус документации
+### 2. Auth / Security
 
-Документация закрыта на 100%, все содержательные открытые вопросы закрыты по итогам совместного разбора (см. `docs/ReadMe.md` — «Единственный оставшийся содержательный открытый вопрос»: список конкретных отличий от Encounter, не блокирует реализацию). Все 20 ADR приняты (Accepted).
+4. ⚪ **Перейти на access + refresh tokens (ADR-0015)**
+   - access token 15 минут;
+   - refresh token в БД;
+   - rotation;
+   - `/api/auth/refresh` и `/api/auth/logout`;
+   - обновить frontend и документацию.
+
+5. ⚪ **Разобраться с диагностическим `GET /api/test/secure`**
+   - удалить перед первым публичным релизом либо явно оставить и документировать назначение.
+
+6. ⚪ **Проверить безопасность `/api/users/search`**
+   - решить, кто имеет право искать пользователей;
+   - определить, какие поля (`email`, `role`, и т.п.) доступны не-ADMIN;
+   - зафиксировать решение в threat model и тестах.
+
+7. ⚪ **Убрать публикацию PostgreSQL `5432` из production compose**
+   - БД должна быть доступна приложению через внутреннюю Docker-сеть;
+   - публичный вход в production остаётся через frontend/nginx.
+
+### 3. API для frontend / Game Mode
+
+8. ⚪ **Добавить `GET /api/users/me`**
+   - вернуть профиль текущего пользователя;
+   - frontend должен получать `id`, `publicName`, `email`, `role` без обходных запросов.
+
+9. ⚪ **Добавить получение квестов/регистраций текущей команды**
+   - убрать N+1 запросы frontend через `upcoming`;
+   - вернуть также прошедшие (`FINISHED`) квесты.
+
+10. ⚪ **Определить отображаемое имя команды**
+    - решить `username` vs `publicName` для `TeamMemberDto.name` и `TeamResponse.captainName`;
+    - зафиксировать единое правило и привести API/frontend к нему.
+
+11. ⚪ **Добавить `username` в `UserResponse` для поиска пользователей**
+    - frontend должен однозначно идентифицировать результат поиска при передаче капитанства.
+
+12. ⚪ **Добавить `authorId` / `authorName` в `QuestResponse`**
+    - frontend должен понимать авторство без обходного поиска через `/users/search`.
+
+13. ⚪ **Добавить API для текущего уровня команды**
+    - упростить Game Mode: текущий `LevelProgress`, содержимое уровня, `autoTransitionAt` и доступные подсказки должны быть получаемы одним понятным контрактом.
+
+### 4. Бизнес-правила, требующие решения
+
+14. 🟣 **DNF: определить прекондицию**
+    - вариант A: ручной `setDnf()` разрешён только после `Quest.status = FINISHED`;
+    - вариант B: `finishQuest()` автоматически переводит все незавершённые команды в DNF, а ручной endpoint не нужен;
+    - после решения обновить `progress.md`, `registration.md`, API и тесты.
+
+15. 🟣 **Регистрация команды: разрешённые статусы Quest**
+    - сейчас backend разрешает регистрацию во всех статусах кроме `FINISHED`, а frontend показывает её только для `REGISTRATION`;
+    - определить, должен ли backend принимать только `REGISTRATION` или поддерживать позднюю регистрацию как отдельный сценарий.
+
+16. 🟣 **Удаление Quest**
+    - определить, разрешено ли удаление `RUNNING`/`FINISHED` квестов;
+    - если нет — запретить на backend или ввести soft-delete/архивирование.
+
+### 5. Домен и функциональность
+
+17. ⚪ **Прокинуть `Quest.maximumTeams` в DTO**
+    - добавить поле в create/update/response;
+    - дать автору возможность задавать лимит, а клиенту — видеть его.
+
+18. ⚪ **Statistics / Ranking**
+    - реализовать пакет `statistic/` согласно `01-domain/statistics-ranking.md`;
+    - начать с минимального набора данных, необходимого для игрового результата, затем расширять live-статистику.
+
+19. ⚪ **Live-статистика через SSE**
+    - реализовать ADR-0014;
+    - определить события/данные, которые действительно нужны статистике;
+    - подключить frontend без polling.
+
+### 6. Технический долг
+
+20. ⚪ **Удалить/заменить deprecated `LevelProgressServiceImpl.autoTransitionLevel()`**
+    - оставить единственную безопасную конкурентную реализацию через атомарный repository method;
+    - после миграции тестов удалить deprecated метод.
+
+21. ⚪ **Свести `progress.md` и `runtime.md`**
+    - убрать дублирование правил QuestProgress/LevelProgress и `autoTransitionAt`;
+    - оставить один источник истины.
+
+## Осознанно отложено
+
+- 💤 Персональные подсказки.
+- 💤 Ручное досрочное открытие подсказки автором.
+- 💤 Подробный список отличий QuestEngine от Encounter — можно уточнять по мере развития продукта, это не блокирует текущую разработку.
+
+## Отдельно: production CD
+
+CD намеренно не включён до выхода в production. Поэтому исправление `deploy.yml` сейчас **не является задачей текущего backlog**. Когда появится реальный production deployment, отдельным deployment-заходом нужно проверить trigger/`if`, рабочую директорию и весь production compose.
+
+## Итог
+
+**Немедленных блокеров сейчас нет.**
+
+Следующий рабочий фокус — API/Game Mode и security. После них — статистика/SSE и технический долг документации. JaCoCo/k6 остаются уже готовым инструментарием качества, а не отдельным блокером.
