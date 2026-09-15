@@ -1,5 +1,6 @@
 package dn.questenginev2.level.service;
 
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.level.dto.CreateLevelRequest;
 import dn.questenginev2.level.dto.LevelResponse;
 import dn.questenginev2.level.entity.Level;
@@ -88,7 +89,7 @@ public class LevelServiceImpl implements LevelService {
   private Level validateLevelExist(Long levelId) {
     return levelRepository
         .findById(levelId)
-        .orElseThrow(() -> new IllegalArgumentException("Уровень не найден: " + levelId));
+        .orElseThrow(() -> new ResourceNotFoundException("Уровень не найден: " + levelId));
   }
 
   // ────── BUILDERS ───────────────────────────────────────────────────────────

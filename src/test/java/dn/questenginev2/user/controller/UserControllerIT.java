@@ -105,6 +105,6 @@ class UserControllerIT {
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"role\":\"AUTHOR\"}"))
-        .andExpect(status().isConflict());
+        .andExpect(status().isForbidden());
   }
 }

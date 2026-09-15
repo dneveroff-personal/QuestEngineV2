@@ -95,7 +95,7 @@ class HintControllerTest {
                 .content(
                     "{\"orderIndex\":1,\"delaySeconds\":30,\"content\":\"Hint"
                         + " content\",\"type\":\"REGULAR\"}"))
-        .andExpect(status().isConflict())
+        .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title", is("Forbidden Operation")));
   }

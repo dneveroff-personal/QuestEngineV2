@@ -6,7 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.quest.dto.QuestRegisterResponse;
 import dn.questenginev2.quest.entity.Quest;
 import dn.questenginev2.quest.entity.QuestRegistration;
@@ -158,19 +160,19 @@ class QuestRegistrationServiceImplTest {
   }
 
   @Test
-  void registerTeam_throwsIllegalArgumentException_whenQuestNotFound() {
+  void registerTeam_throwsResourceNotFoundException_whenQuestNotFound() {
     when(userService.getCurrentUser(authentication)).thenReturn(captainUser);
     when(questRepository.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questRegistrationService.registerTeam(999L, 1L, authentication))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Квест не найден");
 
     verify(questRegistrationRepository, never()).save(any());
   }
 
   @Test
-  void registerTeam_throwsForbiddenOperationException_whenQuestIsFinished() {
+  void registerTeam_throwsConflictException_whenQuestIsFinished() {
     Quest finishedQuest =
         Quest.builder()
             .id(1L)
@@ -184,20 +186,20 @@ class QuestRegistrationServiceImplTest {
     when(questRepository.findById(1L)).thenReturn(Optional.of(finishedQuest));
 
     assertThatThrownBy(() -> questRegistrationService.registerTeam(1L, 1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("завершённый квест");
 
     verify(questRegistrationRepository, never()).save(any());
   }
 
   @Test
-  void registerTeam_throwsIllegalArgumentException_whenTeamNotFound() {
+  void registerTeam_throwsResourceNotFoundException_whenTeamNotFound() {
     when(userService.getCurrentUser(authentication)).thenReturn(captainUser);
     when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
     when(teamRepository.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questRegistrationService.registerTeam(1L, 999L, authentication))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Команда не найдена");
 
     verify(questRegistrationRepository, never()).save(any());
@@ -269,7 +271,7 @@ class QuestRegistrationServiceImplTest {
   }
 
   @Test
-  void unregisterTeam_throwsForbiddenOperationException_whenNotPending() {
+  void unregisterTeam_throwsConflictException_whenNotPending() {
     when(userService.getCurrentUser(authentication)).thenReturn(captainUser);
     when(teamMemberRepository.findByUser(captainUser)).thenReturn(Optional.of(teamMember));
 
@@ -286,7 +288,7 @@ class QuestRegistrationServiceImplTest {
         .thenReturn(Optional.of(registration));
 
     assertThatThrownBy(() -> questRegistrationService.unregisterTeam(1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("PENDING");
 
     verify(questRegistrationRepository, never()).delete(any());
@@ -347,7 +349,7 @@ class QuestRegistrationServiceImplTest {
   }
 
   @Test
-  void approveTeam_throwsForbiddenOperationException_whenLimitReached() {
+  void approveTeam_throwsConflictException_whenLimitReached() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
     when(questRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(quest));
@@ -368,7 +370,7 @@ class QuestRegistrationServiceImplTest {
         .thenReturn(100L);
 
     assertThatThrownBy(() -> questRegistrationService.approveTeam(1L, 1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("лимит команд");
 
     verify(questRegistrationRepository, never()).save(any());
@@ -415,7 +417,7 @@ class QuestRegistrationServiceImplTest {
   }
 
   @Test
-  void rejectTeam_throwsIllegalArgumentException_whenNoPendingRegistration() {
+  void rejectTeam_throwsResourceNotFoundException_whenNoPendingRegistration() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
     when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
@@ -424,7 +426,7 @@ class QuestRegistrationServiceImplTest {
         .thenReturn(Collections.emptyList());
 
     assertThatThrownBy(() -> questRegistrationService.rejectTeam(1L, 1L, authentication))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Активная заявка не найдена");
 
     verify(questRegistrationRepository, never()).save(any());

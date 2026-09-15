@@ -11,6 +11,7 @@ import dn.questenginev2.code.entity.Code;
 import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.entity.Quest;
@@ -222,11 +223,11 @@ class CodeServiceImplTest {
   }
 
   @Test
-  void getCodeById_throwsIllegalArgumentException_whenCodeDoesNotExist() {
+  void getCodeById_throwsResourceNotFoundException_whenCodeDoesNotExist() {
     when(codeRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
     assertThatThrownBy(() -> codeService.getCodeById(999L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Код не найден");
   }
 
@@ -294,12 +295,12 @@ class CodeServiceImplTest {
   }
 
   @Test
-  void deleteCode_throwsIllegalArgumentException_whenCodeDoesNotExist() {
+  void deleteCode_throwsResourceNotFoundException_whenCodeDoesNotExist() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(codeRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
     assertThatThrownBy(() -> codeService.deleteCode(999L, authentication))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Код не найден");
 
     verify(codeRepository, never()).delete(any(Code.class));

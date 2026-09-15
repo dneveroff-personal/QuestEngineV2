@@ -1,8 +1,10 @@
 package dn.questenginev2.quest.service;
 
 import dn.questenginev2.bonuspenalty.service.BonusPenaltyService;
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.LevelProgressNotFoundException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.common.exceptions.TeamNotFoundException;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
@@ -133,7 +135,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     QuestProgress progress =
         questProgressRepository
             .findByQuestIdAndTeamId(questId, team.getId())
-            .orElseThrow(() -> new IllegalArgumentException("Прогресс не найден"));
+            .orElseThrow(() -> new ResourceNotFoundException("Прогресс не найден"));
 
     validateProgressWaiting(progress);
 
@@ -151,7 +153,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     QuestProgress progress =
         questProgressRepository
             .findByQuestIdAndTeamId(questId, teamId)
-            .orElseThrow(() -> new IllegalArgumentException("Прогресс не найден"));
+            .orElseThrow(() -> new ResourceNotFoundException("Прогресс не найден"));
 
     return buildQuestProgressResponse(progress);
   }
@@ -173,7 +175,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     QuestProgress progress =
         questProgressRepository
             .findByQuestIdAndTeamIdAndStatus(questId, teamId, QuestProgressStatus.RUNNING)
-            .orElseThrow(() -> new IllegalArgumentException("Прогресс не найден"));
+            .orElseThrow(() -> new ResourceNotFoundException("Прогресс не найден"));
 
     validateProgressRunning(progress);
 
@@ -192,7 +194,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     QuestProgress progress =
         questProgressRepository
             .findByQuestIdAndTeamId(questId, teamId)
-            .orElseThrow(() -> new IllegalArgumentException("Прогресс не найден"));
+            .orElseThrow(() -> new ResourceNotFoundException("Прогресс не найден"));
 
     validateProgressNotFinished(progress);
 
@@ -249,12 +251,12 @@ public class QuestProgressServiceImpl implements QuestProgressService {
   private Quest validateQuestExist(Long questId) {
     return questRepository
         .findById(questId)
-        .orElseThrow(() -> new IllegalArgumentException("Квест не найден: " + questId));
+        .orElseThrow(() -> new ResourceNotFoundException("Квест не найден: " + questId));
   }
 
   private void validateQuestRunning(Quest quest) {
     if (quest.getStatus() != QuestStatus.RUNNING) {
-      throw new ForbiddenOperationException("Создать прогресс можно только для RUNNING квеста");
+      throw new ConflictException("Создать прогресс можно только для RUNNING квеста");
     }
   }
 
@@ -269,8 +271,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
         questRegistrationRepository
             .findByQuestIdAndTeamIdAndStatus(
                 questId, teamId, dn.questenginev2.quest.entity.RegistrationStatus.APPROVED)
-            .orElseThrow(
-                () -> new ForbiddenOperationException("Команда не подтверждена для этого квеста"));
+            .orElseThrow(() -> new ConflictException("Команда не подтверждена для этого квеста"));
   }
 
   private void validateNoDuplicateProgress(Long questId, Long teamId) {
@@ -281,20 +282,20 @@ public class QuestProgressServiceImpl implements QuestProgressService {
 
   private void validateProgressWaiting(QuestProgress progress) {
     if (progress.getStatus() != QuestProgressStatus.WAITING) {
-      throw new ForbiddenOperationException("Войти в квест можно только из статуса WAITING");
+      throw new ConflictException("Войти в квест можно только из статуса WAITING");
     }
   }
 
   private void validateProgressRunning(QuestProgress progress) {
     if (progress.getStatus() != QuestProgressStatus.RUNNING) {
-      throw new ForbiddenOperationException("Завершить можно только RUNNING прогресс");
+      throw new ConflictException("Завершить можно только RUNNING прогресс");
     }
   }
 
   private void validateProgressNotFinished(QuestProgress progress) {
     if (progress.getStatus() == QuestProgressStatus.FINISHED
         || progress.getStatus() == QuestProgressStatus.DNF) {
-      throw new ForbiddenOperationException("Нельзя изменить завершённый прогресс");
+      throw new ConflictException("Нельзя изменить завершённый прогресс");
     }
   }
 

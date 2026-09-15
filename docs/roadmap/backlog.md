@@ -25,7 +25,7 @@
 | **Bonus/Penalty Time** | 🟢 `01-domain/bonus-penalty.md`, ADR-0007 | 🟡 | Все три источника реализованы и агрегируются в `QuestProgressResponse.bonusPenaltySeconds` (`BonusPenaltyServiceImpl`, миграция V15). `ManualTimeAdjustmentController` — create/list/revoke. `Code.points → bonusPenaltySeconds` переименовано (V16). Тестов пока нет — пишутся отдельно, намеренно вне scope этого захода |
 | Statistics / Ranking | 🟡 `01-domain/statistics-ranking.md` | ⚪ | Пакет `statistic/` пуст |
 | Permissions / Security | 🟢 `05-security/permissions.md` | 🔵 | Базовая ролевая модель реализована |
-| API-контракт | 🟢 `04-api/conventions.md`, `04-api/endpoints.md` | 🟡 | Swagger/OpenAPI подключён; решения по статусам/пагинации приняты (ADR-0011/0012), не реализованы |
+| API-контракт | 🟢 `04-api/conventions.md`, `04-api/endpoints.md` | 🟡 | Swagger/OpenAPI подключён; решения по статусам/пагинации приняты и реализованы (ADR-0011/0012) — `ConflictException`/`ResourceNotFoundException`, `PageResponse<T>` на `/users/search` и `/teams/search`. Тестов пока нет (пишутся отдельно) |
 | DNF для команды | 🟢 `01-domain/registration.md`, `progress.md` | 🟡 | `setDnf()` реализован в сервисе, не выведен в контроллер |
 | Live-статистика (транспорт) | 🟢 `06-nfr/requirements.md`, ADR-0014 | ⚪ | SSE выбран, без искусственной задержки, не реализован |
 | Rate limiting | 🟢 `05-security/threat-model.md`, ADR-0016 | ⚪ | `bucket4j` выбран, только для `/auth/login` (5/мин на IP). Явно НЕ для ввода кода — см. ADR-0016 |
@@ -45,7 +45,7 @@
 4. ✅ Закрыть подтверждённые гонки в `approveTeam()` и `enterQuest()` (ADR-0010) — реализовано: пессимистичная блокировка (`findByIdForUpdate`) в `approveTeam`, идемпотентный `saveAndFlush`+catch в `createFirstLevelProgress`/`createNextLevelProgress`. Проверено реальными конкурентными IT-тестами (`ApproveTeamRaceIT`).
 5. ✅ Реализовать `HintProgress` (ADR-0020/ADR-0021) — реализовано: поля `Hint.type`/`bonusPenaltySeconds`, `HintProgress`, Job 3 (только REGULAR), `POST .../hints/{hintId}/take` (BONUS/PENALTY, явный выбор команды), `GET /api/quests/progress/{questId}/{teamId}/hints` с тремя состояниями видимости.
 6. ✅ Реализовать три источника Bonus/Penalty (ADR-0007) — реализовано: `ManualTimeAdjustment` (entity/repository/service/controller, миграция V15), эффект кода и эффект подсказки — агрегация через `BonusPenaltyServiceImpl` (`QuestProgressResponse.bonusPenaltySeconds`). Тестов пока нет (пишутся отдельно).
-7. Развести семантику HTTP-статусов ошибок (ADR-0011), добавить `PageResponse<T>` (ADR-0012).
+7. ✅ Развести семантику HTTP-статусов ошибок (ADR-0011) — реализовано: `ForbiddenOperationException` теперь только 403 (было 409 — несоответствие названию), новый `ConflictException` (409, состояние-based), новый `ResourceNotFoundException` (404, заменяет generic `IllegalArgumentException` в ~25 местах). `PageResponse<T>` (ADR-0012) — `/users/search`, `/teams/search`. Тестов пока нет (пишутся отдельно).
 8. Вывести `setDnf()` в контроллер.
 9. Внедрить rate limiting только для `/auth/login` (ADR-0016) и перейти на access+refresh токены (ADR-0015) до первого публичного релиза.
 10. Настроить `jacocoTestCoverageVerification` (ADR-0017) и k6-смок-тест на Сценарий 6.
@@ -77,6 +77,8 @@
 - **`QuestProgressResponse` не отдавал `id`** — `ManualTimeAdjustmentService` спроектирован вокруг `questProgressId`, но ни один эндпоинт не возвращал этот id клиенту, поэтому вызвать новый функционал было бы нечем. **✅ Исправлено** — добавлено поле `id` (и заодно `bonusPenaltySeconds` — агрегат трёх источников).
 - **ADR-007 формула не учитывала вклад подсказок** — принята до ADR-0021 (явное взятие BONUS/PENALTY-подсказок), из трёх слагаемых учитывала только код и ручную корректировку. **✅ Исправлено** — формула и текст ADR обновлены.
 - **`bonus-penalty.md` — внутреннее противоречие**: два вопроса ("диапазон корректировки", "привязка к уровню") помечены "Решено" прямо в тексте, но остались в списке "Открытые вопросы" внизу того же файла. **✅ Исправлено** — список открытых вопросов приведён в соответствие с уже принятыми решениями.
+- **`Quest.maximumTeams` существует на entity, но не выставлен ни в одном DTO** — найдено при работе над ADR-0011 (использован в `validateApprovedTeamsLimit`, дефолт 100). `QuestResponse`/`CreateQuestRequest` его не содержат — автор не может задать лимит при создании/редактировании квеста, всегда используется дефолт; клиент не может увидеть лимит вообще. В отличие от статистики или access+refresh, это не требует новой доменной модели — поле уже есть, нужно только прокинуть в DTO + `CodeServiceImpl`-подобный сеттер в `QuestServiceImpl`. Небольшая, самостоятельная задача.
+
 ## Статус документации
 
-Документация закрыта на 100%, все содержательные открытые вопросы закрыты по итогам совместного разбора (см. `docs/ReadMe.md` — «Единственный оставшийся содержательный открытый вопрос»: список конкретных отличий от Encounter, не блокирует реализацию). Все 19 ADR приняты (Accepted).
+Документация закрыта на 100%, все содержательные открытые вопросы закрыты по итогам совместного разбора (см. `docs/ReadMe.md` — «Единственный оставшийся содержательный открытый вопрос»: список конкретных отличий от Encounter, не блокирует реализацию). Все 20 ADR приняты (Accepted).

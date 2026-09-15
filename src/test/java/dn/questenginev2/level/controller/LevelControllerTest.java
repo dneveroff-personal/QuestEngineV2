@@ -60,7 +60,7 @@ class LevelControllerTest {
   }
 
   @Test
-  void createLevel_returnsConflict_whenUserIsNotAuthorOrAdmin() throws Exception {
+  void createLevel_returnsForbidden_whenUserIsNotAuthorOrAdmin() throws Exception {
     when(levelService.createLevel(eq(1L), any(CreateLevelRequest.class), any()))
         .thenThrow(
             new ForbiddenOperationException("Создавать уровни могут только AUTHOR или ADMIN"));
@@ -71,7 +71,7 @@ class LevelControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     "{\"title\":\"Level 1\",\"content\":\"Level content\",\"timeoutSeconds\":300}"))
-        .andExpect(status().isConflict())
+        .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title", is("Forbidden Operation")));
   }

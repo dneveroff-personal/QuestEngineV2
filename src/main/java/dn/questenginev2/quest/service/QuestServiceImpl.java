@@ -1,7 +1,9 @@
 package dn.questenginev2.quest.service;
 
 import dn.questenginev2.code.repository.CodeRepository;
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.dto.CreateQuestRequest;
@@ -129,7 +131,7 @@ public class QuestServiceImpl implements QuestService {
   public Quest validateQuestExist(Long questId) {
     return questRepository
         .findById(questId)
-        .orElseThrow(() -> new IllegalArgumentException("Квест не найден: " + questId));
+        .orElseThrow(() -> new ResourceNotFoundException("Квест не найден: " + questId));
   }
 
   @Override
@@ -150,7 +152,7 @@ public class QuestServiceImpl implements QuestService {
 
   private void validateQuestStatus(Quest quest, QuestStatus required, String action) {
     if (quest.getStatus() != required) {
-      throw new ForbiddenOperationException(
+      throw new ConflictException(
           "Действие \""
               + action
               + "\" доступно только для квеста в статусе "
@@ -167,13 +169,13 @@ public class QuestServiceImpl implements QuestService {
   private void validateQuestPublishable(Quest quest) {
     List<Level> levels = levelRepository.findByQuestIdOrderByOrderIndex(quest.getId());
     if (levels.isEmpty()) {
-      throw new ForbiddenOperationException("Нельзя опубликовать квест без уровней");
+      throw new ConflictException("Нельзя опубликовать квест без уровней");
     }
     for (Level level : levels) {
       boolean hasAutoTransition = level.getTimeoutSeconds() != null;
       boolean hasCodes = codeRepository.existsByLevelId(level.getId());
       if (!hasAutoTransition && !hasCodes) {
-        throw new ForbiddenOperationException(
+        throw new ConflictException(
             "Уровень \""
                 + level.getTitle()
                 + "\" (id="

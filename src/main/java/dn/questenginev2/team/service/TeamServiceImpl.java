@@ -1,5 +1,6 @@
 package dn.questenginev2.team.service;
 
+import dn.questenginev2.common.dto.PageResponse;
 import dn.questenginev2.common.exceptions.*;
 import dn.questenginev2.team.dto.CreateTeamRequest;
 import dn.questenginev2.team.dto.TeamFilterRequest;
@@ -179,16 +180,14 @@ public class TeamServiceImpl implements TeamService {
   }
 
   @Override
-  public List<TeamResponse> searchTeams(TeamFilterRequest filter, Pageable pageable) {
+  public PageResponse<TeamResponse> searchTeams(TeamFilterRequest filter, Pageable pageable) {
     Specification<Team> spec =
         TeamSpecification.hasName(filter.name())
             .and(TeamSpecification.hasCaptain(filter.captain()))
             .and(TeamSpecification.createdAtAfter(filter.createdAtAfter()))
             .and(TeamSpecification.createdAtBefore(filter.createdAtBefore()));
     // TODO - нужно исправить проблему N+1
-    return teamRepository.findAll(spec, pageable).stream()
-        .map(this::buildTeamResponse)
-        .collect(Collectors.toList());
+    return PageResponse.from(teamRepository.findAll(spec, pageable).map(this::buildTeamResponse));
   }
 
   private List<TeamMemberDto> teamMemberstoDto(List<TeamMember> teamMembers) {

@@ -1,6 +1,7 @@
 package dn.questenginev2.user.controller;
 
 import dn.questenginev2.common.constants.Routes;
+import dn.questenginev2.common.dto.PageResponse;
 import dn.questenginev2.user.dto.ResetPasswordRequest;
 import dn.questenginev2.user.dto.SetRoleRequest;
 import dn.questenginev2.user.dto.UserFilterRequest;
@@ -9,7 +10,6 @@ import dn.questenginev2.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -47,7 +47,7 @@ public class UserController {
       summary = "Search users",
       description = "Search users with dynamic filters (username, email, role, date range)")
   @GetMapping("/search")
-  public ResponseEntity<List<UserResponse>> searchUsers(
+  public ResponseEntity<PageResponse<UserResponse>> searchUsers(
       @Valid UserFilterRequest filter, Pageable pageable) {
     return ResponseEntity.status(HttpStatus.OK).body(userService.searchUsers(filter, pageable));
   }

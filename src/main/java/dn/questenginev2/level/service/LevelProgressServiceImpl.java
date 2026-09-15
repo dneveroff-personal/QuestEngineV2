@@ -1,6 +1,7 @@
 package dn.questenginev2.level.service;
 
-import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ConflictException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.level.dto.LevelProgressResponse;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
@@ -43,7 +44,7 @@ public class LevelProgressServiceImpl implements LevelProgressService {
   @Override
   public LevelProgressResponse createFirstLevelProgress(QuestProgress questProgress) {
     if (questProgress == null || questProgress.getQuest() == null) {
-      throw new IllegalArgumentException("QuestProgress не найден");
+      throw new ResourceNotFoundException("QuestProgress не найден");
     }
 
     Long questId = questProgress.getQuest().getId();
@@ -51,7 +52,7 @@ public class LevelProgressServiceImpl implements LevelProgressService {
     Level level =
         levelRepository
             .findByQuestIdAndOrderIndex(questId, 1)
-            .orElseThrow(() -> new IllegalArgumentException("Уровень не найден"));
+            .orElseThrow(() -> new ResourceNotFoundException("Уровень не найден"));
 
     validateLevelBelongsToQuest(level, questId);
 
@@ -187,7 +188,7 @@ public class LevelProgressServiceImpl implements LevelProgressService {
   private Level validateLevelExist(Long levelId) {
     return levelRepository
         .findById(levelId)
-        .orElseThrow(() -> new IllegalArgumentException("Уровень не найден: " + levelId));
+        .orElseThrow(() -> new ResourceNotFoundException("Уровень не найден: " + levelId));
   }
 
   private LevelProgress validateLevelProgressExist(Long levelProgressId) {
@@ -195,19 +196,19 @@ public class LevelProgressServiceImpl implements LevelProgressService {
     return levelProgressRepository
         .findById(levelProgressId)
         .orElseThrow(
-            () -> new IllegalArgumentException("LevelProgress не найден: " + levelProgressId));
+            () -> new ResourceNotFoundException("LevelProgress не найден: " + levelProgressId));
   }
 
   private void validateLevelActive(LevelProgress levelProgress) {
     if (levelProgress.getStatus() != LevelProgressStatus.ACTIVE) {
-      throw new ForbiddenOperationException(
+      throw new ConflictException(
           "Завершить можно только ACTIVE уровень. Текущий статус: " + levelProgress.getStatus());
     }
   }
 
   private static void validateLevelBelongsToQuest(Level level, Long questId) {
     if (!level.getQuest().getId().equals(questId)) {
-      throw new ForbiddenOperationException("Уровень не принадлежит QuestProgress");
+      throw new ConflictException("Уровень не принадлежит QuestProgress");
     }
   }
 

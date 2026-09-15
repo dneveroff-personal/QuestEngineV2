@@ -7,7 +7,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.hint.dto.HintProgressResponse;
 import dn.questenginev2.hint.entity.Hint;
 import dn.questenginev2.hint.entity.HintProgress;
@@ -230,7 +232,7 @@ class HintProgressServiceImplTest {
     when(questProgressRepository.findByQuestIdAndTeamId(100L, 10L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> hintProgressService.getVisibleHints(100L, 10L, authentication))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(ResourceNotFoundException.class);
   }
 
   // ────── takeHint ───────────────────────────────────────────────────────────
@@ -283,7 +285,7 @@ class HintProgressServiceImplTest {
     when(hintRepository.findById(1L)).thenReturn(Optional.of(futureHint));
 
     assertThatThrownBy(() -> hintProgressService.takeHint(100L, 10L, 1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("не стала доступна");
 
     verify(hintProgressRepository, never()).saveAndFlush(any());
@@ -295,7 +297,7 @@ class HintProgressServiceImplTest {
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> hintProgressService.takeHint(100L, 10L, 1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("активного уровня");
   }
 
@@ -317,7 +319,7 @@ class HintProgressServiceImplTest {
     when(hintRepository.findById(1L)).thenReturn(Optional.of(otherLevelHint));
 
     assertThatThrownBy(() -> hintProgressService.takeHint(100L, 10L, 1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("не относится");
   }
 
@@ -328,6 +330,6 @@ class HintProgressServiceImplTest {
     when(hintRepository.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> hintProgressService.takeHint(100L, 10L, 999L, authentication))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(ResourceNotFoundException.class);
   }
 }

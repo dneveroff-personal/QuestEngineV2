@@ -1,6 +1,7 @@
 package dn.questenginev2.user.service;
 
 import dn.questenginev2.auth.dto.ResetAdminPasswordRequest;
+import dn.questenginev2.common.dto.PageResponse;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.UserNotFoundException;
 import dn.questenginev2.user.dto.ResetPasswordRequest;
@@ -10,9 +11,7 @@ import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.repository.UserRepository;
 import dn.questenginev2.user.specification.UserSpecification;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -80,7 +79,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public List<UserResponse> searchUsers(UserFilterRequest filter, Pageable pageable) {
+  public PageResponse<UserResponse> searchUsers(UserFilterRequest filter, Pageable pageable) {
     var spec =
         UserSpecification.hasUsername(filter.username())
             .and(UserSpecification.hasEmail(filter.email()))
@@ -88,9 +87,7 @@ public class UserServiceImpl implements UserService {
             .and(UserSpecification.createdAtAfter(filter.createdAtAfter()))
             .and(UserSpecification.createdAtBefore(filter.createdAtBefore()));
 
-    return userRepository.findAll(spec, pageable).stream()
-        .map(this::buildUserResponse)
-        .collect(Collectors.toList());
+    return PageResponse.from(userRepository.findAll(spec, pageable).map(this::buildUserResponse));
   }
 
   // ────── VALIDATIONS ───────────────────────────────────────────────────────────

@@ -14,7 +14,9 @@ import dn.questenginev2.code.entity.CodeSubmissionResult;
 import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
 import dn.questenginev2.level.entity.LevelProgressStatus;
@@ -230,7 +232,7 @@ class CodeSubmissionServiceImplTest {
   }
 
   @Test
-  void submitCode_throwsForbiddenOperationException_whenNoActiveLevelProgress() {
+  void submitCode_throwsConflictException_whenNoActiveLevelProgress() {
     when(levelProgressRepository.findByQuestProgressIdAndStatus(500L, LevelProgressStatus.ACTIVE))
         .thenReturn(Optional.empty());
 
@@ -238,19 +240,19 @@ class CodeSubmissionServiceImplTest {
             () ->
                 codeSubmissionService.submitCode(
                     100L, 10L, new SubmitCodeRequest("siniy"), authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("активного уровня");
   }
 
   @Test
-  void submitCode_throwsIllegalArgumentException_whenQuestProgressNotFound() {
+  void submitCode_throwsResourceNotFoundException_whenQuestProgressNotFound() {
     when(questProgressRepository.findByQuestIdAndTeamId(100L, 10L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(
             () ->
                 codeSubmissionService.submitCode(
                     100L, 10L, new SubmitCodeRequest("siniy"), authentication))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(ResourceNotFoundException.class);
   }
 
   @Test

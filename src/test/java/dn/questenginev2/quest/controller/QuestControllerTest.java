@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.quest.dto.CreateQuestRequest;
 import dn.questenginev2.quest.dto.QuestResponse;
@@ -138,7 +139,7 @@ class QuestControllerTest {
   void publishQuest_returnsConflict_whenQuestNotDraft() throws Exception {
     when(questService.publishQuest(eq(1L), any()))
         .thenThrow(
-            new ForbiddenOperationException(
+            new ConflictException(
                 "Действие \"опубликовать\" доступно только для квеста в статусе DRAFT, текущий"
                     + " статус: REGISTRATION"));
 
@@ -146,7 +147,7 @@ class QuestControllerTest {
         .perform(post("/api/quests/1/publish"))
         .andExpect(status().isConflict())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-        .andExpect(jsonPath("$.title", is("Forbidden Operation")));
+        .andExpect(jsonPath("$.title", is("Conflict")));
   }
 
   @Test
@@ -174,7 +175,7 @@ class QuestControllerTest {
   void finishQuest_returnsConflict_whenQuestNotRunning() throws Exception {
     when(questService.finishQuest(eq(1L), any()))
         .thenThrow(
-            new ForbiddenOperationException(
+            new ConflictException(
                 "Действие \"завершить\" доступно только для квеста в статусе RUNNING, текущий"
                     + " статус: DRAFT"));
 
@@ -182,11 +183,11 @@ class QuestControllerTest {
         .perform(post("/api/quests/1/finish"))
         .andExpect(status().isConflict())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-        .andExpect(jsonPath("$.title", is("Forbidden Operation")));
+        .andExpect(jsonPath("$.title", is("Conflict")));
   }
 
   @Test
-  void createQuest_returnsConflict_whenUserIsNotAuthorOrAdmin() throws Exception {
+  void createQuest_returnsForbidden_whenUserIsNotAuthorOrAdmin() throws Exception {
     when(questService.createQuest(any(CreateQuestRequest.class), any()))
         .thenThrow(
             new ForbiddenOperationException("Создавать квесты могут только AUTHOR или ADMIN"));
@@ -198,7 +199,7 @@ class QuestControllerTest {
                 .content(
                     "{\"title\":\"Test Quest\",\"description\":\"Test"
                         + " Description\",\"type\":\"TEAM\"}"))
-        .andExpect(status().isConflict())
+        .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title", is("Forbidden Operation")));
   }

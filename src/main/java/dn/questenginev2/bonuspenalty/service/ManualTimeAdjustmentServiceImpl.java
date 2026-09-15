@@ -4,7 +4,8 @@ import dn.questenginev2.bonuspenalty.dto.CreateManualTimeAdjustmentRequest;
 import dn.questenginev2.bonuspenalty.dto.ManualTimeAdjustmentResponse;
 import dn.questenginev2.bonuspenalty.entity.ManualTimeAdjustment;
 import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
-import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ConflictException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.quest.entity.QuestProgress;
 import dn.questenginev2.quest.entity.QuestStatus;
 import dn.questenginev2.quest.repository.QuestProgressRepository;
@@ -72,7 +73,7 @@ public class ManualTimeAdjustmentServiceImpl implements ManualTimeAdjustmentServ
     // официального завершения Quest — иначе итоговая статистика/место
     // менялись бы задним числом уже после того, как результат объявлен.
     if (adjustment.getQuestProgress().getQuest().getStatus() == QuestStatus.FINISHED) {
-      throw new ForbiddenOperationException(
+      throw new ConflictException(
           "Нельзя отозвать корректировку после завершения квеста: " + adjustmentId);
     }
 
@@ -100,14 +101,14 @@ public class ManualTimeAdjustmentServiceImpl implements ManualTimeAdjustmentServ
     return questProgressRepository
         .findById(questProgressId)
         .orElseThrow(
-            () -> new IllegalArgumentException("Прогресс квеста не найден: " + questProgressId));
+            () -> new ResourceNotFoundException("Прогресс квеста не найден: " + questProgressId));
   }
 
   private ManualTimeAdjustment validateAdjustmentExist(Long adjustmentId) {
     return manualTimeAdjustmentRepository
         .findById(adjustmentId)
         .orElseThrow(
-            () -> new IllegalArgumentException("Корректировка не найдена: " + adjustmentId));
+            () -> new ResourceNotFoundException("Корректировка не найдена: " + adjustmentId));
   }
 
   private ManualTimeAdjustmentResponse buildResponse(ManualTimeAdjustment adjustment) {

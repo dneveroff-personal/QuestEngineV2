@@ -74,7 +74,7 @@ class UserControllerTest {
             put("/api/users/1/role")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"role\":\"AUTHOR\"}"))
-        .andExpect(status().isConflict())
+        .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title", is("Forbidden Operation")));
   }

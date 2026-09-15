@@ -1,6 +1,8 @@
 package dn.questenginev2.quest.service;
 
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.common.exceptions.TeamNotFoundException;
 import dn.questenginev2.quest.dto.QuestRegisterResponse;
 import dn.questenginev2.quest.entity.*;
@@ -77,7 +79,7 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
     QuestRegistration registration =
         questRegistrationRepository
             .findByQuestIdAndTeamId(questId, team.getId())
-            .orElseThrow(() -> new IllegalArgumentException("Регистрация не найдена"));
+            .orElseThrow(() -> new ResourceNotFoundException("Регистрация не найдена"));
 
     validateRegistrationPending(registration);
 
@@ -96,7 +98,7 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
     QuestRegistration registration =
         questRegistrationRepository
             .findByQuestIdAndTeamId(questId, teamId)
-            .orElseThrow(() -> new IllegalArgumentException("Регистрация не найдена"));
+            .orElseThrow(() -> new ResourceNotFoundException("Регистрация не найдена"));
 
     validateRegistrationPending(registration);
     validateApprovedTeamsLimit(questId);
@@ -126,7 +128,7 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
             .findByTeamIdAndQuestIdAndStatus(teamId, questId, RegistrationStatus.PENDING)
             .stream()
             .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("Активная заявка не найдена"));
+            .orElseThrow(() -> new ResourceNotFoundException("Активная заявка не найдена"));
 
     validateQuestAuthor(currentUser, registration.getQuest().getId());
     validateRegistrationPending(registration);
@@ -142,19 +144,19 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
   private Quest validateQuestExist(Long questId) {
     return questRepository
         .findById(questId)
-        .orElseThrow(() -> new IllegalArgumentException("Квест не найден: " + questId));
+        .orElseThrow(() -> new ResourceNotFoundException("Квест не найден: " + questId));
   }
 
   private void validateQuestNotFinished(Quest quest) {
     if (quest.getStatus() == QuestStatus.FINISHED) {
-      throw new ForbiddenOperationException("Нельзя подать заявку на завершённый квест");
+      throw new ConflictException("Нельзя подать заявку на завершённый квест");
     }
   }
 
   private Team validateTeamExist(Long teamId) {
     return teamRepository
         .findById(teamId)
-        .orElseThrow(() -> new IllegalArgumentException("Команда не найдена: " + teamId));
+        .orElseThrow(() -> new ResourceNotFoundException("Команда не найдена: " + teamId));
   }
 
   private void validateTeamCaptain(User user, Team team) {
@@ -177,7 +179,7 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
 
   private void validateRegistrationPending(QuestRegistration registration) {
     if (registration.getStatus() != RegistrationStatus.PENDING) {
-      throw new ForbiddenOperationException(
+      throw new ConflictException(
           "Можно отменить/подтвердить/отклонить только заявку в статусе PENDING");
     }
   }
@@ -196,12 +198,12 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
     Quest quest =
         questRepository
             .findByIdForUpdate(questId)
-            .orElseThrow(() -> new IllegalArgumentException("Квест не найден: " + questId));
+            .orElseThrow(() -> new ResourceNotFoundException("Квест не найден: " + questId));
     long approvedCount =
         questRegistrationRepository.countByQuestIdAndStatus(questId, RegistrationStatus.APPROVED);
 
     if (approvedCount >= quest.getMaximumTeams()) {
-      throw new ForbiddenOperationException(
+      throw new ConflictException(
           "Достигнут лимит команд для этого квеста: " + quest.getMaximumTeams());
     }
   }

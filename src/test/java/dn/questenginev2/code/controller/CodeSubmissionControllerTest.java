@@ -64,7 +64,7 @@ class CodeSubmissionControllerTest {
   }
 
   @Test
-  void submitCode_returnsConflict_whenUserNotTeamMember() throws Exception {
+  void submitCode_returnsForbidden_whenUserNotTeamMember() throws Exception {
     when(codeSubmissionService.submitCode(eq(1L), eq(2L), any(SubmitCodeRequest.class), any()))
         .thenThrow(
             new ForbiddenOperationException("Вводить коды может только участник этой команды"));
@@ -74,7 +74,7 @@ class CodeSubmissionControllerTest {
             post("/api/quests/progress/1/2/codes")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"value\":\"синий\"}"))
-        .andExpect(status().isConflict())
+        .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }
 }

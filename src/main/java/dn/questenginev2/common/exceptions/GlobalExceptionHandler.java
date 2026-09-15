@@ -103,13 +103,36 @@ public class GlobalExceptionHandler {
   }
 
   // ===== ForbiddenOperationException =====
+  // ADR-0011: название подразумевает 403 — раньше маппилось на 409, что и
+  // было найденным несоответствием. Теперь используется только для "прав
+  // нет в принципе" (роль/владение), состояние-based случаи — см. ConflictException ниже.
   @ExceptionHandler(ForbiddenOperationException.class)
   public ProblemDetail handleForbiddenOperation(
       ForbiddenOperationException ex, WebRequest request) {
     ProblemDetail problemDetail =
         createProblemDetail(
-            ex, HttpStatus.CONFLICT, request, "Forbidden Operation", ex.getMessage());
+            ex, HttpStatus.FORBIDDEN, request, "Forbidden Operation", ex.getMessage());
     log.error("Forbidden operation: {}", ex.getMessage());
+    return problemDetail;
+  }
+
+  // ===== ConflictException (ADR-0011) =====
+  @ExceptionHandler(ConflictException.class)
+  public ProblemDetail handleConflictException(ConflictException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(ex, HttpStatus.CONFLICT, request, "Conflict", ex.getMessage());
+    log.error("Conflict: {}", ex.getMessage());
+    return problemDetail;
+  }
+
+  // ===== ResourceNotFoundException (ADR-0011) =====
+  @ExceptionHandler(ResourceNotFoundException.class)
+  public ProblemDetail handleResourceNotFoundException(
+      ResourceNotFoundException ex, WebRequest request) {
+    ProblemDetail problemDetail =
+        createProblemDetail(
+            ex, HttpStatus.NOT_FOUND, request, "Resource Not Found", ex.getMessage());
+    log.error("Resource not found: {}", ex.getMessage());
     return problemDetail;
   }
 
@@ -295,6 +318,8 @@ public class GlobalExceptionHandler {
     if (ex instanceof WrongPasswordException) return "wrong-password";
     if (ex instanceof RequestAlreadyExistsException) return "conflict";
     if (ex instanceof ForbiddenOperationException) return "forbidden-operation";
+    if (ex instanceof ConflictException) return "conflict";
+    if (ex instanceof ResourceNotFoundException) return "resource-not-found";
     if (ex instanceof EntityNotFoundException) return "entity-not-found";
     if (ex instanceof UserNotFoundException) return "user-not-found";
     if (ex instanceof RequestNotFoundException) return "request-not-found";

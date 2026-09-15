@@ -5,7 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ConflictException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.level.dto.LevelProgressResponse;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
@@ -152,21 +153,21 @@ class LevelProgressServiceImplTest {
   }
 
   @Test
-  void createFirstLevelProgress_throwsIllegalArgumentException_whenQuestProgressNotFound() {
+  void createFirstLevelProgress_throwsResourceNotFoundException_whenQuestProgressNotFound() {
     QuestProgress emptyProgress = new QuestProgress();
     assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(emptyProgress))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("QuestProgress не найден");
 
     verify(levelProgressRepository, never()).save(any());
   }
 
   @Test
-  void createFirstLevelProgress_throwsIllegalArgumentException_whenLevelNotFound() {
+  void createFirstLevelProgress_throwsResourceNotFoundException_whenLevelNotFound() {
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(questProgress))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Уровень не найден");
 
     verify(levelProgressRepository, never()).save(any());
@@ -245,7 +246,7 @@ class LevelProgressServiceImplTest {
   }
 
   @Test
-  void completeLevel_throwsForbiddenOperationException_whenNotActive() {
+  void completeLevel_throwsConflictException_whenNotActive() {
     LevelProgress completedLevel =
         LevelProgress.builder()
             .id(1L)
@@ -260,7 +261,7 @@ class LevelProgressServiceImplTest {
     when(levelProgressRepository.findById(1L)).thenReturn(Optional.of(completedLevel));
 
     assertThatThrownBy(() -> levelProgressService.completeLevel(1L))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("ACTIVE");
 
     verify(levelProgressRepository, never()).save(any());
@@ -399,7 +400,7 @@ class LevelProgressServiceImplTest {
   }
 
   @Test
-  void autoTransitionLevel_throwsForbiddenOperationException_whenNotActive() {
+  void autoTransitionLevel_throwsConflictException_whenNotActive() {
     LevelProgress completedLevel =
         LevelProgress.builder()
             .id(1L)
@@ -414,7 +415,7 @@ class LevelProgressServiceImplTest {
     when(levelProgressRepository.findById(1L)).thenReturn(Optional.of(completedLevel));
 
     assertThatThrownBy(() -> levelProgressService.autoTransitionLevel(1L))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("ACTIVE");
 
     verify(levelProgressRepository, never()).save(any());
@@ -423,7 +424,7 @@ class LevelProgressServiceImplTest {
   // ────── CREATE FIRST LEVEL PROGRESS - EDGE CASES ───────────────────────────────
 
   @Test
-  void createFirstLevelProgress_throwsForbiddenOperationException_whenLevelBelongsToAnotherQuest() {
+  void createFirstLevelProgress_throwsConflictException_whenLevelBelongsToAnotherQuest() {
     Quest questB =
         Quest.builder()
             .id(2L)
@@ -449,7 +450,7 @@ class LevelProgressServiceImplTest {
     when(levelRepository.findByQuestIdAndOrderIndex(1L, 1)).thenReturn(Optional.of(levelB));
 
     assertThatThrownBy(() -> levelProgressService.createFirstLevelProgress(questProgress))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("не принадлежит QuestProgress");
 
     verify(levelProgressRepository, never()).save(any());

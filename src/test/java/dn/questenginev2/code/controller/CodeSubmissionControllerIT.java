@@ -221,7 +221,7 @@ class CodeSubmissionControllerIT {
   }
 
   @Test
-  void submitCode_returnsConflict_whenUserNotTeamMember() throws Exception {
+  void submitCode_returnsForbidden_whenUserNotTeamMember() throws Exception {
     setUpActiveLevelWithCodes(
         1, Code.builder().value("siniy").type(CodeType.MAIN).codeIndex(1).build());
 
@@ -251,7 +251,7 @@ class CodeSubmissionControllerIT {
                 .header("Authorization", "Bearer " + outsiderToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"value\":\"siniy\"}"))
-        .andExpect(status().isConflict())
+        .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }
 

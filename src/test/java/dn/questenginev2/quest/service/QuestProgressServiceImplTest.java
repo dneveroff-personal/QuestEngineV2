@@ -6,7 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import dn.questenginev2.bonuspenalty.service.BonusPenaltyService;
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.common.exceptions.TeamNotFoundException;
 import dn.questenginev2.level.dto.LevelProgressResponse;
 import dn.questenginev2.level.entity.Level;
@@ -209,7 +211,7 @@ class QuestProgressServiceImplTest {
   }
 
   @Test
-  void createProgress_throwsForbiddenOperationException_whenRegistrationPending() {
+  void createProgress_throwsConflictException_whenRegistrationPending() {
     when(questRepository.findById(1L)).thenReturn(Optional.of(runningQuest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team1));
     when(questRegistrationRepository.findByQuestIdAndTeamIdAndStatus(
@@ -217,14 +219,14 @@ class QuestProgressServiceImplTest {
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questProgressService.createProgress(1L, 1L))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("не подтверждена");
 
     verify(questProgressRepository, never()).save(any());
   }
 
   @Test
-  void createProgress_throwsForbiddenOperationException_whenRegistrationRejected() {
+  void createProgress_throwsConflictException_whenRegistrationRejected() {
     when(questRepository.findById(1L)).thenReturn(Optional.of(runningQuest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team1));
     when(questRegistrationRepository.findByQuestIdAndTeamIdAndStatus(
@@ -232,7 +234,7 @@ class QuestProgressServiceImplTest {
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questProgressService.createProgress(1L, 1L))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("не подтверждена");
 
     verify(questProgressRepository, never()).save(any());
@@ -255,23 +257,23 @@ class QuestProgressServiceImplTest {
   }
 
   @Test
-  void createProgress_throwsForbiddenOperationException_whenQuestNotRunning() {
+  void createProgress_throwsConflictException_whenQuestNotRunning() {
     when(questRepository.findById(2L)).thenReturn(Optional.of(draftQuest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team1));
 
     assertThatThrownBy(() -> questProgressService.createProgress(2L, 1L))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("RUNNING");
 
     verify(questProgressRepository, never()).save(any());
   }
 
   @Test
-  void createProgress_throwsIllegalArgumentException_whenQuestNotFound() {
+  void createProgress_throwsResourceNotFoundException_whenQuestNotFound() {
     when(questRepository.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questProgressService.createProgress(999L, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Квест не найден");
 
     verify(questProgressRepository, never()).save(any());
@@ -328,7 +330,7 @@ class QuestProgressServiceImplTest {
   }
 
   @Test
-  void enterQuest_throwsForbiddenOperationException_whenProgressNotWaiting() {
+  void enterQuest_throwsConflictException_whenProgressNotWaiting() {
     QuestProgress runningProgress =
         QuestProgress.builder()
             .id(1L)
@@ -346,21 +348,21 @@ class QuestProgressServiceImplTest {
     when(levelProgressService.createFirstLevelProgress(any())).thenReturn(null);
 
     assertThatThrownBy(() -> questProgressService.enterQuest(1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("WAITING");
 
     verify(questProgressRepository, never()).save(any());
   }
 
   @Test
-  void enterQuest_throwsIllegalArgumentException_whenProgressNotFound() {
+  void enterQuest_throwsResourceNotFoundException_whenProgressNotFound() {
     when(userService.getCurrentUser(authentication)).thenReturn(playerUser);
     when(teamMemberRepository.findByUser(playerUser)).thenReturn(Optional.of(teamMember));
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L)).thenReturn(Optional.empty());
     when(levelProgressService.createFirstLevelProgress(any())).thenReturn(null);
 
     assertThatThrownBy(() -> questProgressService.enterQuest(1L, authentication))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Прогресс не найден");
 
     verify(questProgressRepository, never()).save(any());
@@ -390,11 +392,11 @@ class QuestProgressServiceImplTest {
   }
 
   @Test
-  void getProgress_throwsIllegalArgumentException_whenNotFound() {
+  void getProgress_throwsResourceNotFoundException_whenNotFound() {
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questProgressService.getProgress(1L, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Прогресс не найден");
   }
 
@@ -434,11 +436,11 @@ class QuestProgressServiceImplTest {
   }
 
   @Test
-  void getAllByQuest_throwsIllegalArgumentException_whenQuestNotFound() {
+  void getAllByQuest_throwsResourceNotFoundException_whenQuestNotFound() {
     when(questRepository.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questProgressService.getAllByQuest(999L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Квест не найден");
   }
 
@@ -484,7 +486,7 @@ class QuestProgressServiceImplTest {
   }
 
   @Test
-  void finishProgress_throwsIllegalArgumentException_whenProgressNotFound() {
+  void finishProgress_throwsResourceNotFoundException_whenProgressNotFound() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
     when(questProgressRepository.findByQuestIdAndTeamIdAndStatus(
@@ -492,7 +494,7 @@ class QuestProgressServiceImplTest {
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questProgressService.finishProgress(1L, 1L, authentication))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Прогресс не найден");
 
     verify(questProgressRepository, never()).save(any());
@@ -564,7 +566,7 @@ class QuestProgressServiceImplTest {
   }
 
   @Test
-  void setDnf_throwsForbiddenOperationException_whenFinished() {
+  void setDnf_throwsConflictException_whenFinished() {
     QuestProgress finishedProgress =
         QuestProgress.builder()
             .id(1L)
@@ -582,14 +584,14 @@ class QuestProgressServiceImplTest {
         .thenReturn(Optional.of(finishedProgress));
 
     assertThatThrownBy(() -> questProgressService.setDnf(1L, 1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("завершённый прогресс");
 
     verify(questProgressRepository, never()).save(any());
   }
 
   @Test
-  void setDnf_throwsForbiddenOperationException_whenAlreadyDnf() {
+  void setDnf_throwsConflictException_whenAlreadyDnf() {
     QuestProgress dnfProgress =
         QuestProgress.builder()
             .id(1L)
@@ -607,7 +609,7 @@ class QuestProgressServiceImplTest {
         .thenReturn(Optional.of(dnfProgress));
 
     assertThatThrownBy(() -> questProgressService.setDnf(1L, 1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("завершённый прогресс");
 
     verify(questProgressRepository, never()).save(any());
@@ -638,13 +640,13 @@ class QuestProgressServiceImplTest {
   }
 
   @Test
-  void setDnf_throwsIllegalArgumentException_whenProgressNotFound() {
+  void setDnf_throwsResourceNotFoundException_whenProgressNotFound() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questProgressService.setDnf(1L, 1L, authentication))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Прогресс не найден");
 
     verify(questProgressRepository, never()).save(any());

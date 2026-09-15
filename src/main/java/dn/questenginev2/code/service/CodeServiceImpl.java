@@ -5,6 +5,7 @@ import dn.questenginev2.code.dto.CreateCodeRequest;
 import dn.questenginev2.code.entity.Code;
 import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.repository.CodeRepository;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.service.QuestService;
@@ -94,13 +95,13 @@ public class CodeServiceImpl implements CodeService {
   private Level validateLevelExist(Long levelId) {
     return levelRepository
         .findById(levelId)
-        .orElseThrow(() -> new IllegalArgumentException("Уровень не найден: " + levelId));
+        .orElseThrow(() -> new ResourceNotFoundException("Уровень не найден: " + levelId));
   }
 
   private Code validateCodeExist(Long codeId) {
     return codeRepository
         .findById(codeId)
-        .orElseThrow(() -> new IllegalArgumentException("Код не найден: " + codeId));
+        .orElseThrow(() -> new ResourceNotFoundException("Код не найден: " + codeId));
   }
 
   private void validateCodeValueUnique(Long levelId, String codeValue) {

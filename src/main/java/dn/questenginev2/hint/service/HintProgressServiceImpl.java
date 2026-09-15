@@ -1,6 +1,8 @@
 package dn.questenginev2.hint.service;
 
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.hint.dto.HintProgressResponse;
 import dn.questenginev2.hint.entity.Hint;
 import dn.questenginev2.hint.entity.HintProgress;
@@ -107,23 +109,21 @@ public class HintProgressServiceImpl implements HintProgressService {
         levelProgressRepository
             .findByQuestProgressIdAndStatus(questProgress.getId(), LevelProgressStatus.ACTIVE)
             .orElseThrow(
-                () ->
-                    new ForbiddenOperationException(
-                        "У команды нет активного уровня для взятия подсказок"));
+                () -> new ConflictException("У команды нет активного уровня для взятия подсказок"));
 
     Hint hint =
         hintRepository
             .findById(hintId)
-            .orElseThrow(() -> new IllegalArgumentException("Подсказка не найдена: " + hintId));
+            .orElseThrow(() -> new ResourceNotFoundException("Подсказка не найдена: " + hintId));
 
     if (!hint.getLevel().getId().equals(levelProgress.getLevel().getId())) {
-      throw new ForbiddenOperationException("Подсказка не относится к активному уровню команды");
+      throw new ConflictException("Подсказка не относится к активному уровню команды");
     }
 
     Instant now = clock.instant();
     Instant hintAvailableAt = levelProgress.getOpenedAt().plusSeconds(hint.getDelaySeconds());
     if (now.isBefore(hintAvailableAt)) {
-      throw new ForbiddenOperationException("Подсказка ещё не стала доступна");
+      throw new ConflictException("Подсказка ещё не стала доступна");
     }
 
     Optional<HintProgress> existing =
@@ -151,7 +151,7 @@ public class HintProgressServiceImpl implements HintProgressService {
         .findByQuestIdAndTeamId(questId, teamId)
         .orElseThrow(
             () ->
-                new IllegalArgumentException(
+                new ResourceNotFoundException(
                     "Прогресс команды не найден: questId=" + questId + ", teamId=" + teamId));
   }
 

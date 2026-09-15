@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.hint.dto.CreateHintRequest;
 import dn.questenginev2.hint.dto.HintResponse;
 import dn.questenginev2.hint.entity.Hint;
@@ -155,7 +156,7 @@ class HintServiceImplTest {
   }
 
   @Test
-  void createHint_throwsIllegalArgumentException_whenLevelDoesNotExist() {
+  void createHint_throwsResourceNotFoundException_whenLevelDoesNotExist() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(levelRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
@@ -163,7 +164,7 @@ class HintServiceImplTest {
         new CreateHintRequest(1, 30, "Hint content", HintType.REGULAR, null);
 
     assertThatThrownBy(() -> hintService.createHint(999L, request, authentication))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Уровень не найден");
 
     verify(hintRepository, never()).save(any());
@@ -225,11 +226,11 @@ class HintServiceImplTest {
   }
 
   @Test
-  void getHintById_throwsIllegalArgumentException_whenHintDoesNotExist() {
+  void getHintById_throwsResourceNotFoundException_whenHintDoesNotExist() {
     when(hintRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
     assertThatThrownBy(() -> hintService.getHintById(999L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Подсказка не найдена");
   }
 
@@ -297,12 +298,12 @@ class HintServiceImplTest {
   }
 
   @Test
-  void deleteHint_throwsIllegalArgumentException_whenHintDoesNotExist() {
+  void deleteHint_throwsResourceNotFoundException_whenHintDoesNotExist() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(hintRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
     assertThatThrownBy(() -> hintService.deleteHint(999L, authentication))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Подсказка не найдена");
 
     verify(hintRepository, never()).delete(any(Hint.class));

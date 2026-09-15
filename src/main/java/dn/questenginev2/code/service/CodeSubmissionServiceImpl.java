@@ -8,7 +8,9 @@ import dn.questenginev2.code.entity.CodeSubmissionResult;
 import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
 import dn.questenginev2.level.entity.LevelProgressStatus;
@@ -88,9 +90,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
                     levelProgressRepository.findTopByQuestProgressIdOrderByIdDesc(
                         questProgress.getId()))
             .orElseThrow(
-                () ->
-                    new ForbiddenOperationException(
-                        "У команды нет активного уровня для ввода кодов"));
+                () -> new ConflictException("У команды нет активного уровня для ввода кодов"));
 
     Level level = levelProgress.getLevel();
     List<Code> levelCodes = codeRepository.findByLevelIdOrderByCreatedAt(level.getId());
@@ -150,7 +150,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
         .findByQuestIdAndTeamId(questId, teamId)
         .orElseThrow(
             () ->
-                new IllegalArgumentException(
+                new ResourceNotFoundException(
                     "Прогресс команды не найден: questId=" + questId + ", teamId=" + teamId));
   }
 

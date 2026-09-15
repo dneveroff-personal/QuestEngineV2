@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.hint.dto.HintProgressResponse;
 import dn.questenginev2.hint.entity.HintType;
@@ -81,7 +82,7 @@ class HintProgressControllerTest {
 
     mockMvc
         .perform(get("/api/quests/progress/1/2/hints"))
-        .andExpect(status().isConflict())
+        .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }
 
@@ -108,7 +109,7 @@ class HintProgressControllerTest {
   @Test
   void takeHint_returnsConflict_whenNotYetAvailable() throws Exception {
     when(hintProgressService.takeHint(eq(1L), eq(2L), eq(1L), any()))
-        .thenThrow(new ForbiddenOperationException("Подсказка ещё не стала доступна"));
+        .thenThrow(new ConflictException("Подсказка ещё не стала доступна"));
 
     mockMvc
         .perform(post("/api/quests/progress/1/2/hints/1/take"))

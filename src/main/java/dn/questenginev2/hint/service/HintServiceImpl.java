@@ -1,5 +1,6 @@
 package dn.questenginev2.hint.service;
 
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.hint.dto.CreateHintRequest;
 import dn.questenginev2.hint.dto.HintResponse;
 import dn.questenginev2.hint.entity.Hint;
@@ -95,13 +96,13 @@ public class HintServiceImpl implements HintService {
   private Level validateLevelExist(Long levelId) {
     return levelRepository
         .findById(levelId)
-        .orElseThrow(() -> new IllegalArgumentException("Уровень не найден: " + levelId));
+        .orElseThrow(() -> new ResourceNotFoundException("Уровень не найден: " + levelId));
   }
 
   private Hint validateHintExist(Long hintId) {
     return hintRepository
         .findById(hintId)
-        .orElseThrow(() -> new IllegalArgumentException("Подсказка не найдена: " + hintId));
+        .orElseThrow(() -> new ResourceNotFoundException("Подсказка не найдена: " + hintId));
   }
 
   /**

@@ -6,7 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import dn.questenginev2.code.repository.CodeRepository;
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.repository.LevelRepository;
 import dn.questenginev2.quest.dto.CreateQuestRequest;
@@ -204,7 +206,7 @@ class QuestServiceImplTest {
     when(questRepository.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questService.getQuestById(999L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Квест не найден");
 
     verify(questRepository).findById(999L);
@@ -306,7 +308,7 @@ class QuestServiceImplTest {
     when(questRepository.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questService.delete(999L, authentication))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Квест не найден");
 
     verify(questRepository).findById(999L);
@@ -338,7 +340,7 @@ class QuestServiceImplTest {
     when(questRepository.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questService.validateQuestExist(999L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Квест не найден");
 
     verify(questRepository).findById(999L);
@@ -393,7 +395,7 @@ class QuestServiceImplTest {
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, authorUser.getId())).thenReturn(true);
 
     assertThatThrownBy(() -> questService.publishQuest(1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("REGISTRATION");
 
     verify(questRepository, never()).save(any());
@@ -417,7 +419,7 @@ class QuestServiceImplTest {
     when(levelRepository.findByQuestIdOrderByOrderIndex(1L)).thenReturn(List.of());
 
     assertThatThrownBy(() -> questService.publishQuest(1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("без уровней");
 
     verify(questRepository, never()).save(any());
@@ -444,7 +446,7 @@ class QuestServiceImplTest {
     when(codeRepository.existsByLevelId(10L)).thenReturn(false);
 
     assertThatThrownBy(() -> questService.publishQuest(1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("Broken Level")
         .hasMessageContaining("непроходим");
 
@@ -505,7 +507,7 @@ class QuestServiceImplTest {
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, authorUser.getId())).thenReturn(true);
 
     assertThatThrownBy(() -> questService.finishQuest(1L, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
+        .isInstanceOf(ConflictException.class)
         .hasMessageContaining("DRAFT");
 
     verify(questRepository, never()).save(any());

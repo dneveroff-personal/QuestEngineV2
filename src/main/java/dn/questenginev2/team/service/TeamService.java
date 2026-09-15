@@ -1,5 +1,6 @@
 package dn.questenginev2.team.service;
 
+import dn.questenginev2.common.dto.PageResponse;
 import dn.questenginev2.team.dto.CreateTeamRequest;
 import dn.questenginev2.team.dto.TeamFilterRequest;
 import dn.questenginev2.team.dto.TeamJoinResponse;
@@ -31,5 +32,5 @@ public interface TeamService {
 
   TeamResponse getTeamById(Long teamId);
 
-  List<TeamResponse> searchTeams(TeamFilterRequest filter, Pageable pageable);
+  PageResponse<TeamResponse> searchTeams(TeamFilterRequest filter, Pageable pageable);
 }

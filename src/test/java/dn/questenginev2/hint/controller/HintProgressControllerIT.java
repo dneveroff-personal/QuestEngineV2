@@ -327,7 +327,7 @@ class HintProgressControllerIT {
         .perform(
             get("/api/quests/progress/" + quest.getId() + "/" + team.getId() + "/hints")
                 .header("Authorization", "Bearer " + outsiderToken))
-        .andExpect(status().isConflict())
+        .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }
 }

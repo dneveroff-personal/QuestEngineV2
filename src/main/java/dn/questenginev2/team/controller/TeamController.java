@@ -1,6 +1,7 @@
 package dn.questenginev2.team.controller;
 
 import dn.questenginev2.common.constants.Routes;
+import dn.questenginev2.common.dto.PageResponse;
 import dn.questenginev2.team.dto.CreateTeamRequest;
 import dn.questenginev2.team.dto.TeamFilterRequest;
 import dn.questenginev2.team.dto.TeamJoinResponse;
@@ -99,7 +100,7 @@ public class TeamController {
       summary = "Search teams",
       description = "Search teams with dynamic filters (name, captain, date range)")
   @GetMapping("/search")
-  public ResponseEntity<List<TeamResponse>> searchTeams(
+  public ResponseEntity<PageResponse<TeamResponse>> searchTeams(
       @Valid TeamFilterRequest filter, Pageable pageable) {
     return ResponseEntity.status(HttpStatus.OK).body(teamService.searchTeams(filter, pageable));
   }

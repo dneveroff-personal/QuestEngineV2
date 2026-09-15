@@ -124,13 +124,13 @@ class QuestRegistrationControllerTest {
   }
 
   @Test
-  void register_returnsConflict_whenForbiddenOperation() throws Exception {
+  void register_returnsForbidden_whenForbiddenOperation() throws Exception {
     when(questRegistrationService.registerTeam(eq(1L), eq(1L), any()))
         .thenThrow(new ForbiddenOperationException("Подать заявку может только капитан команды"));
 
     mockMvc
         .perform(post("/api/quests/register/1/1"))
-        .andExpect(status().isConflict())
+        .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title", is("Forbidden Operation")));
   }
@@ -143,7 +143,7 @@ class QuestRegistrationControllerTest {
 
     mockMvc
         .perform(put("/api/quests/register/1/approve/1"))
-        .andExpect(status().isConflict())
+        .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title", is("Forbidden Operation")));
   }

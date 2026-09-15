@@ -59,7 +59,7 @@ class CodeControllerTest {
   }
 
   @Test
-  void createCode_returnsConflict_whenUserIsNotAuthorOrAdmin() throws Exception {
+  void createCode_returnsForbidden_whenUserIsNotAuthorOrAdmin() throws Exception {
     when(codeService.createCode(eq(1L), any(CreateCodeRequest.class), any()))
         .thenThrow(new ForbiddenOperationException("Создавать коды могут только AUTHOR или ADMIN"));
 
@@ -68,7 +68,7 @@ class CodeControllerTest {
             post("/api/quests/1/levels/1/codes")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"value\":\"CODE123\",\"type\":\"MAIN\",\"points\":100}"))
-        .andExpect(status().isConflict())
+        .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title", is("Forbidden Operation")));
   }
