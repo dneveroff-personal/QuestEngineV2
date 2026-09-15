@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "dn"
-version = "0.7.5"
+version = "0.7.6"
 description = "Platform of city-quests, real-time and online"
 
 java {
@@ -49,6 +49,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.flywaydb:flyway-core:11.8.0")
     implementation("org.flywaydb:flyway-database-postgresql:11.8.0")
+
+    // Rate limiting (ADR-0016) — only for /auth/login
+    implementation("com.bucket4j:bucket4j_jdk17-core:8.19.0")
 
     // Database
     runtimeOnly("org.postgresql:postgresql")
