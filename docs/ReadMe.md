@@ -81,7 +81,7 @@
 
 | Документ | Статус |
 |---|---|
-| [testing-strategy.md](07-quality/testing-strategy.md) — паттерн тестов, DoD, k6-смок-тест на Сценарий 6 | 🟢 *(все решения приняты — порог покрытия, Clock-инъекция, нагрузочное тестирование)* |
+| [testing-strategy.md](07-quality/testing-strategy.md) — паттерн тестов, DoD, опциональный k6-смок на Сценарий 6 | 🟢 *(ADR-0017 amended: без % порога; k6 — ручной smoke, не CI-gate)* |
 
 ## 08. Ops
 
@@ -116,7 +116,7 @@
 | [ADR-014](03-architecture/adr/ADR-014-sse-for-live-statistics.md) | SSE как транспорт live-статистики, без искусственной задержки | 🟢 Accepted |
 | [ADR-015](03-architecture/adr/ADR-015-access-refresh-token-pattern.md) | Access (15 мин) + refresh (в БД, с ротацией) токены | 🟢 Accepted |
 | [ADR-016](03-architecture/adr/ADR-016-rate-limiting-bucket4j.md) | Rate limiting через `bucket4j` — только для `/auth/login`, явно НЕ для ввода кода | 🟢 Accepted *(реализовано 0.7.6)* |
-| [ADR-017](03-architecture/adr/ADR-017-jacoco-coverage-threshold.md) | Порог покрытия 70% (сервисный слой), проваливает сборку | 🟢 Accepted |
+| [ADR-017](03-architecture/adr/ADR-017-jacoco-coverage-threshold.md) | JaCoCo-отчёты без % порога и без fail-the-build | 🟢 Accepted *(amended)* |
 | [ADR-018](03-architecture/adr/ADR-018-clock-injection-required-for-time-dependent-services.md) | `Clock`-инъекция обязательна для time-dependent сервисов | 🟢 Accepted |
 | [ADR-019](03-architecture/adr/ADR-019-single-entity-model-for-all-game-formats.md) | Одна модель данных для всех форматов игры, без offline/online split | 🟢 Accepted |
 | [ADR-020](03-architecture/adr/ADR-020-hint-auto-reveal-bonus-penalty-types.md) | Hint: auto-reveal (REGULAR), типы Regular/Bonus/Penalty | 🟢 Accepted *(п.3 амендирован ADR-0021)* |
@@ -141,10 +141,10 @@
 
 ## Обнаруженные функциональные блокеры (не про документацию — про недостающий код)
 
-- Метод `setDnf()` реализован в сервисе, но не выведен ни в один контроллер.
 - Пакет `statistic/` создан пустым — статистика не реализована совсем.
 - Оставлен диагностический `GET /api/test/secure` — решить, удалять перед релизом или документировать намеренно.
 - ✅ Rate limiting для `/auth/login` реализован (0.7.6, ADR-0016).
+- ✅ ADR-0017: жёсткий порог покрытия и fail-the-build **не** используются; JaCoCo только отчёты.
 - `JwtService` и `GlobalExceptionHandler` не имеют собственных unit-тестов.
 - CORS не требуется по решённой архитектуре (same-origin), но стоит явно проверить конфигурацию reverse-proxy при первом деплое.
 - `.github/workflows/deploy.yml` осознанно отключён до продакшена; при включении не забыть поправить `if`-условие + путь `cd` — см. `roadmap/backlog.md`.
