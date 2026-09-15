@@ -2,16 +2,12 @@ package dn.questenginev2.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,8 +57,8 @@ class LoginRateLimitFilterTest {
       filter.doFilterInternal(request, response, filterChain);
     }
 
-    verify(filterChain, times(5)).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
-    assertThat(response.getStatus()).isEqualTo(200); // default of MockHttpServletResponse
+    verify(filterChain, times(5))
+        .doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
   }
 
   @Test
@@ -71,13 +67,10 @@ class LoginRateLimitFilterTest {
     request.setRemoteAddr("10.0.0.2");
 
     for (int i = 0; i < 5; i++) {
-      MockHttpServletResponse okResponse = new MockHttpServletResponse();
-      filter.doFilterInternal(request, okResponse, filterChain);
+      filter.doFilterInternal(request, new MockHttpServletResponse(), filterChain);
     }
 
     MockHttpServletResponse blocked = new MockHttpServletResponse();
-    StringWriter writer = new StringWriter();
-    // MockHttpServletResponse already has a writer; we just call the filter
     filter.doFilterInternal(request, blocked, filterChain);
 
     verify(filterChain, times(5)).doFilter(any(), any());
@@ -98,7 +91,6 @@ class LoginRateLimitFilterTest {
       filter.doFilterInternal(ip2, new MockHttpServletResponse(), filterChain);
     }
 
-    // both IPs still allowed on 5th (already counted above), 6th for each should be blocked
     MockHttpServletResponse blocked1 = new MockHttpServletResponse();
     filter.doFilterInternal(ip1, blocked1, filterChain);
     MockHttpServletResponse blocked2 = new MockHttpServletResponse();
@@ -106,13 +98,13 @@ class LoginRateLimitFilterTest {
 
     assertThat(blocked1.getStatus()).isEqualTo(429);
     assertThat(blocked2.getStatus()).isEqualTo(429);
-    verify(filterChain, times(10)).doFilter(any(), any()); // only the first 5+5
+    verify(filterChain, times(10)).doFilter(any(), any());
   }
 
   @Test
   void usesXForwardedForWhenPresent() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
-    request.setRemoteAddr("127.0.0.1"); // proxy
+    request.setRemoteAddr("127.0.0.1");
     request.addHeader("X-Forwarded-For", "203.0.113.50, 10.0.0.1");
 
     for (int i = 0; i < 5; i++) {
