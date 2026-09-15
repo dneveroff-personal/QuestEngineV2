@@ -1,28 +1,25 @@
-# ADR-0016: Realtime transport boundaries
+# ADR-0016: Границы realtime-транспортов
 
-## Status
+## Статус
 
-Accepted
+Принято
 
-## Context
+## Контекст
 
-QuestEngine uses realtime updates in different parts of the application. The
-transport must be selected by use case rather than introducing WebSocket as a
-replacement for every push mechanism.
+QuestEngine использует realtime-обновления в разных частях приложения. Транспорт должен выбираться исходя из конкретного сценария, а не через попытку заменить WebSocket все существующие механизмы доставки обновлений.
 
-Encounter-style gameplay benefits from low-latency bidirectional communication,
-while live statistics can remain a simple server-to-client stream.
+Игровой процесс в стиле Encounter выигрывает от низкой задержки realtime-обмена, тогда как для live-статистики достаточно простого server-to-client потока.
 
-## Decision
+## Решение
 
-QuestEngine uses **two realtime transports with explicit boundaries**:
+QuestEngine использует **два realtime-транспорта с чёткими границами ответственности**:
 
-### SSE — live statistics
+### SSE — live-статистика
 
-Server-Sent Events remain the transport for live quest statistics.
+Server-Sent Events остаётся транспортом для live-статистики квеста.
 
 ```text
-Statistics page
+Страница статистики
       │
       ▼
      SSE
@@ -31,25 +28,23 @@ Statistics page
 TanStack Query cache
 ```
 
-SSE is one-way and is sufficient because the statistics client does not need to
-send realtime commands over the same connection.
+SSE является односторонним транспортом и достаточен, поскольку клиент статистики не должен отправлять realtime-команды через то же соединение.
 
-The existing statistics SSE decision from ADR-0014 remains valid.
+Существующее решение по SSE для статистики из ADR-0014 остаётся действующим.
 
-### WebSocket — gameplay realtime
+### WebSocket — realtime игрового процесса
 
-WebSocket is reserved for realtime game events and future gameplay
-synchronization.
+WebSocket используется для realtime-событий игры и дальнейшей синхронизации игрового процесса.
 
 ```text
 Game Mode
    │
-   ├── REST → initial/current state and normal mutations
+   ├── REST → начальное/актуальное состояние и обычные mutations
    │
-   └── WebSocket → realtime game events
+   └── WebSocket → realtime-события игры
 ```
 
-Examples of WebSocket events:
+Примеры WebSocket-событий:
 
 * `LEVEL_COMPLETED`
 * `LEVEL_AUTO_TRANSITIONED`
@@ -58,46 +53,40 @@ Examples of WebSocket events:
 * `CODE_REJECTED`
 * `QUEST_FINISHED`
 
-WebSocket does not replace REST and does not become a source of domain truth.
+WebSocket не заменяет REST и не становится источником истины для доменного состояния.
 
-## Consequences
+## Последствия
 
-Positive:
+Положительные:
 
-* statistics remain simple and compatible with the existing SSE implementation;
-* gameplay gets a proper realtime channel;
-* frontend does not need polling for game events;
-* transport choice is explicit and easy to evolve;
-* future backend microservices can publish gameplay events behind the same API
-  boundary.
+* статистика остаётся простой и совместимой с существующей реализацией SSE;
+* игровой процесс получает полноценный realtime-канал;
+* frontend не должен использовать polling для игровых событий;
+* выбор транспорта явно зафиксирован и может развиваться независимо;
+* будущие backend-микросервисы смогут публиковать игровые события за тем же API boundary.
 
-Negative:
+Отрицательные:
 
-* the frontend has two realtime mechanisms to maintain;
-* gameplay WebSocket infrastructure requires authentication, reconnect and
-  subscription handling.
+* frontend должен поддерживать два realtime-механизма;
+* инфраструктура игрового WebSocket требует аутентификации, reconnect и управления подписками.
 
-## Implementation direction
+## Направление реализации
 
-For the gameplay WebSocket implementation, Spring STOMP over WebSocket is the
-preferred protocol unless a later ADR changes this decision. Spring provides
-message destinations, subscriptions, authentication and authorization around
-STOMP without requiring QuestEngine to invent a custom messaging protocol.
+Для игрового WebSocket в качестве предпочтительного протокола выбирается Spring STOMP поверх WebSocket, если последующий ADR не изменит это решение. Spring предоставляет destinations сообщений, subscriptions, аутентификацию и авторизацию вокруг STOMP, поэтому QuestEngine не требуется изобретать собственный messaging-протокол.
 
-The exact endpoint, destinations, event envelope and subscription rules must
-be defined in `docs/frontend/realtime.md` before implementation.
+Точный endpoint, destinations, envelope событий и правила подписок должны быть определены в `docs/frontend/realtime.md` до начала реализации.
 
-## Summary
+## Итог
 
 ```text
 REST
  ├── CRUD
- ├── initial/current state
- └── normal mutations
+ ├── начальное/актуальное состояние
+ └── обычные mutations
 
 SSE
- └── live statistics
+ └── live-статистика
 
 WebSocket
- └── gameplay realtime events
+ └── realtime-события игры
 ```
