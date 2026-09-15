@@ -26,7 +26,7 @@
 | Statistics / Ranking | 🟡 `01-domain/statistics-ranking.md` | ⚪ | Пакет `statistic/` пуст |
 | Permissions / Security | 🟢 `05-security/permissions.md` | 🔵 | Базовая ролевая модель реализована |
 | API-контракт | 🟢 `04-api/conventions.md`, `04-api/endpoints.md` | 🟡 | Swagger/OpenAPI подключён; решения по статусам/пагинации приняты и реализованы (ADR-0011/0012) — `ConflictException`/`ResourceNotFoundException`, `PageResponse<T>` на `/users/search` и `/teams/search`. Тестов пока нет (пишутся отдельно) |
-| DNF для команды | 🟢 `01-domain/registration.md`, `progress.md` | 🟡 | `setDnf()` реализован в сервисе, не выведен в контроллер |
+| DNF для команды | 🟢 `01-domain/registration.md`, `progress.md` | 🟡 | `PUT /api/quests/progress/{questId}/{teamId}/dnf` реализован (`QuestProgressController.setDnf`). Открытый вопрос по прекондиции — см. находки ниже. Тестов пока нет |
 | Live-статистика (транспорт) | 🟢 `06-nfr/requirements.md`, ADR-0014 | ⚪ | SSE выбран, без искусственной задержки, не реализован |
 | Rate limiting | 🟢 `05-security/threat-model.md`, ADR-0016 | 🔵 | `bucket4j` — `LoginRateLimitFilter` (5/мин на IP) только для `POST /api/auth/login`. In-memory. CodeSubmission намеренно не ограничен. Unit-тесты фильтра. (0.7.6) |
 | JWT: access+refresh токены | 🟢 `05-security/threat-model.md`, ADR-0015 | ⚪ | Заменяет старую модель «единый JWT на 24ч» — текущий код (`JwtService`) реализует именно старую модель, требует переработки |
@@ -46,7 +46,7 @@
 5. ✅ Реализовать `HintProgress` (ADR-0020/ADR-0021) — реализовано: поля `Hint.type`/`bonusPenaltySeconds`, `HintProgress`, Job 3 (только REGULAR), `POST .../hints/{hintId}/take` (BONUS/PENALTY, явный выбор команды), `GET /api/quests/progress/{questId}/{teamId}/hints` с тремя состояниями видимости.
 6. ✅ Реализовать три источника Bonus/Penalty (ADR-0007) — реализовано: `ManualTimeAdjustment` (entity/repository/service/controller, миграция V15), эффект кода и эффект подсказки — агрегация через `BonusPenaltyServiceImpl` (`QuestProgressResponse.bonusPenaltySeconds`). Тестов пока нет (пишутся отдельно).
 7. ✅ Развести семантику HTTP-статусов ошибок (ADR-0011) — реализовано: `ForbiddenOperationException` теперь только 403 (было 409 — несоответствие названию), новый `ConflictException` (409, состояние-based), новый `ResourceNotFoundException` (404, заменяет generic `IllegalArgumentException` в ~25 местах). `PageResponse<T>` (ADR-0012) — `/users/search`, `/teams/search`. Тестов пока нет (пишутся отдельно).
-8. Вывести `setDnf()` в контроллер.
+8. ✅ Вывести `setDnf()` в контроллер — `PUT /api/quests/progress/{questId}/{teamId}/dnf`, стиль и авторизация зеркалят соседний `finish`. Открытый вопрос по прекондиции — см. находки ниже.
 9. ✅ Внедрить rate limiting только для `/auth/login` (ADR-0016) — реализовано в 0.7.6 (`LoginRateLimitFilter`, 5/мин на IP). Переход на access+refresh токены (ADR-0015) — остаётся отдельной задачей до первого публичного релиза.
 10. Настроить `jacocoTestCoverageVerification` (ADR-0017) и k6-смок-тест на Сценарий 6.
 11. Если/когда `deploy.yml` будет включаться обратно — поправить `if`-условие и путь `cd` (см. находки ниже), иначе CD молча не сработает даже при ручном запуске.
@@ -77,6 +77,7 @@
 - **ADR-007 формула не учитывала вклад подсказок** — принята до ADR-0021 (явное взятие BONUS/PENALTY-подсказок), из трёх слагаемых учитывала только код и ручную корректировку. **✅ Исправлено** — формула и текст ADR обновлены.
 - **`bonus-penalty.md` — внутреннее противоречие**: два вопроса ("диапазон корректировки", "привязка к уровню") помечены "Решено" прямо в тексте, но остались в списке "Открытые вопросы" внизу того же файла. **✅ Исправлено** — список открытых вопросов приведён в соответствие с уже принятыми решениями.
 - **`Quest.maximumTeams` существует на entity, но не выставлен ни в одном DTO** — найдено при работе над ADR-0011 (использован в `validateApprovedTeamsLimit`, дефолт 100). `QuestResponse`/`CreateQuestRequest` его не содержат — автор не может задать лимит при создании/редактировании квеста, всегда используется дефолт; клиент не может увидеть лимит вообще. В отличие от статистики или access+refresh, это не требует новой доменной модели — поле уже есть, нужно только прокинуть в DTO + `CodeServiceImpl`-подобный сеттер в `QuestServiceImpl`. Небольшая, самостоятельная задача.
+- **`setDnf()` не проверяет статус `Quest`** — `statistics-ranking.md` описывает DNF как случающийся "после официального завершения Quest автором", но `QuestProgressServiceImpl.setDnf()` (и теперь контроллер поверх него) проверяет только `QuestProgress` (не FINISHED/DNF) — не `Quest.status`. Технически автор может проставить DNF команде, пока квест ещё `RUNNING`. **Открытый вопрос, не решённый в этот заход** (не входило в scope "вывести существующий метод в контроллер" — это уже вопрос бизнес-правила, не проводки): нужна ли явная проверка `Quest.status == FINISHED` как прекондиция, или `setDnf` должен вызываться автоматически при `finishQuest()` для всех незавершённых команд (что убрало бы ручной вызов вовсе)? Формулировка в спеке скорее описательная, чем императивная — требует решения человека, не Claude.
 
 ## Статус документации
 

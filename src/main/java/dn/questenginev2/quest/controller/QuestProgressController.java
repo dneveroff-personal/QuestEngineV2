@@ -53,4 +53,17 @@ public class QuestProgressController {
     return ResponseEntity.status(HttpStatus.OK)
         .body(questProgressService.finishProgress(questId, teamId, auth));
   }
+
+  @Operation(
+      summary = "Set DNF for team",
+      description =
+          "Author marks team as Did Not Finish (any non-finished status -> DNF). Used when a"
+              + " team was admitted but never completed the quest by the time the author"
+              + " officially closes it — see 01-domain/statistics-ranking.md.")
+  @PutMapping(Routes.QUEST_ID + Routes.TEAM_ID + "/dnf")
+  public ResponseEntity<QuestProgressResponse> setDnf(
+      @PathVariable Long questId, @PathVariable Long teamId, Authentication auth) {
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(questProgressService.setDnf(questId, teamId, auth));
+  }
 }

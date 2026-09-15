@@ -63,13 +63,13 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         .getWriter()
         .write(
             """
-            {
-              "type": "https://api.questenginev2.dn/problems/too-many-requests",
-              "title": "Too Many Requests",
-              "status": 429,
-              "detail": "Too many login attempts. Limit is 5 requests per minute per IP. Please try again later."
-            }
-            """);
+{
+  "type": "https://api.questenginev2.dn/problems/too-many-requests",
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "Too many login attempts. Limit is 5 requests per minute per IP. Please try again later."
+}
+""");
   }
 
   private Bucket createBucket(String key) {

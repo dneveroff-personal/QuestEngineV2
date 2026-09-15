@@ -94,7 +94,7 @@
 | POST | `/quests/progress/{questId}/{teamId}/codes` | 🔵 *(CodeSubmission, см. `code-submission.md`)* |
 | GET | `/quests/progress/{questId}/{teamId}/hints` | 🔵 *(видимые подсказки команды — три состояния, ADR-0020/ADR-0021)* |
 | POST | `/quests/progress/{questId}/{teamId}/hints/{hintId}/take` | 🔵 *(явное взятие BONUS/PENALTY-подсказки, ADR-0021)* |
-| **DNF endpoint** | — | ⚪ Метод `setDnf()` существует в сервисе, но **не выведен ни в один контроллер** — вызвать через API невозможно. |
+| PUT | `/quests/progress/{questId}/{teamId}/dnf` | 🟡 *(реализовано; не проверяет `Quest.status` как прекондицию — открытый вопрос, см. `roadmap/backlog.md`)* |
 
 ---
 
@@ -160,7 +160,6 @@ CRUD автором и игровой ввод командой — см. `01-do
 
 ## Сводка по крупным пробелам, не отражённым построчно выше
 
-1. `setDnf()` реализован в сервисе, но не достижим через API.
-2. Вся статистика (`statistic/`) не реализована.
-3. Auth — модель одного JWT на 24ч, не access+refresh (ADR-0015).
-4. Игровые механики `CodeSubmission` и `HintProgress` (ввод кода/открытие подсказки командой во время игры) не реализованы — есть только редактирование автором.
+1. Вся статистика (`statistic/`) не реализована.
+2. Auth — модель одного JWT на 24ч, не access+refresh (ADR-0015).
+3. `Quest.maximumTeams` существует на entity, но не выставлен ни в одном DTO — см. `roadmap/backlog.md`.
