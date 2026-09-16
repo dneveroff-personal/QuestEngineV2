@@ -7,10 +7,10 @@
 Документы читаются по возрастанию номера папки — от бизнес-смысла к реализации.
 Каждый документ имеет статус:
 
-- 🟢 **Accepted** — согласовано, можно проектировать/реализовывать поверх этого.
-- 🟡 **Draft** — основа есть, но требует уточнений (см. "Открытые вопросы" внутри файла, если есть).
-- ⚪ **TBD** — раздел выделен, содержание ещё не написано.
-- 🔵 **Implemented** — помимо описания, уже реализовано в коде и покрыто тестами.
+- 🟢 **Accepted** — согласовано.
+- 🟡 **Draft** — основа есть, но требует уточнений.
+- ⚪ **TBD** — раздел ещё не написан.
+- 🔵 **Implemented** — реализовано в коде и покрыто тестами.
 
 ---
 
@@ -18,12 +18,10 @@
 
 | Документ | Статус |
 |---|---|
-| [glossary.md](00-vision/glossary.md) — словарь терминов (Ubiquitous Language) | 🟢 |
-| [product-vision.md](00-vision/product-vision.md) — продукт, аналогия с Encounter, учебные цели, аудитория | 🟡 *(1 открытый вопрос — точные содержательные отличия от Encounter; аудитория решена)* |
+| [glossary.md](00-vision/glossary.md) | 🟢 |
+| [product-vision.md](00-vision/product-vision.md) | 🟡 *(1 открытый вопрос — точные содержательные отличия от Encounter; не блокирует работу)* |
 
-## 01. Domain — предметная область ("что")
-
-Статические сущности (шаблон игры) и Runtime-сущности (прохождение игры).
+## 01. Domain — предметная область
 
 | Документ | Статус |
 |---|---|
@@ -31,57 +29,57 @@
 | [level.md](01-domain/level.md) | 🟢 |
 | [team.md](01-domain/team.md) | 🟢 |
 | [registration.md](01-domain/registration.md) | 🟢 |
-| [progress.md](01-domain/progress.md) — QuestProgress / LevelProgress | 🟢 |
-| [runtime.md](01-domain/runtime.md) — сводная runtime-модель | 🟡 *(частично дублирует progress.md — требует слияния, известный техдолг)* |
+| [progress.md](01-domain/progress.md) | 🟢 |
+| [runtime.md](01-domain/runtime.md) | 🟡 *(частично дублирует progress.md — техдолг)* |
 | [domain-events.md](01-domain/domain-events.md) | 🟢 |
 | [invariants.md](01-domain/invariants.md) | 🟢 |
-| [statistics-ranking.md](01-domain/statistics-ranking.md) | 🟢 *(модель ranking полностью формализована, включая первый уровень; дублирующий раздел устранён)* |
-| [code-submission.md](01-domain/code-submission.md) — коды, синонимы, порог | 🟢 *(модель полностью решена — ADR-0004/0005/0006, rate limiting, видимость статистики, формат прогресса)* |
-| [hint-progress.md](01-domain/hint-progress.md) — auto-reveal (REGULAR), явное взятие (BONUS/PENALTY) | 🔵 *(реализовано — Job 3 + take-эндпоинт, ADR-0020/ADR-0021; персональные подсказки — будущее улучшение)* |
-| [bonus-penalty.md](01-domain/bonus-penalty.md) — три источника бонус/штрафа, аудит | 🟢 *(модель решена ADR-0007/0020; реализовано — `BonusPenaltyServiceImpl`, `ManualTimeAdjustmentController`, `Code.bonusPenaltySeconds`; тестов пока нет)* |
+| [statistics-ranking.md](01-domain/statistics-ranking.md) | 🟢 *(модель формализована; реализация ещё отсутствует)* |
+| [code-submission.md](01-domain/code-submission.md) | 🟢 *(модель решена; runtime-механика реализована)* |
+| [hint-progress.md](01-domain/hint-progress.md) | 🔵 *(Job 3 + take endpoint; персональные подсказки — будущее улучшение)* |
+| [bonus-penalty.md](01-domain/bonus-penalty.md) | 🟢 *(модель решена; реализация есть; полный API/runtime coverage остаётся в backlog)* |
 
-## 02. Processes — бизнес-процессы ("как", без привязки к транспорту)
+## 02. Processes — бизнес-процессы
 
 | Документ | Статус |
 |---|---|
 | [quest-lifecycle.md](02-processes/quest-lifecycle.md) | 🟢 |
 | [sequence-diagrams.md](02-processes/sequence-diagrams.md) | 🟢 |
-| [concurrency-scenarios.md](02-processes/concurrency-scenarios.md) — гонки: лимит команд, автостарт, порог кодов под нагрузкой | 🟢 *(7 сценариев, 5 из них реализованы и проверены реальными конкурентными тестами)* |
+| [concurrency-scenarios.md](02-processes/concurrency-scenarios.md) | 🟢 *(ключевые гонки покрыты конкурентными тестами)* |
 
 ## 03. Architecture — технические решения
 
 | Документ | Статус |
 |---|---|
-| [domain-model.md](03-architecture/domain-model.md) — ER-диаграмма, слои модели | 🟢 |
+| [domain-model.md](03-architecture/domain-model.md) | 🟢 |
 | [state-machines.md](03-architecture/state-machines.md) | 🟢 |
-| [scheduling.md](03-architecture/scheduling.md) — механизм автостарта Quest / автоперехода уровней | 🟢 *(реализовано — `dn.questenginev2.scheduling`, Job 1/Job 2, интервал 1 сек)* |
-| [adr/](03-architecture/adr/) — architecture decision records | 🟢 *(20 ADR, все Accepted — см. реестр ниже)* |
+| [scheduling.md](03-architecture/scheduling.md) | 🟢 *(Job 1/Job 2 реализованы)* |
+| [adr/](03-architecture/adr/) | 🟢 *(ADR приняты)* |
 
 ## 04. API — контракт
 
 | Документ | Статус |
 |---|---|
-| [conventions.md](04-api/conventions.md) — формат ошибок, аутентификация (access+refresh), пагинация, версионирование | 🟡 *(HTTP-статусы и пагинация реализованы — ADR-0011/0012; access+refresh (ADR-0015) ещё нет, старая модель на одном JWT)* |
-| [endpoints.md](04-api/endpoints.md) — карта ресурсов, статус по каждому | 🟡 *(несколько эндпоинтов ещё не реализованы — см. "Сводка по крупным пробелам" в конце файла и `roadmap/backlog.md`)* |
+| [conventions.md](04-api/conventions.md) | 🟡 *(HTTP-статусы и пагинация реализованы; access+refresh ещё нет)* |
+| [endpoints.md](04-api/endpoints.md) | 🟡 *(оставшиеся API gaps перечислены в `roadmap/backlog.md`)* |
 
 ## 05. Security
 
 | Документ | Статус |
 |---|---|
 | [permissions.md](05-security/permissions.md) | 🟢 |
-| [threat-model.md](05-security/threat-model.md) — access+refresh токены, rate limiting (только login), CORS (same-origin) | 🟢 *(rate limiting реализован в 0.7.6 — `LoginRateLimitFilter`; access+refresh ещё нет)* |
+| [threat-model.md](05-security/threat-model.md) | 🟢 *(rate limiting login реализован; access+refresh ещё нет)* |
 
 ## 06. NFR — нефункциональные требования
 
 | Документ | Статус |
 |---|---|
-| [requirements.md](06-nfr/requirements.md) — нагрузка, транспорт статистики, часовые пояса, локализация, отказоустойчивость | 🟢 *(все решения приняты; список конкретных отличий от Encounter — отдельный открытый вопрос в product-vision.md, не здесь)* |
+| [requirements.md](06-nfr/requirements.md) | 🟢 |
 
 ## 07. Quality — тестирование и Definition of Done
 
 | Документ | Статус |
 |---|---|
-| [testing-strategy.md](07-quality/testing-strategy.md) — паттерн тестов, DoD, опциональный k6-смок на Сценарий 6 | 🟢 *(ADR-0017 amended: без % порога; k6 — ручной smoke, не CI-gate)* |
+| [testing-strategy.md](07-quality/testing-strategy.md) | 🟢 *(JaCoCo и k6 smoke готовы; k6 не является CI gate)* |
 
 ## 08. Ops
 
@@ -93,61 +91,25 @@
 
 | Документ | Статус |
 |---|---|
-| [backlog.md](roadmap/backlog.md) — что специфицировано, что реализовано, что предстоит | 🟢 |
+| [backlog.md](roadmap/backlog.md) | 🟢 |
 
 ---
 
-## Реестр ADR
+## Технический долг документации
 
-| ADR | Решение | Статус |
-|---|---|---|
-| [ADR-001](03-architecture/adr/ADR-001-quest-is-the-core-domain-object.md) | Quest — корневой доменный объект | 🟢 Accepted |
-| [ADR-002](03-architecture/adr/ADR-002-quest-start-is-global.md) | Старт Quest глобален; QuestProgress создаётся по расписанию, LevelProgress — лениво при входе | 🟢 Accepted |
-| [ADR-003](03-architecture/adr/ADR-003-naming-of-runtime-entities.md) | Именование runtime-сущностей | 🟢 Accepted |
-| [ADR-004](03-architecture/adr/ADR-004-code-value-uniqueness-scoped-to-level.md) | Уникальность `code_value` в пределах Level, не глобально | 🟢 Accepted |
-| [ADR-005](03-architecture/adr/ADR-005-level-completion-model.md) | Модель завершения уровня: коды, синонимы, порог | 🟢 Accepted |
-| [ADR-006](03-architecture/adr/ADR-006-code-points-renamed-to-bonus-penalty-seconds.md) | `Code.points` → `bonusPenaltySeconds`, единица — секунды | 🟢 Accepted |
-| [ADR-007](03-architecture/adr/ADR-007-bonus-penalty-aggregation-model.md) | Итоговое время — агрегат ручных корректировок + кодов + подсказок | 🟢 Accepted |
-| [ADR-009](03-architecture/adr/ADR-009-automatic-quest-progress-completion.md) | QuestProgress завершается автоматически при любом способе завершения последнего уровня | 🟢 Accepted |
-| [ADR-010](03-architecture/adr/ADR-010-pessimistic-locking-for-registration-and-entry-races.md) | `SELECT FOR UPDATE` + идемпотентная обработка для найденных гонок | 🟢 Accepted |
-| [ADR-011](03-architecture/adr/ADR-011-http-error-status-semantics.md) | Разведение `403`/`404`/`409` по трём разным исключениям | 🟢 Accepted |
-| [ADR-012](03-architecture/adr/ADR-012-pagination-page-response.md) | Listing-эндпоинты возвращают `PageResponse<T>` с метаданными | 🟢 Accepted |
-| [ADR-013](03-architecture/adr/ADR-013-quest-start-time-display-timezone.md) | `startTime` всегда отображается в поясе устройства пользователя | 🟢 Accepted |
-| [ADR-014](03-architecture/adr/ADR-014-sse-for-live-statistics.md) | SSE как транспорт live-статистики, без искусственной задержки | 🟢 Accepted |
-| [ADR-015](03-architecture/adr/ADR-015-access-refresh-token-pattern.md) | Access (15 мин) + refresh (в БД, с ротацией) токены | 🟢 Accepted |
-| [ADR-016](03-architecture/adr/ADR-016-rate-limiting-bucket4j.md) | Rate limiting через `bucket4j` — только для `/auth/login`, явно НЕ для ввода кода | 🟢 Accepted *(реализовано 0.7.6)* |
-| [ADR-017](03-architecture/adr/ADR-017-jacoco-coverage-threshold.md) | JaCoCo-отчёты без % порога и без fail-the-build | 🟢 Accepted *(amended)* |
-| [ADR-018](03-architecture/adr/ADR-018-clock-injection-required-for-time-dependent-services.md) | `Clock`-инъекция обязательна для time-dependent сервисов | 🟢 Accepted |
-| [ADR-019](03-architecture/adr/ADR-019-single-entity-model-for-all-game-formats.md) | Одна модель данных для всех форматов игры, без offline/online split | 🟢 Accepted |
-| [ADR-020](03-architecture/adr/ADR-020-hint-auto-reveal-bonus-penalty-types.md) | Hint: auto-reveal (REGULAR), типы Regular/Bonus/Penalty | 🟢 Accepted *(п.3 амендирован ADR-0021)* |
-| [ADR-021](03-architecture/adr/ADR-021-hint-take-action-for-bonus-penalty.md) | Hint: явное взятие для BONUS/PENALTY — тип виден, число и content скрыты до взятия | 🟢 Accepted |
-
-**Все 20 ADR приняты (Accepted).** Открытых архитектурных вопросов не осталось.
-
----
-
-## Известный технический долг документации
-
-`01-domain/progress.md` и `01-domain/runtime.md` частично пересказывают одни и те же правила (жизненный цикл QuestProgress/LevelProgress, расчёт `autoTransitionAt`) разными словами — при следующей содержательной правке одного из них нужно свести их в один документ.
+`01-domain/progress.md` и `01-domain/runtime.md` частично пересказывают одни и те же правила (жизненный цикл QuestProgress/LevelProgress, расчёт `autoTransitionAt`) разными словами. При следующей содержательной правке их нужно свести в один источник истины.
 
 ## Будущие улучшения (осознанно отложены за пределы MVP)
 
-- **Персональные подсказки** — автор сможет создавать подсказку, видимую только конкретной команде (или нескольким), не всем участникам квеста (`01-domain/hint-progress.md`). Отдельная модель данных, не специфицирована подробно.
-- **Ручное досрочное открытие подсказки автором** — не в MVP, только auto-reveal по таймеру.
+- **Персональные подсказки** — отдельная модель данных, не специфицирована подробно.
+- **Ручное досрочное открытие подсказки автором** — не в MVP.
 
 ## Единственный оставшийся содержательный открытый вопрос
 
-Список конкретных отличий движка от Encounter (`00-vision/product-vision.md`) — не заполнен, не блокирует ни архитектуру, ни реализацию; можно закрывать по мере развития продукта, не откладывая переход к коду.
+Список конкретных отличий движка от Encounter (`00-vision/product-vision.md`) можно уточнять по мере развития продукта; это не блокирует реализацию.
 
-## Обнаруженные функциональные блокеры (не про документацию — про недостающий код)
+## Текущий статус
 
-- Пакет `statistic/` создан пустым — статистика не реализована совсем.
-- Оставлен диагностический `GET /api/test/secure` — решить, удалять перед релизом или документировать намеренно.
-- ✅ Rate limiting для `/auth/login` реализован (0.7.6, ADR-0016).
-- ✅ ADR-0017: жёсткий порог покрытия и fail-the-build **не** используются; JaCoCo только отчёты.
-- `JwtService` и `GlobalExceptionHandler` не имеют собственных unit-тестов.
-- CORS не требуется по решённой архитектуре (same-origin), но стоит явно проверить конфигурацию reverse-proxy при первом деплое.
-- `.github/workflows/deploy.yml` осознанно отключён до продакшена; при включении не забыть поправить `if`-условие + путь `cd` — см. `roadmap/backlog.md`.
-- Текущая аутентификация в коде (`JwtService`, `AuthController`) реализует старую модель (единый JWT на 24ч) — требует переработки под access+refresh (ADR-0015).
+**Немедленных блокеров нет.**
 
-Полная таблица соответствия "специфицировано → реализовано" — в `roadmap/backlog.md`.
+Актуальный список незавершённых задач, решений и технического долга ведётся только в [roadmap/backlog.md](roadmap/backlog.md). Завершённые находки и разовые проверки не дублируются здесь.
