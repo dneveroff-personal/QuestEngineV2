@@ -1,6 +1,6 @@
 # Quest Engine V2 (registry image)
 # Deploy: docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
-# Публичный вход — только frontend/nginx (порт 80). app доступен только внутри docker-сети.
+# Публичный вход — только frontend/nginx (порт 80). app и postgres доступны только внутри docker-сети.
 services:
 
   postgres:
@@ -11,8 +11,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       POSTGRES_DB: ${POSTGRES_DB:-qe_v2_db}
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+    # Порт 5432 намеренно НЕ публикуется на хост (backlog Auth/Security #7).
+    # app ходит в БД по имени сервиса postgres:5432 внутри qe-v2-network.
+    expose:
+      - "5432"
     volumes:
       - qe_v2_db_data:/var/lib/postgresql/data
     networks:
