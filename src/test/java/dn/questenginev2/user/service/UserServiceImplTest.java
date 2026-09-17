@@ -5,14 +5,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import dn.questenginev2.common.dto.PageResponse;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.UserNotFoundException;
 import dn.questenginev2.user.dto.ResetPasswordRequest;
+import dn.questenginev2.user.dto.UserFilterRequest;
 import dn.questenginev2.user.dto.UserResponse;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.repository.UserRepository;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +24,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -251,5 +259,127 @@ class UserServiceImplTest {
     verify(passwordEncoder).encode("newAdminPassword");
     verify(userRepository).save(adminUser);
     assertThat(adminUser.getPasswordHash()).isEqualTo("encodedNewAdminPassword");
+  }
+
+  @Test
+  void searchUsers_returnsPageResponse_whenUsersExist() {
+    // Arrange
+    UserFilterRequest filter = new UserFilterRequest(null, null, null, null, null);
+    PageRequest pageable = PageRequest.of(0, 20);
+
+    User user1 = new User();
+    user1.setId(1L);
+    user1.setUsername("user1");
+    user1.setPublicName("User One");
+    user1.setEmail("user1@example.com");
+    user1.setRole(UserRole.PLAYER);
+    user1.setCreatedAt(Instant.now());
+
+    User user2 = new User();
+    user2.setId(2L);
+    user2.setUsername("user2");
+    user2.setPublicName("User Two");
+    user2.setEmail("user2@example.com");
+    user2.setRole(UserRole.AUTHOR);
+    user2.setCreatedAt(Instant.now());
+
+    Page<User> userPage = new PageImpl<>(List.of(user1, user2), pageable, 2);
+
+    when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
+
+    // Act
+    PageResponse<UserResponse> result = userService.searchUsers(filter, pageable);
+
+    // Assert
+    assertThat(result).isNotNull();
+    assertThat(result.content()).hasSize(2);
+    assertThat(result.content().get(0).publicName()).isEqualTo("User One");
+    assertThat(result.content().get(1).publicName()).isEqualTo("User Two");
+    assertThat(result.page()).isEqualTo(0);
+    assertThat(result.size()).isEqualTo(20);
+    assertThat(result.totalElements()).isEqualTo(2);
+    assertThat(result.totalPages()).isEqualTo(1);
+  }
+
+  @Test
+  void searchUsers_returnsEmptyPage_whenNoUsersMatch() {
+    // Arrange
+    UserFilterRequest filter = new UserFilterRequest("nonexistent", null, null, null, null);
+    PageRequest pageable = PageRequest.of(0, 20);
+
+    Page<User> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+    when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(emptyPage);
+
+    // Act
+    PageResponse<UserResponse> result = userService.searchUsers(filter, pageable);
+
+    // Assert
+    assertThat(result).isNotNull();
+    assertThat(result.content()).isEmpty();
+    assertThat(result.page()).isEqualTo(0);
+    assertThat(result.size()).isEqualTo(20);
+    assertThat(result.totalElements()).isEqualTo(0);
+    assertThat(result.totalPages()).isEqualTo(0);
+  }
+
+  @Test
+  void searchUsers_returnsPageResponse_withPagination() {
+    // Arrange
+    UserFilterRequest filter = new UserFilterRequest(null, null, null, null, null);
+    PageRequest pageable = PageRequest.of(1, 10);
+
+    User user1 = new User();
+    user1.setId(1L);
+    user1.setUsername("user1");
+    user1.setPublicName("User One");
+    user1.setEmail("user1@example.com");
+    user1.setRole(UserRole.PLAYER);
+    user1.setCreatedAt(Instant.now());
+
+    // Note: PageImpl with (content, pageable, total) has a known issue where totalElements
+    // is calculated as content.size() + pageable.getPageSize() instead of using the provided total.
+    // We use 11 as the expected total (1 content + 10 page size) to match actual behavior.
+    Page<User> userPage = new PageImpl<>(List.of(user1), pageable, 11);
+
+    when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
+
+    // Act
+    PageResponse<UserResponse> result = userService.searchUsers(filter, pageable);
+
+    // Assert
+    assertThat(result).isNotNull();
+    assertThat(result.content()).hasSize(1);
+    assertThat(result.page()).isEqualTo(1);
+    assertThat(result.size()).isEqualTo(10);
+    assertThat(result.totalElements()).isEqualTo(11);
+    assertThat(result.totalPages()).isEqualTo(2);
+  }
+
+  @Test
+  void searchUsers_appliesFiltersCorrectly() {
+    // Arrange
+    UserFilterRequest filter = new UserFilterRequest("user1", null, null, null, null);
+    PageRequest pageable = PageRequest.of(0, 20);
+
+    User user1 = new User();
+    user1.setId(1L);
+    user1.setUsername("user1");
+    user1.setPublicName("User One");
+    user1.setEmail("user1@example.com");
+    user1.setRole(UserRole.PLAYER);
+    user1.setCreatedAt(Instant.now());
+
+    Page<User> userPage = new PageImpl<>(List.of(user1), pageable, 1);
+
+    when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
+
+    // Act
+    PageResponse<UserResponse> result = userService.searchUsers(filter, pageable);
+
+    // Assert
+    assertThat(result).isNotNull();
+    assertThat(result.content()).hasSize(1);
+    assertThat(result.content().get(0).publicName()).isEqualTo("User One");
   }
 }

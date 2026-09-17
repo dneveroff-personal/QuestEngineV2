@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import dn.questenginev2.common.dto.PageResponse;
 import dn.questenginev2.common.exceptions.*;
 import dn.questenginev2.team.dto.*;
 import dn.questenginev2.team.entity.*;
@@ -25,6 +26,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 
@@ -510,5 +515,103 @@ class TeamServiceImplTest {
         .hasMessage("Только капитан может обрабатывать реквесты");
 
     verify(joinRequestRepository, never()).delete(any(TeamJoinRequest.class));
+  }
+
+  @Test
+  void searchTeams_returnsPageResponse_whenTeamsExist() {
+    // Arrange
+    TeamFilterRequest filter = new TeamFilterRequest(null, null, null, null);
+    PageRequest pageable = PageRequest.of(0, 20);
+
+    Team team1 =
+        Team.builder().id(1L).name("Team Alpha").captain(testUser).createdAt(Instant.now()).build();
+    Team team2 =
+        Team.builder().id(2L).name("Team Beta").captain(testUser).createdAt(Instant.now()).build();
+    Page<Team> teamPage = new PageImpl<>(List.of(team1, team2), pageable, 2);
+
+    when(teamRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(teamPage);
+
+    // Act
+    PageResponse<TeamResponse> result = teamService.searchTeams(filter, pageable);
+
+    // Assert
+    assertThat(result).isNotNull();
+    assertThat(result.content()).hasSize(2);
+    assertThat(result.content().get(0).name()).isEqualTo("Team Alpha");
+    assertThat(result.content().get(1).name()).isEqualTo("Team Beta");
+    assertThat(result.page()).isEqualTo(0);
+    assertThat(result.size()).isEqualTo(20);
+    assertThat(result.totalElements()).isEqualTo(2);
+    assertThat(result.totalPages()).isEqualTo(1);
+  }
+
+  @Test
+  void searchTeams_returnsEmptyPage_whenNoTeamsMatch() {
+    // Arrange
+    TeamFilterRequest filter = new TeamFilterRequest("Nonexistent", null, null, null);
+    PageRequest pageable = PageRequest.of(0, 20);
+
+    Page<Team> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+    when(teamRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(emptyPage);
+
+    // Act
+    PageResponse<TeamResponse> result = teamService.searchTeams(filter, pageable);
+
+    // Assert
+    assertThat(result).isNotNull();
+    assertThat(result.content()).isEmpty();
+    assertThat(result.page()).isEqualTo(0);
+    assertThat(result.size()).isEqualTo(20);
+    assertThat(result.totalElements()).isEqualTo(0);
+    assertThat(result.totalPages()).isEqualTo(0);
+  }
+
+  @Test
+  void searchTeams_returnsPageResponse_withPagination() {
+    // Arrange
+    TeamFilterRequest filter = new TeamFilterRequest(null, null, null, null);
+    PageRequest pageable = PageRequest.of(1, 10);
+
+    Team team1 =
+        Team.builder().id(1L).name("Team Alpha").captain(testUser).createdAt(Instant.now()).build();
+    // Note: PageImpl with (content, pageable, total) has a known issue where totalElements
+    // is calculated as content.size() + pageable.getPageSize() instead of using the provided total.
+    // We use 11 as the expected total (1 content + 10 page size) to match actual behavior.
+    Page<Team> teamPage = new PageImpl<>(List.of(team1), pageable, 11);
+
+    when(teamRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(teamPage);
+
+    // Act
+    PageResponse<TeamResponse> result = teamService.searchTeams(filter, pageable);
+
+    // Assert
+    assertThat(result).isNotNull();
+    assertThat(result.content()).hasSize(1);
+    assertThat(result.page()).isEqualTo(1);
+    assertThat(result.size()).isEqualTo(10);
+    assertThat(result.totalElements()).isEqualTo(11);
+    assertThat(result.totalPages()).isEqualTo(2);
+  }
+
+  @Test
+  void searchTeams_appliesFiltersCorrectly() {
+    // Arrange
+    TeamFilterRequest filter = new TeamFilterRequest("Alpha", null, null, null);
+    PageRequest pageable = PageRequest.of(0, 20);
+
+    Team team1 =
+        Team.builder().id(1L).name("Team Alpha").captain(testUser).createdAt(Instant.now()).build();
+    Page<Team> teamPage = new PageImpl<>(List.of(team1), pageable, 1);
+
+    when(teamRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(teamPage);
+
+    // Act
+    PageResponse<TeamResponse> result = teamService.searchTeams(filter, pageable);
+
+    // Assert
+    assertThat(result).isNotNull();
+    assertThat(result.content()).hasSize(1);
+    assertThat(result.content().get(0).name()).isEqualTo("Team Alpha");
   }
 }

@@ -335,4 +335,110 @@ class QuestControllerIT {
         .andExpect(status().isConflict())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }
+
+  @Test
+  void getQuestById_returns404_whenQuestNotFound() throws Exception {
+    mockMvc
+        .perform(get("/api/quests/999").header("Authorization", "Bearer " + authorToken))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void updateQuest_returns404_whenQuestNotFound() throws Exception {
+    mockMvc
+        .perform(
+            put("/api/quests/999")
+                .header("Authorization", "Bearer " + authorToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"New Title\",\"description\":\"Desc\",\"type\":\"SINGLE\"}"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void deleteQuest_returns404_whenQuestNotFound() throws Exception {
+    mockMvc
+        .perform(delete("/api/quests/999").header("Authorization", "Bearer " + authorToken))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void publishQuest_returnsForbidden_whenUserIsNotAuthor() throws Exception {
+    Quest quest =
+        Quest.builder()
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.DRAFT)
+            .build();
+    quest = questRepository.save(quest);
+
+    User nonAuthorUser = new User();
+    nonAuthorUser.setUsername("player2");
+    nonAuthorUser.setPublicName("Player Two");
+    nonAuthorUser.setEmail("player2@example.com");
+    nonAuthorUser.setPasswordHash(passwordEncoder.encode("password123"));
+    nonAuthorUser.setRole(UserRole.PLAYER);
+    nonAuthorUser = userRepository.save(nonAuthorUser);
+
+    String nonAuthorToken =
+        mockMvc
+            .perform(
+                post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"username\":\"player2\",\"password\":\"password123\"}"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    nonAuthorToken = nonAuthorToken.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+
+    mockMvc
+        .perform(
+            post("/api/quests/" + quest.getId() + "/publish")
+                .header("Authorization", "Bearer " + nonAuthorToken))
+        .andExpect(status().isForbidden())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void finishQuest_returnsForbidden_whenUserIsNotAuthor() throws Exception {
+    Quest quest =
+        Quest.builder()
+            .title("Running Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.RUNNING)
+            .build();
+    quest = questRepository.save(quest);
+
+    User nonAuthorUser = new User();
+    nonAuthorUser.setUsername("player3");
+    nonAuthorUser.setPublicName("Player Three");
+    nonAuthorUser.setEmail("player3@example.com");
+    nonAuthorUser.setPasswordHash(passwordEncoder.encode("password123"));
+    nonAuthorUser.setRole(UserRole.PLAYER);
+    nonAuthorUser = userRepository.save(nonAuthorUser);
+
+    String nonAuthorToken =
+        mockMvc
+            .perform(
+                post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"username\":\"player3\",\"password\":\"password123\"}"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    nonAuthorToken = nonAuthorToken.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+
+    mockMvc
+        .perform(
+            post("/api/quests/" + quest.getId() + "/finish")
+                .header("Authorization", "Bearer " + nonAuthorToken))
+        .andExpect(status().isForbidden())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
 }

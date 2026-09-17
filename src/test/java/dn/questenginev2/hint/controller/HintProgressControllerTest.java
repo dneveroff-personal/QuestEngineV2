@@ -1,5 +1,6 @@
 package dn.questenginev2.hint.controller;
 
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -9,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.hint.dto.HintProgressResponse;
 import dn.questenginev2.hint.entity.HintType;
 import dn.questenginev2.hint.service.HintProgressService;
@@ -75,7 +77,7 @@ class HintProgressControllerTest {
   }
 
   @Test
-  void getVisibleHints_returnsConflict_whenUserNotTeamMember() throws Exception {
+  void getVisibleHints_returnsForbidden_whenUserNotTeamMember() throws Exception {
     when(hintProgressService.getVisibleHints(eq(1L), eq(2L), any()))
         .thenThrow(
             new ForbiddenOperationException("Видеть подсказки может только участник этой команды"));
@@ -114,6 +116,29 @@ class HintProgressControllerTest {
     mockMvc
         .perform(post("/api/quests/progress/1/2/hints/1/take"))
         .andExpect(status().isConflict())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void getVisibleHints_returns404_whenQuestProgressNotFound() throws Exception {
+    when(hintProgressService.getVisibleHints(eq(999L), eq(2L), any()))
+        .thenThrow(new ResourceNotFoundException("Прогресс команды не найден"));
+
+    mockMvc
+        .perform(get("/api/quests/progress/999/2/hints"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title", is("Resource Not Found")));
+  }
+
+  @Test
+  void takeHint_returns404_whenHintNotFound() throws Exception {
+    when(hintProgressService.takeHint(eq(1L), eq(2L), eq(999L), any()))
+        .thenThrow(new ResourceNotFoundException("Подсказка не найдена: 999"));
+
+    mockMvc
+        .perform(post("/api/quests/progress/1/2/hints/999/take"))
+        .andExpect(status().isNotFound())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }
 }

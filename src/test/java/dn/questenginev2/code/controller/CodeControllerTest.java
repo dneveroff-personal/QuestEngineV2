@@ -13,6 +13,7 @@ import dn.questenginev2.code.dto.CreateCodeRequest;
 import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.service.CodeService;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,5 +103,28 @@ class CodeControllerTest {
         .andExpect(jsonPath("$.value").value("CODE123"))
         .andExpect(jsonPath("$.type").value("MAIN"))
         .andExpect(jsonPath("$.bonusPenaltySeconds").value(100));
+  }
+
+  @Test
+  void getCodeById_returns404_whenCodeNotFound() throws Exception {
+    when(codeService.getCodeById(999L))
+        .thenThrow(new ResourceNotFoundException("Код не найден: 999"));
+
+    mockMvc
+        .perform(get("/api/codes/999"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title", is("Resource Not Found")));
+  }
+
+  @Test
+  void getCodesByLevel_returns404_whenLevelNotFound() throws Exception {
+    when(codeService.getCodesByLevelId(999L))
+        .thenThrow(new ResourceNotFoundException("Уровень не найден: 999"));
+
+    mockMvc
+        .perform(get("/api/quests/1/levels/999/codes"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }
 }

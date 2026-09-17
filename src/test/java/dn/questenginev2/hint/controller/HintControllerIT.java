@@ -195,4 +195,112 @@ class HintControllerIT {
         .andExpect(jsonPath("$[0].orderIndex").value(1))
         .andExpect(jsonPath("$[0].content").value("Hint content"));
   }
+
+  @Test
+  void getHintById_returns404_whenHintNotFound() throws Exception {
+    mockMvc
+        .perform(get("/api/hints/999").header("Authorization", "Bearer " + authorToken))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void createHint_returnsForbidden_whenUserIsNotAuthor() throws Exception {
+    Quest quest =
+        Quest.builder()
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.DRAFT)
+            .build();
+    quest = questRepository.save(quest);
+
+    Level level =
+        Level.builder()
+            .quest(quest)
+            .title("Level 1")
+            .orderIndex(1)
+            .content("Level content")
+            .build();
+    level = levelRepository.save(level);
+
+    User nonAuthorUser = new User();
+    nonAuthorUser.setUsername("player4");
+    nonAuthorUser.setPublicName("Player Four");
+    nonAuthorUser.setEmail("player4@example.com");
+    nonAuthorUser.setPasswordHash(passwordEncoder.encode("password123"));
+    nonAuthorUser.setRole(UserRole.PLAYER);
+    nonAuthorUser = userRepository.save(nonAuthorUser);
+
+    String nonAuthorToken =
+        mockMvc
+            .perform(
+                post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"username\":\"player4\",\"password\":\"password123\"}"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    nonAuthorToken = nonAuthorToken.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+
+    mockMvc
+        .perform(
+            post("/api/quests/" + quest.getId() + "/levels/" + level.getId() + "/hints")
+                .header("Authorization", "Bearer " + nonAuthorToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"orderIndex\":1,\"delaySeconds\":30,\"content\":\"Hint"
+                        + " content\",\"type\":\"REGULAR\"}"))
+        .andExpect(status().isForbidden())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void createHint_returns404_whenLevelNotFound() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/quests/999/levels/999/hints")
+                .header("Authorization", "Bearer " + authorToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"orderIndex\":1,\"delaySeconds\":30,\"content\":\"Hint"
+                        + " content\",\"type\":\"REGULAR\"}"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void createHint_returnsConflict_whenHintDataIsInvalid() throws Exception {
+    Quest quest =
+        Quest.builder()
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(QuestStatus.DRAFT)
+            .build();
+    quest = questRepository.save(quest);
+    questAuthorRepository.save(QuestAuthor.builder().quest(quest).user(authorUser).build());
+
+    Level level =
+        Level.builder()
+            .quest(quest)
+            .title("Level 1")
+            .orderIndex(1)
+            .content("Level content")
+            .build();
+    level = levelRepository.save(level);
+
+    // REGULAR hint with bonusPenaltySeconds set — invalid per validateHintData
+    mockMvc
+        .perform(
+            post("/api/quests/" + quest.getId() + "/levels/" + level.getId() + "/hints")
+                .header("Authorization", "Bearer " + authorToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"orderIndex\":1,\"delaySeconds\":30,\"content\":\"Hint"
+                        + " content\",\"type\":\"REGULAR\",\"bonusPenaltySeconds\":100}"))
+        .andExpect(status().isConflict())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
 }

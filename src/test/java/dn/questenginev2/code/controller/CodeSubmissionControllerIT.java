@@ -321,4 +321,16 @@ class CodeSubmissionControllerIT {
         codeSubmissionRepository.findByLevelProgressIdOrderBySubmittedAtDesc(levelProgress.getId());
     assertThat(submissions).hasSize(threadCount);
   }
+
+  @Test
+  void submitCode_returns404_whenQuestProgressNotFound() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/quests/progress/999/999/codes")
+                .header("Authorization", "Bearer " + teamMemberToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"value\":\"siniy\"}"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
 }

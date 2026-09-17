@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
+import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.quest.dto.QuestRegisterResponse;
 import dn.questenginev2.quest.entity.RegistrationStatus;
 import dn.questenginev2.quest.service.QuestRegistrationService;
@@ -146,5 +147,27 @@ class QuestRegistrationControllerTest {
         .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title", is("Forbidden Operation")));
+  }
+
+  @Test
+  void register_returns404_whenQuestNotFound() throws Exception {
+    when(questRegistrationService.registerTeam(eq(999L), eq(1L), any()))
+        .thenThrow(new ResourceNotFoundException("Квест не найден: 999"));
+
+    mockMvc
+        .perform(post("/api/quests/register/999/1"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void getRegisteredTeams_returns404_whenQuestNotFound() throws Exception {
+    when(questRegistrationService.findAll(eq(999L)))
+        .thenThrow(new ResourceNotFoundException("Квест не найден: 999"));
+
+    mockMvc
+        .perform(get("/api/quests/register/999"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }
 }

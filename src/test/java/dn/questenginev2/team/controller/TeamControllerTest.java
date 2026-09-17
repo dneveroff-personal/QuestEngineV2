@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.common.dto.PageResponse;
 import dn.questenginev2.common.exceptions.RequestNotFoundException;
 import dn.questenginev2.common.exceptions.TeamAlreadyExistsException;
 import dn.questenginev2.common.exceptions.UserAlreadyInTeamException;
@@ -18,11 +19,13 @@ import dn.questenginev2.team.entity.TeamRole;
 import dn.questenginev2.team.service.TeamService;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -274,5 +277,98 @@ class TeamControllerTest {
         .andExpect(status().isNotFound())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title", is("Request Not Found")));
+  }
+
+  @Test
+  void searchTeams_returnsPageResponse_whenTeamsExist() throws Exception {
+    // Arrange
+    TeamResponse team1 =
+        new TeamResponse(1L, "Team Alpha", "captain1", Instant.now(), Collections.emptyList());
+    TeamResponse team2 =
+        new TeamResponse(2L, "Team Beta", "captain2", Instant.now(), Collections.emptyList());
+    PageResponse<TeamResponse> pageResponse =
+        new PageResponse<>(List.of(team1, team2), 0, 20, 2L, 1);
+
+    when(teamService.searchTeams(any(TeamFilterRequest.class), any(PageRequest.class)))
+        .thenReturn(pageResponse);
+
+    // Act & Assert
+    mockMvc
+        .perform(get("/api/teams/search"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.content").isArray())
+        .andExpect(jsonPath("$.content.length()").value(2))
+        .andExpect(jsonPath("$.content[0].id").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("Team Alpha"))
+        .andExpect(jsonPath("$.content[1].id").value(2))
+        .andExpect(jsonPath("$.content[1].name").value("Team Beta"))
+        .andExpect(jsonPath("$.page").value(0))
+        .andExpect(jsonPath("$.size").value(20))
+        .andExpect(jsonPath("$.totalElements").value(2))
+        .andExpect(jsonPath("$.totalPages").value(1));
+  }
+
+  @Test
+  void searchTeams_returnsEmptyPage_whenNoTeamsMatch() throws Exception {
+    // Arrange
+    PageResponse<TeamResponse> pageResponse =
+        new PageResponse<>(Collections.emptyList(), 0, 20, 0L, 0);
+
+    when(teamService.searchTeams(any(TeamFilterRequest.class), any(PageRequest.class)))
+        .thenReturn(pageResponse);
+
+    // Act & Assert
+    mockMvc
+        .perform(get("/api/teams/search"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.content").isArray())
+        .andExpect(jsonPath("$.content").isEmpty())
+        .andExpect(jsonPath("$.page").value(0))
+        .andExpect(jsonPath("$.size").value(20))
+        .andExpect(jsonPath("$.totalElements").value(0))
+        .andExpect(jsonPath("$.totalPages").value(0));
+  }
+
+  @Test
+  void searchTeams_returnsPageResponse_withPaginationParams() throws Exception {
+    // Arrange
+    TeamResponse team1 =
+        new TeamResponse(1L, "Team Alpha", "captain1", Instant.now(), Collections.emptyList());
+    PageResponse<TeamResponse> pageResponse = new PageResponse<>(List.of(team1), 1, 10, 15L, 2);
+
+    when(teamService.searchTeams(any(TeamFilterRequest.class), any(PageRequest.class)))
+        .thenReturn(pageResponse);
+
+    // Act & Assert
+    mockMvc
+        .perform(get("/api/teams/search").param("page", "1").param("size", "10"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.page").value(1))
+        .andExpect(jsonPath("$.size").value(10))
+        .andExpect(jsonPath("$.totalElements").value(15))
+        .andExpect(jsonPath("$.totalPages").value(2));
+  }
+
+  @Test
+  void searchTeams_returnsPageResponse_withFilterParams() throws Exception {
+    // Arrange
+    TeamResponse team1 =
+        new TeamResponse(1L, "Team Alpha", "captain1", Instant.now(), Collections.emptyList());
+    PageResponse<TeamResponse> pageResponse = new PageResponse<>(List.of(team1), 0, 20, 1L, 1);
+
+    when(teamService.searchTeams(any(TeamFilterRequest.class), any(PageRequest.class)))
+        .thenReturn(pageResponse);
+
+    // Act & Assert
+    mockMvc
+        .perform(get("/api/teams/search").param("name", "Alpha"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("Team Alpha"));
   }
 }
