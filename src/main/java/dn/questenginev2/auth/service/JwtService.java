@@ -20,7 +20,15 @@ public class JwtService {
   @Value("${jwt.secret}")
   private String secret;
 
-  @Value("${jwt.expiration:86400000}")
+  /** Access token TTL in ms — ADR-0015: 15 minutes. */
+  @Value("${jwt.access-expiration:900000}")
+  private Long accessExpiration;
+
+  /**
+   * @deprecated use {@link #accessExpiration}; kept so existing {@code jwt.expiration} configs still
+   *     apply if access-expiration is not set.
+   */
+  @Value("${jwt.expiration:900000}")
   private Long expiration;
 
   @Getter private SecretKey key;
@@ -32,19 +40,29 @@ public class JwtService {
   @PostConstruct
   public void init() {
     this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    if (accessExpiration == null || accessExpiration <= 0) {
+      accessExpiration = expiration;
+    }
   }
 
-  public String generateToken(String username, String role) {
+  public String generateAccessToken(String username, String role) {
     Map<String, Object> claims = new HashMap<>();
     claims.put("role", role);
 
+    long ttl = accessExpiration != null ? accessExpiration : expiration;
     return Jwts.builder()
         .claims(claims)
         .subject(username)
         .issuedAt(new Date())
-        .expiration(new Date(System.currentTimeMillis() + expiration))
+        .expiration(new Date(System.currentTimeMillis() + ttl))
         .signWith(key)
         .compact();
+  }
+
+  /** @deprecated use {@link #generateAccessToken} */
+  @Deprecated
+  public String generateToken(String username, String role) {
+    return generateAccessToken(username, role);
   }
 
   public boolean validatePassword(String rawPassword, String passwordHash) {
