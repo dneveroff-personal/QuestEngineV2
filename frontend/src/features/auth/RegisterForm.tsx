@@ -30,9 +30,7 @@ export function RegisterForm() {
   const mutation = useMutation({
     mutationFn: register,
     onSuccess: (response) => {
-      // Регистрация сразу авторизует (backend возвращает LoginResponse) —
-      // отдельного шага "теперь войдите" не требуется.
-      setSession(response.token, response.publicName);
+      setSession(response.accessToken, response.publicName, response.refreshToken);
       navigate("/", { replace: true });
     },
     onError: (error) => {
@@ -48,34 +46,33 @@ export function RegisterForm() {
     },
   });
 
-  function onSubmit(values: RegisterFormValues) {
-    mutation.mutate(values);
-  }
+  const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
 
-  const generalError =
-    mutation.error instanceof NetworkError
-      ? mutation.error.message
-      : mutation.error instanceof ApiError && mutation.error.fieldErrors.length === 0
+  const rootError =
+    mutation.error instanceof ApiError && mutation.error.fieldErrors.length === 0
+      ? mutation.error.detail || mutation.error.title
+      : mutation.error instanceof NetworkError
         ? mutation.error.message
-        : null;
+        : mutation.error
+          ? "Не удалось зарегистрироваться."
+          : null;
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form onSubmit={onSubmit} className="space-y-4">
         <FormField
           control={form.control}
           name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Имя пользователя</FormLabel>
+              <FormLabel>Логин</FormLabel>
               <FormControl>
-                <Input autoComplete="username" autoFocus {...field} />
+                <Input autoComplete="username" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="email"
@@ -89,13 +86,12 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="publicName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Публичное имя (необязательно)</FormLabel>
+              <FormLabel>Отображаемое имя</FormLabel>
               <FormControl>
                 <Input autoComplete="nickname" {...field} />
               </FormControl>
@@ -103,7 +99,6 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="password"
@@ -117,15 +112,9 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-
-        {generalError && (
-          <p role="alert" className="text-destructive text-sm">
-            {generalError}
-          </p>
-        )}
-
+        {rootError && <p className="text-sm text-destructive">{rootError}</p>}
         <Button type="submit" className="w-full" disabled={mutation.isPending}>
-          {mutation.isPending ? "Регистрируем..." : "Зарегистрироваться"}
+          {mutation.isPending ? "Регистрация…" : "Зарегистрироваться"}
         </Button>
       </form>
     </Form>
