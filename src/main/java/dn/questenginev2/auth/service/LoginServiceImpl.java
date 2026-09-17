@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -15,9 +16,10 @@ public class LoginServiceImpl implements LoginService {
 
   private final UserService userService;
   private final JwtService jwtService;
+  private final RefreshTokenService refreshTokenService;
 
-  // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
   @Override
+  @Transactional
   public LoginResponse login(AuthRequestBase request) {
     User user =
         userService
@@ -31,23 +33,23 @@ public class LoginServiceImpl implements LoginService {
   }
 
   @Override
+  @Transactional
   public LoginResponse login(AuthRequestBase request, User user) {
     validatePassword(request.getPassword(), user.getPasswordHash());
 
     return buildLoginResponse(user);
   }
 
-  // ────── VALIDATIONS ───────────────────────────────────────────────────────────
   private void validatePassword(String rawPassword, String passwordHash) {
     if (!jwtService.validatePassword(rawPassword, passwordHash)) {
       throw new BadCredentialsException("Invalid password");
     }
   }
 
-  // ────── BUILDERS ───────────────────────────────────────────────────────────
   private LoginResponse buildLoginResponse(User user) {
-    String token = jwtService.generateToken(user.getUsername(), user.getRole().name());
-
-    return new LoginResponse(user.getPublicName(), token);
+    String accessToken =
+        jwtService.generateAccessToken(user.getUsername(), user.getRole().name());
+    String refreshToken = refreshTokenService.issue(user);
+    return new LoginResponse(user.getPublicName(), accessToken, refreshToken);
   }
 }

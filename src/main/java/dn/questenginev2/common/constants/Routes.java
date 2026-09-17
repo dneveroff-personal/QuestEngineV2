@@ -12,6 +12,8 @@ public final class Routes {
   // Auth
   public static final String REGISTER = AUTH + "/register";
   public static final String LOGIN = AUTH + "/login";
+  public static final String REFRESH = AUTH + "/refresh";
+  public static final String LOGOUT = AUTH + "/logout";
   public static final String RESET_ADMIN_PASSWORD = AUTH + "/reset-admin-password";
 
   // User
