@@ -1,104 +1,74 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { login } from "@/api/auth";
-import { ApiError, NetworkError } from "@/api/errors";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { ApiError } from "@/api/errors";
 import { setSession } from "@/lib/auth-token";
 import { loginSchema, type LoginFormValues } from "@/features/auth/schemas";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export function LoginForm() {
   const navigate = useNavigate();
-  const form = useForm<LoginFormValues>({
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { username: "", password: "" },
   });
 
-  const mutation = useMutation({
-    mutationFn: login,
-    onSuccess: (response) => {
-      setSession(response.token, response.publicName);
-      navigate("/", { replace: true });
-    },
-    onError: (error) => {
-      // Ошибки валидации конкретных полей — привязать к полю формы, а не
-      // показывать одним общим текстом (architecture.md §12.1: backend —
-      // источник истины, клиентская схема могла с ним разойтись).
-      if (error instanceof ApiError && error.fieldErrors.length > 0) {
-        for (const fieldError of error.fieldErrors) {
-          if (fieldError.field === "username" || fieldError.field === "password") {
-            form.setError(fieldError.field, { message: fieldError.message });
-          }
-        }
+  const onSubmit = handleSubmit(async (values) => {
+    setFormError(null);
+    try {
+      const response = await login(values);
+      setSession(response.accessToken, response.publicName, response.refreshToken);
+      navigate("/");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setFormError(err.detail || err.title);
+      } else {
+        setFormError("Не удалось войти. Попробуйте ещё раз.");
       }
-    },
+    }
   });
-
-  function onSubmit(values: LoginFormValues) {
-    mutation.mutate(values);
-  }
-
-  // Ошибка, которая не привязана к конкретному полю (неверный логин/пароль,
-  // сеть недоступна и т.п.) — показывается одним блоком над кнопкой.
-  const generalError =
-    mutation.error instanceof NetworkError
-      ? mutation.error.message
-      : mutation.error instanceof ApiError && mutation.error.fieldErrors.length === 0
-        ? mutation.error.message
-        : null;
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <FormField
-          control={form.control}
-          name="username"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Имя пользователя</FormLabel>
-              <FormControl>
-                <Input autoComplete="username" autoFocus {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Пароль</FormLabel>
-              <FormControl>
-                <Input type="password" autoComplete="current-password" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {generalError && (
-          <p role="alert" className="text-destructive text-sm">
-            {generalError}
-          </p>
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="username">Логин</Label>
+        <Input id="username" autoComplete="username" {...register("username")} />
+        {errors.username && (
+          <p className="text-sm text-destructive">{errors.username.message}</p>
         )}
-
-        <Button type="submit" className="w-full" disabled={mutation.isPending}>
-          {mutation.isPending ? "Входим..." : "Войти"}
-        </Button>
-      </form>
-    </Form>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Пароль</Label>
+        <Input
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          {...register("password")}
+        />
+        {errors.password && (
+          <p className="text-sm text-destructive">{errors.password.message}</p>
+        )}
+      </div>
+      {formError && <p className="text-sm text-destructive">{formError}</p>}
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
+        {isSubmitting ? "Вход…" : "Войти"}
+      </Button>
+      <p className="text-center text-sm text-muted-foreground">
+        Нет аккаунта?{" "}
+        <Link to="/register" className="underline">
+          Регистрация
+        </Link>
+      </p>
+    </form>
   );
 }
