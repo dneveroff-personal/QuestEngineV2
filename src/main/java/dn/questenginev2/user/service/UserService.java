@@ -31,5 +31,6 @@ public interface UserService {
 
   void resetAdminPassword(ResetAdminPasswordRequest request);
 
-  PageResponse<UserResponse> searchUsers(UserFilterRequest filter, Pageable pageable);
+  PageResponse<UserResponse> searchUsers(
+      UserFilterRequest filter, Pageable pageable, Authentication auth);
 }

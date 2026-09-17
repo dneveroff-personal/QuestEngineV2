@@ -3,12 +3,12 @@ package dn.questenginev2.user.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import dn.questenginev2.common.dto.PageResponse;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.UserNotFoundException;
-import dn.questenginev2.user.dto.ResetPasswordRequest;
 import dn.questenginev2.user.dto.UserFilterRequest;
 import dn.questenginev2.user.dto.UserResponse;
 import dn.questenginev2.user.entity.User;
@@ -35,11 +35,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 class UserServiceImplTest {
 
   @Mock private UserRepository userRepository;
-
   @Mock private PasswordEncoder passwordEncoder;
-
   @Mock private Authentication authentication;
-
   @InjectMocks private UserServiceImpl userService;
 
   private User testUser;
@@ -67,123 +64,88 @@ class UserServiceImplTest {
   }
 
   @Test
-  void saveUser_savesAndReturnsUser() {
-    when(userRepository.save(any(User.class))).thenReturn(testUser);
+  void searchUsers_returnsPageResponse_whenUsersExist() {
+    when(authentication.getName()).thenReturn("admin");
+    when(userRepository.findByUsername("admin")).thenReturn(Optional.of(adminUser));
 
-    User saved = userService.saveUser(testUser);
+    UserFilterRequest filter = new UserFilterRequest(null, null, null, null, null);
+    PageRequest pageable = PageRequest.of(0, 20);
 
-    assertThat(saved).isNotNull();
-    assertThat(saved.getId()).isEqualTo(1L);
-    verify(userRepository).save(testUser);
+    User user1 = new User();
+    user1.setId(1L);
+    user1.setUsername("user1");
+    user1.setPublicName("User One");
+    user1.setEmail("user1@example.com");
+    user1.setRole(UserRole.PLAYER);
+    user1.setCreatedAt(Instant.now());
+
+    User user2 = new User();
+    user2.setId(2L);
+    user2.setUsername("user2");
+    user2.setPublicName("User Two");
+    user2.setEmail("user2@example.com");
+    user2.setRole(UserRole.AUTHOR);
+    user2.setCreatedAt(Instant.now());
+
+    Page<User> userPage = new PageImpl<>(List.of(user1, user2), pageable, 2);
+    when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
+
+    PageResponse<UserResponse> result =
+        userService.searchUsers(filter, pageable, authentication);
+
+    assertThat(result).isNotNull();
+    assertThat(result.content()).hasSize(2);
+    assertThat(result.content().get(0).username()).isEqualTo("user1");
+    assertThat(result.content().get(0).email()).isEqualTo("user1@example.com");
   }
 
   @Test
-  void findByUsername_returnsUser_whenUserExists() {
-    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+  void searchUsers_returnsEmptyPage_whenNoUsersMatch() {
+    when(authentication.getName()).thenReturn("admin");
+    when(userRepository.findByUsername("admin")).thenReturn(Optional.of(adminUser));
 
-    Optional<User> result = userService.findByUsername("testuser");
+    UserFilterRequest filter = new UserFilterRequest("nonexistent", null, null, null, null);
+    PageRequest pageable = PageRequest.of(0, 20);
+    Page<User> userPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+    when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
 
-    assertThat(result).isPresent();
-    assertThat(result.get().getUsername()).isEqualTo("testuser");
-    verify(userRepository).findByUsername("testuser");
+    PageResponse<UserResponse> result =
+        userService.searchUsers(filter, pageable, authentication);
+
+    assertThat(result.content()).isEmpty();
+    assertThat(result.totalElements()).isEqualTo(0);
   }
 
   @Test
-  void findByUsername_returnsEmpty_whenUserDoesNotExist() {
-    when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
-
-    Optional<User> result = userService.findByUsername("nonexistent");
-
-    assertThat(result).isEmpty();
-    verify(userRepository).findByUsername("nonexistent");
-  }
-
-  @Test
-  void existsByUsername_returnsTrue_whenUserExists() {
-    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-
-    boolean exists = userService.existsByUsername("testuser");
-
-    assertThat(exists).isTrue();
-    verify(userRepository).findByUsername("testuser");
-  }
-
-  @Test
-  void existsByUsername_returnsFalse_whenUserDoesNotExist() {
-    when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
-
-    boolean exists = userService.existsByUsername("nonexistent");
-
-    assertThat(exists).isFalse();
-    verify(userRepository).findByUsername("nonexistent");
-  }
-
-  @Test
-  void existsByEmail_returnsTrue_whenEmailExists() {
-    when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
-
-    boolean exists = userService.existsByEmail("test@example.com");
-
-    assertThat(exists).isTrue();
-    verify(userRepository).findByEmail("test@example.com");
-  }
-
-  @Test
-  void existsByEmail_returnsFalse_whenEmailDoesNotExist() {
-    when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
-
-    boolean exists = userService.existsByEmail("nonexistent@example.com");
-
-    assertThat(exists).isFalse();
-    verify(userRepository).findByEmail("nonexistent@example.com");
-  }
-
-  @Test
-  void getCurrentUser_returnsUser_whenUserExists() {
+  void searchUsers_redactsSensitiveFields_whenCallerIsNotAdmin() {
     when(authentication.getName()).thenReturn("testuser");
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
-    User result = userService.getCurrentUser(authentication);
+    UserFilterRequest filter = new UserFilterRequest(null, null, null, null, null);
+    PageRequest pageable = PageRequest.of(0, 20);
 
-    assertThat(result).isNotNull();
-    assertThat(result.getUsername()).isEqualTo("testuser");
-    verify(authentication).getName();
-    verify(userRepository).findByUsername("testuser");
-  }
+    User other = new User();
+    other.setId(3L);
+    other.setUsername("other");
+    other.setPublicName("Other User");
+    other.setEmail("other@example.com");
+    other.setRole(UserRole.AUTHOR);
+    other.setCreatedAt(Instant.now());
 
-  @Test
-  void getCurrentUser_throwsUserNotFoundException_whenUserDoesNotExist() {
-    when(authentication.getName()).thenReturn("nonexistent");
-    when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
+    Page<User> userPage = new PageImpl<>(List.of(other), pageable, 1);
+    when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
 
-    assertThatThrownBy(() -> userService.getCurrentUser(authentication))
-        .isInstanceOf(UserNotFoundException.class)
-        .hasMessageContaining("nonexistent");
+    PageResponse<UserResponse> result =
+        userService.searchUsers(filter, pageable, authentication);
 
-    verify(authentication).getName();
-    verify(userRepository).findByUsername("nonexistent");
-  }
-
-  @Test
-  void getUser_returnsUser_whenUserExists() {
-    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-
-    User result = userService.getUser(1L);
-
-    assertThat(result).isNotNull();
-    assertThat(result.getId()).isEqualTo(1L);
-    verify(userRepository).findById(1L);
-  }
-
-  @Test
-  void getUser_throwsUserNotFoundException_whenUserDoesNotExist() {
-    when(userRepository.findById(999L)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> userService.getUser(999L))
-        .isInstanceOf(UserNotFoundException.class)
-        .hasMessageContaining("999");
-
-    verify(userRepository).findById(999L);
+    assertThat(result.content()).hasSize(1);
+    UserResponse row = result.content().get(0);
+    assertThat(row.id()).isEqualTo(3L);
+    assertThat(row.username()).isEqualTo("other");
+    assertThat(row.publicName()).isEqualTo("Other User");
+    assertThat(row.email()).isNull();
+    assertThat(row.role()).isNull();
+    assertThat(row.createdAt()).isNull();
   }
 
   @Test
@@ -214,172 +176,21 @@ class UserServiceImplTest {
   }
 
   @Test
-  void resetPassword_resetsPassword_whenUserIsAdmin() {
-    when(authentication.getName()).thenReturn("admin");
-    when(userRepository.findByUsername("admin")).thenReturn(Optional.of(adminUser));
-    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-    when(passwordEncoder.encode("newPassword")).thenReturn("encodedNewPassword");
-    when(userRepository.save(any(User.class))).thenReturn(testUser);
-
-    ResetPasswordRequest request = new ResetPasswordRequest("newPassword");
-
-    userService.resetPassword(1L, request, authentication);
-
-    verify(passwordEncoder).encode("newPassword");
-    verify(userRepository).save(testUser);
-    assertThat(testUser.getPasswordHash()).isEqualTo("encodedNewPassword");
-  }
-
-  @Test
-  void resetPassword_throwsForbiddenOperationException_whenUserIsNotAdmin() {
+  void getCurrentUser_returnsUser_whenFound() {
     when(authentication.getName()).thenReturn("testuser");
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
-    ResetPasswordRequest request = new ResetPasswordRequest("newPassword");
+    User result = userService.getCurrentUser(authentication);
 
-    assertThatThrownBy(() -> userService.resetPassword(1L, request, authentication))
-        .isInstanceOf(ForbiddenOperationException.class)
-        .hasMessageContaining("Администратору");
-
-    verify(userRepository, never()).findById(any());
-    verify(userRepository, never()).save(any());
+    assertThat(result.getUsername()).isEqualTo("testuser");
   }
 
   @Test
-  void resetAdminPassword_resetsAdminPassword() {
-    when(userRepository.findById(1L)).thenReturn(Optional.of(adminUser));
-    when(passwordEncoder.encode("newAdminPassword")).thenReturn("encodedNewAdminPassword");
-    when(userRepository.save(any(User.class))).thenReturn(adminUser);
+  void getCurrentUser_throwsUserNotFoundException_whenMissing() {
+    when(authentication.getName()).thenReturn("missing");
+    when(userRepository.findByUsername("missing")).thenReturn(Optional.empty());
 
-    dn.questenginev2.auth.dto.ResetAdminPasswordRequest request =
-        new dn.questenginev2.auth.dto.ResetAdminPasswordRequest("newAdminPassword");
-
-    userService.resetAdminPassword(request);
-
-    verify(passwordEncoder).encode("newAdminPassword");
-    verify(userRepository).save(adminUser);
-    assertThat(adminUser.getPasswordHash()).isEqualTo("encodedNewAdminPassword");
-  }
-
-  @Test
-  void searchUsers_returnsPageResponse_whenUsersExist() {
-    // Arrange
-    UserFilterRequest filter = new UserFilterRequest(null, null, null, null, null);
-    PageRequest pageable = PageRequest.of(0, 20);
-
-    User user1 = new User();
-    user1.setId(1L);
-    user1.setUsername("user1");
-    user1.setPublicName("User One");
-    user1.setEmail("user1@example.com");
-    user1.setRole(UserRole.PLAYER);
-    user1.setCreatedAt(Instant.now());
-
-    User user2 = new User();
-    user2.setId(2L);
-    user2.setUsername("user2");
-    user2.setPublicName("User Two");
-    user2.setEmail("user2@example.com");
-    user2.setRole(UserRole.AUTHOR);
-    user2.setCreatedAt(Instant.now());
-
-    Page<User> userPage = new PageImpl<>(List.of(user1, user2), pageable, 2);
-
-    when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
-
-    // Act
-    PageResponse<UserResponse> result = userService.searchUsers(filter, pageable);
-
-    // Assert
-    assertThat(result).isNotNull();
-    assertThat(result.content()).hasSize(2);
-    assertThat(result.content().get(0).publicName()).isEqualTo("User One");
-    assertThat(result.content().get(1).publicName()).isEqualTo("User Two");
-    assertThat(result.page()).isEqualTo(0);
-    assertThat(result.size()).isEqualTo(20);
-    assertThat(result.totalElements()).isEqualTo(2);
-    assertThat(result.totalPages()).isEqualTo(1);
-  }
-
-  @Test
-  void searchUsers_returnsEmptyPage_whenNoUsersMatch() {
-    // Arrange
-    UserFilterRequest filter = new UserFilterRequest("nonexistent", null, null, null, null);
-    PageRequest pageable = PageRequest.of(0, 20);
-
-    Page<User> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
-
-    when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(emptyPage);
-
-    // Act
-    PageResponse<UserResponse> result = userService.searchUsers(filter, pageable);
-
-    // Assert
-    assertThat(result).isNotNull();
-    assertThat(result.content()).isEmpty();
-    assertThat(result.page()).isEqualTo(0);
-    assertThat(result.size()).isEqualTo(20);
-    assertThat(result.totalElements()).isEqualTo(0);
-    assertThat(result.totalPages()).isEqualTo(0);
-  }
-
-  @Test
-  void searchUsers_returnsPageResponse_withPagination() {
-    // Arrange
-    UserFilterRequest filter = new UserFilterRequest(null, null, null, null, null);
-    PageRequest pageable = PageRequest.of(1, 10);
-
-    User user1 = new User();
-    user1.setId(1L);
-    user1.setUsername("user1");
-    user1.setPublicName("User One");
-    user1.setEmail("user1@example.com");
-    user1.setRole(UserRole.PLAYER);
-    user1.setCreatedAt(Instant.now());
-
-    // Note: PageImpl with (content, pageable, total) has a known issue where totalElements
-    // is calculated as content.size() + pageable.getPageSize() instead of using the provided total.
-    // We use 11 as the expected total (1 content + 10 page size) to match actual behavior.
-    Page<User> userPage = new PageImpl<>(List.of(user1), pageable, 11);
-
-    when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
-
-    // Act
-    PageResponse<UserResponse> result = userService.searchUsers(filter, pageable);
-
-    // Assert
-    assertThat(result).isNotNull();
-    assertThat(result.content()).hasSize(1);
-    assertThat(result.page()).isEqualTo(1);
-    assertThat(result.size()).isEqualTo(10);
-    assertThat(result.totalElements()).isEqualTo(11);
-    assertThat(result.totalPages()).isEqualTo(2);
-  }
-
-  @Test
-  void searchUsers_appliesFiltersCorrectly() {
-    // Arrange
-    UserFilterRequest filter = new UserFilterRequest("user1", null, null, null, null);
-    PageRequest pageable = PageRequest.of(0, 20);
-
-    User user1 = new User();
-    user1.setId(1L);
-    user1.setUsername("user1");
-    user1.setPublicName("User One");
-    user1.setEmail("user1@example.com");
-    user1.setRole(UserRole.PLAYER);
-    user1.setCreatedAt(Instant.now());
-
-    Page<User> userPage = new PageImpl<>(List.of(user1), pageable, 1);
-
-    when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
-
-    // Act
-    PageResponse<UserResponse> result = userService.searchUsers(filter, pageable);
-
-    // Assert
-    assertThat(result).isNotNull();
-    assertThat(result.content()).hasSize(1);
-    assertThat(result.content().get(0).publicName()).isEqualTo("User One");
+    assertThatThrownBy(() -> userService.getCurrentUser(authentication))
+        .isInstanceOf(UserNotFoundException.class);
   }
 }

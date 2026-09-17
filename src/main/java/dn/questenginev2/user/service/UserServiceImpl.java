@@ -25,7 +25,6 @@ public class UserServiceImpl implements UserService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
 
-  // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
   @Override
   public User saveUser(User user) {
     return userRepository.save(user);
@@ -79,18 +78,30 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public PageResponse<UserResponse> searchUsers(UserFilterRequest filter, Pageable pageable) {
+  public PageResponse<UserResponse> searchUsers(
+      UserFilterRequest filter, Pageable pageable, Authentication auth) {
+    User currentUser = getCurrentUser(auth);
+    boolean admin = currentUser.getRole() == UserRole.ADMIN;
+
+    // Non-ADMIN may only filter by username/public identity, not email/role/dates.
+    String emailFilter = admin ? filter.email() : null;
+    UserRole roleFilter = admin ? filter.role() : null;
+    var createdAfter = admin ? filter.createdAtAfter() : null;
+    var createdBefore = admin ? filter.createdAtBefore() : null;
+
     var spec =
         UserSpecification.hasUsername(filter.username())
-            .and(UserSpecification.hasEmail(filter.email()))
-            .and(UserSpecification.hasRole(filter.role()))
-            .and(UserSpecification.createdAtAfter(filter.createdAtAfter()))
-            .and(UserSpecification.createdAtBefore(filter.createdAtBefore()));
+            .and(UserSpecification.hasEmail(emailFilter))
+            .and(UserSpecification.hasRole(roleFilter))
+            .and(UserSpecification.createdAtAfter(createdAfter))
+            .and(UserSpecification.createdAtBefore(createdBefore));
 
-    return PageResponse.from(userRepository.findAll(spec, pageable).map(this::buildUserResponse));
+    return PageResponse.from(
+        userRepository
+            .findAll(spec, pageable)
+            .map(user -> admin ? buildUserResponse(user) : buildPublicUserResponse(user)));
   }
 
-  // ────── VALIDATIONS ───────────────────────────────────────────────────────────
   private void validateAdmin(User currentUser) {
     if (currentUser.getRole() != UserRole.ADMIN) {
       throw new ForbiddenOperationException("Данная операция разрешена только Администратору");
@@ -105,9 +116,19 @@ public class UserServiceImpl implements UserService {
     return userRepository.findByEmail(email).isPresent();
   }
 
-  // ────── BUILDERS ───────────────────────────────────────────────────────────
   private UserResponse buildUserResponse(User user) {
     return new UserResponse(
-        user.getId(), user.getPublicName(), user.getEmail(), user.getRole(), user.getCreatedAt());
+        user.getId(),
+        user.getUsername(),
+        user.getPublicName(),
+        user.getEmail(),
+        user.getRole(),
+        user.getCreatedAt());
+  }
+
+  /** Limited projection for non-ADMIN search (id, username, publicName only). */
+  private UserResponse buildPublicUserResponse(User user) {
+    return new UserResponse(
+        user.getId(), user.getUsername(), user.getPublicName(), null, null, null);
   }
 }
