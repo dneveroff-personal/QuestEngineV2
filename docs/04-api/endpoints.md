@@ -1,48 +1,15 @@
-# API Endpoints — обзор ресурсов
+# API Endpoints — обзор
 
-Статус: 🟡 Draft.
-
----
-
-## Auth — `/api/auth`
+## Statistics
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST | `/auth/login` | 🔵 |
-| POST | `/auth/register` | 🔵 |
-| POST | `/auth/refresh` | 🔵 |
-| POST | `/auth/logout` | 🔵 |
+| GET | `/api/quests/{questId}/statistics` | 🔵 *(snapshot ranking; SSE = backlog #19)* |
 
-## Users / Teams
+Доступно при `Quest.status` ∈ {RUNNING, FINISHED}. Аутентификация обязательна.
 
-См. предыдущие ревизии — `/users/me`, team displayName, `/teams/.../quests` — 🔵.
+### Ranking rules (кратко)
+- **RUNNING:** только команды с ≥1 завершённым уровнем; больше уровней выше; ничья — кто раньше закрыл последний завершённый уровень.
+- **FINISHED:** FINISHED по `totalTimeSeconds` (стена + bonus/penalty); DNF внизу.
 
-## Quests — `/api/quests`
-
-| Метод | Путь | Статус |
-|---|---|---|
-| POST/GET/PUT | `/quests`, `/quests/{id}`, ... | 🔵 |
-| DELETE | `/quests/{questId}` | 🔵 *(soft-delete → `archived=true`, данные сохраняются)* |
-| POST | `/quests/{id}/publish` | 🔵 *(запрещено для archived)* |
-| POST | `/quests/{id}/finish` | 🔵 *(→ DNF незавершённым; запрещено для archived)* |
-
-## Quest Registration
-
-| Метод | Путь | Статус |
-|---|---|---|
-| POST | `/quests/register/{questId}/{teamId}` | 🔵 *(REGISTRATION + RUNNING; DRAFT/FINISHED/archived — нет)* |
-| GET/DELETE/approve/reject | ... | 🔵 |
-
-## Quest Progress
-
-| Метод | Путь | Статус |
-|---|---|---|
-| GET | `.../current-level` | 🔵 |
-| PUT | `.../dnf` | 🔵 *(только Quest.status=FINISHED; FINISHED→DNF = дисквалификация)* |
-| enter / codes / hints | ... | 🔵 |
-
-## Сводка пробелов
-
-1. Statistics / Ranking.
-2. `Quest.maximumTeams` в DTO.
-3. Тесты по 14–16 (Odissey).
+Остальные ресурсы — см. предыдущие ревизии / OpenAPI.
