@@ -1,12 +1,7 @@
 package dn.questenginev2.team.service;
 
 import dn.questenginev2.common.dto.PageResponse;
-import dn.questenginev2.common.exceptions.ForbiddenOperationException;
-import dn.questenginev2.common.exceptions.RequestAlreadyExistsException;
-import dn.questenginev2.common.exceptions.RequestNotFoundException;
-import dn.questenginev2.common.exceptions.TeamAlreadyExistsException;
-import dn.questenginev2.common.exceptions.TeamNotFoundException;
-import dn.questenginev2.common.exceptions.UserAlreadyInTeamException;
+import dn.questenginev2.common.exceptions.*;
 import dn.questenginev2.team.dto.CreateTeamRequest;
 import dn.questenginev2.team.dto.TeamFilterRequest;
 import dn.questenginev2.team.dto.TeamJoinResponse;
@@ -24,7 +19,6 @@ import dn.questenginev2.team.specification.TeamSpecification;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.service.UserService;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -62,7 +56,7 @@ public class TeamServiceImpl implements TeamService {
 
   @Override
   @Transactional
-  public Boolean createJoinRequest(Long teamId, String username, Authentication auth) {
+  public Boolean createJoinRequest(Authentication auth, Long teamId, String username) {
     User currentUser = userService.getCurrentUser(auth);
     Team team = getTeam(teamId);
 
@@ -130,8 +124,7 @@ public class TeamServiceImpl implements TeamService {
         teamMemberRepository
             .findByUser(currentUser)
             .orElseThrow(() -> new TeamNotFoundException("Команда не найдена"));
-    Team team = membership.getTeam();
-    return buildTeamResponse(team);
+    return buildTeamResponse(membership.getTeam());
   }
 
   @Override
@@ -142,7 +135,7 @@ public class TeamServiceImpl implements TeamService {
 
   @Override
   @Transactional
-  public void leaveTeam(Authentication auth) {
+  public Boolean leaveTeam(Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
     TeamMember membership =
         teamMemberRepository
@@ -152,11 +145,12 @@ public class TeamServiceImpl implements TeamService {
       throw new ForbiddenOperationException("Капитан не может покинуть команду без передачи роли");
     }
     teamMemberRepository.delete(membership);
+    return true;
   }
 
   @Override
   @Transactional
-  public void transferCaptain(Long userId, Authentication auth) {
+  public Boolean transferCaptain(Long userId, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
     TeamMember currentMembership =
         teamMemberRepository
@@ -177,6 +171,7 @@ public class TeamServiceImpl implements TeamService {
     teamMemberRepository.save(currentMembership);
     teamMemberRepository.save(target);
     teamRepository.save(team);
+    return true;
   }
 
   @Override
