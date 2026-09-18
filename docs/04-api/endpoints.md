@@ -41,7 +41,8 @@
 | GET | `/teams/{teamId}` | 🔵 |
 | GET | `/teams/my` | 🔵 |
 | GET | `/teams/{teamId}/members` | 🔵 |
-| GET | `/teams/{teamId}/quests` | ⚪ **Отсутствует.** Нужен frontend для списка квестов/регистраций команды без N+1. |
+| GET | `/teams/{teamId}/quests` | 🔵 |
+| GET | `/teams/my/quests` | 🔵 |
 | GET | `/teams/search` | 🔵 *(пагинация реализована)* |
 | POST | `/teams/{teamId}/request` | 🔵 |
 | GET | `/teams/requests` | 🔵 |
@@ -157,8 +158,6 @@ CRUD автором и игровой ввод командой — см. `01-do
 ## Сводка по крупным пробелам
 
 1. Statistics / Ranking (`statistic/`) не реализованы.
-2. Отсутствует получение квестов текущей команды одним API-запросом.
-3. `QuestResponse` не содержит автора.
-4. `Quest.maximumTeams` не прокинут в DTO.
-5. Требуется решение по статусам регистрации, DNF и удалению Quest.
-6. Нужен агрегированный API текущего уровня для Game Mode.
+2. `Quest.maximumTeams` не прокинут в DTO.
+3. Требуется решение по статусам регистрации, DNF и удалению Quest.
+4. Нужен агрегированный API текущего уровня для Game Mode.
