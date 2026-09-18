@@ -80,6 +80,9 @@ public class QuestServiceImpl implements QuestService {
     quest.setType(request.type());
     quest.setStartTime(request.startTime());
     quest.setFinishTime(request.finishTime());
+    if (request.maximumTeams() != null) {
+      quest.setMaximumTeams(request.maximumTeams());
+    }
 
     Quest savedQuest = questRepository.save(quest);
     return buildQuestResponse(savedQuest);
@@ -213,6 +216,7 @@ public class QuestServiceImpl implements QuestService {
             .createdAt(quest.getCreatedAt())
             .startTime(quest.getStartTime())
             .finishTime(quest.getFinishTime())
+            .maximumTeams(quest.getMaximumTeams())
             .archived(quest.getArchived());
 
     questAuthorRepository
@@ -240,6 +244,7 @@ public class QuestServiceImpl implements QuestService {
         .createdAt(Instant.now())
         .startTime(request.startTime())
         .finishTime(request.finishTime())
+        .maximumTeams(request.maximumTeams() != null ? request.maximumTeams() : 100)
         .build();
   }
 
