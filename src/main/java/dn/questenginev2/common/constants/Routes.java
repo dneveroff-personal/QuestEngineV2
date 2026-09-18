@@ -58,6 +58,7 @@ public final class Routes {
   public static final String QUEST_PROGRESS_HINTS = QUEST_ID + TEAM_ID + "/hints";
   public static final String QUEST_PROGRESS_HINT_TAKE =
       QUEST_ID + TEAM_ID + "/hints/{hintId:\\d+}/take";
+  public static final String QUEST_PROGRESS_CURRENT_LEVEL = QUEST_ID + TEAM_ID + "/current-level";
 
   // Hint
   public static final String HINTS = API + "/hints";

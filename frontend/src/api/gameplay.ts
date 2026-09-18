@@ -1,28 +1,63 @@
 import { apiFetch } from "@/api/client";
 
-/** Сверено с QuestProgressResponse.java / CodeSubmissionResponse.java / SubmitCodeRequest.java / QuestProgressStatus.java / CodeSubmissionResult.java */
+/** Сверено с QuestProgressResponse / CodeSubmissionResponse / CurrentLevelResponse */
 
 export type QuestProgressStatus = "WAITING" | "RUNNING" | "FINISHED" | "DNF";
-export type CodeSubmissionResult = "CORRECT_MAIN" | "CORRECT_BONUS" | "CORRECT_PENALTY" | "INCORRECT";
+export type CodeSubmissionResult =
+  | "CORRECT_MAIN"
+  | "CORRECT_BONUS"
+  | "CORRECT_PENALTY"
+  | "INCORRECT";
+export type LevelProgressStatus = "ACTIVE" | "COMPLETED" | "AUTO_TRANSITIONED";
+export type HintType = "REGULAR" | "BONUS" | "PENALTY";
 
 export interface QuestProgress {
+  id?: number;
   teamName: string;
   status: QuestProgressStatus;
   questStartedAt: string | null;
   endedAt: string | null;
   finishedAt: string | null;
+  bonusPenaltySeconds?: number | null;
 }
 
 export interface CodeSubmissionResponse {
   result: CodeSubmissionResult;
-  /** Осталось решить кодов до завершения уровня, null если на уровне нет обязательных кодов. */
   remainingMainCodes: number | null;
   levelCompleted: boolean;
   questFinished: boolean;
   submittedAt: string;
 }
 
-/** WAITING → RUNNING. QuestProgress должен уже существовать (создаётся, когда квест переходит в RUNNING) — если его ещё нет, backend вернёт ошибку. */
+/** Visible hint during gameplay (same as GET .../hints). */
+export interface HintProgressItem {
+  hintId: number;
+  orderIndex: number;
+  content?: string | null;
+  type: HintType;
+  bonusPenaltySeconds?: number | null;
+  shownAt?: string | null;
+}
+
+/**
+ * Aggregated Game Mode view: ACTIVE LevelProgress + level content +
+ * autoTransitionAt + hints + main-code progress.
+ */
+export interface CurrentLevel {
+  levelProgressId: number;
+  levelProgressStatus: LevelProgressStatus;
+  openedAt: string | null;
+  autoTransitionAt: string | null;
+  levelId: number;
+  orderIndex: number;
+  title: string;
+  content: string;
+  requiredMainCodesCount: number | null;
+  timeoutSeconds: number | null;
+  mainCodesSolved: number;
+  hints: HintProgressItem[];
+}
+
 export function enterQuest(questId: number): Promise<QuestProgress> {
   return apiFetch<QuestProgress>(`/api/quests/progress/${questId}/enter`, { method: "POST" });
 }
@@ -32,14 +67,18 @@ export function getQuestProgress(questId: number, teamId: number): Promise<Quest
 }
 
 /**
- * Не rate-limited намеренно (ADR-0016 — скорость ввода часть геймплея).
- * Ни один эндпоинт не говорит, на каком именно уровне сейчас команда, ни
- * его название/содержимое/таймер автоперехода (LevelProgressResponse
- * существует на backend, но не отдаётся ни одним контроллером — см.
- * docs/roadmap/backlog.md). Единственная обратная связь — эта самая
- * функция: remainingMainCodes/levelCompleted после каждой попытки.
+ * Current ACTIVE level for the team. 404 if no active level.
+ * Replaces N+1 over progress/hints/level for Game Mode.
  */
-export function submitCode(questId: number, teamId: number, value: string): Promise<CodeSubmissionResponse> {
+export function getCurrentLevel(questId: number, teamId: number): Promise<CurrentLevel> {
+  return apiFetch<CurrentLevel>(`/api/quests/progress/${questId}/${teamId}/current-level`);
+}
+
+export function submitCode(
+  questId: number,
+  teamId: number,
+  value: string,
+): Promise<CodeSubmissionResponse> {
   return apiFetch<CodeSubmissionResponse>(`/api/quests/progress/${questId}/${teamId}/codes`, {
     method: "POST",
     body: { value },
