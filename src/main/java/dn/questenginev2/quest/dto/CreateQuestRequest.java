@@ -18,7 +18,7 @@ public record CreateQuestRequest(
     @NotNull(message = "Тип квеста не может быть пустым") QuestType type,
     Instant startTime,
     Instant finishTime,
-    /** Max approved teams; null → default 100 on create. Min 1. */
-    @Min(value = 1, message = "minimumTeams must be at least 1")
+    /** Max approved teams; null → default 100 on create. */
+    @Min(value = 1, message = "maximumTeams must be at least 1")
         @Max(value = 10000, message = "maximumTeams must be at most 10000")
         Integer maximumTeams) {}
