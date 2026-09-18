@@ -30,6 +30,8 @@ public final class Routes {
   public static final String REJECT_JOIN_REQUEST = JOIN_REQUESTS + "/{requestId}/reject";
   public static final String MY = "/my";
   public static final String MEMBERS = TEAM_ID + "/members";
+  public static final String TEAM_QUESTS = TEAM_ID + "/quests";
+  public static final String MY_QUESTS = MY + "/quests";
   public static final String LEAVE = "/leave";
   public static final String TRANSFER_CAPTAIN = "/transfer-captain" + USER_ID;
 

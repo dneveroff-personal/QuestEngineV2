@@ -25,4 +25,8 @@ public interface QuestRegistrationRepository extends JpaRepository<QuestRegistra
   boolean existsByQuestIdAndTeamId(Long questId, Long teamId);
 
   long countByQuestIdAndStatus(Long questId, RegistrationStatus status);
+
+  /** All registrations of a team with quest loaded (any status, incl. finished quests). */
+  @EntityGraph(attributePaths = {"quest"})
+  List<QuestRegistration> findByTeamIdOrderByCreatedAtDesc(Long teamId);
 }
