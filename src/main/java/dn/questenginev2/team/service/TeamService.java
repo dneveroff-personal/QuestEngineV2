@@ -5,6 +5,7 @@ import dn.questenginev2.team.dto.CreateTeamRequest;
 import dn.questenginev2.team.dto.TeamFilterRequest;
 import dn.questenginev2.team.dto.TeamJoinResponse;
 import dn.questenginev2.team.dto.TeamMemberDto;
+import dn.questenginev2.team.dto.TeamQuestItemResponse;
 import dn.questenginev2.team.dto.TeamResponse;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
@@ -33,4 +34,10 @@ public interface TeamService {
   TeamResponse getTeamById(Long teamId);
 
   PageResponse<TeamResponse> searchTeams(TeamFilterRequest filter, Pageable pageable);
+
+  /** Quest registrations of a team (any status), including FINISHED quests. */
+  List<TeamQuestItemResponse> getTeamQuests(Long teamId, Authentication auth);
+
+  /** Same for the caller's current team. */
+  List<TeamQuestItemResponse> getMyTeamQuests(Authentication auth);
 }
