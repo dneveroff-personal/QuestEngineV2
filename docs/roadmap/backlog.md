@@ -34,6 +34,9 @@
 | `/api/users/search` field policy            | `05-security/threat-model.md` | 🔵 | Auth user; non-ADMIN — только id/username/publicName; ADMIN — полный ответ                                                                                           |
 | `UserResponse.username`                     | — | 🔵 | Поле добавлено (поиск / transfer captain)                                                                                                                            |
 | `GET /api/users/me` | `04-api/endpoints.md` | 🔵 | Профиль текущего пользователя |
+| Team username + displayName | `TeamMemberDto` / `TeamResponse` | 🔵 | username + displayName (publicName fallback) |
+| Team quest registrations | `GET /api/teams/{id}/quests`, `/teams/my/quests` | 🔵 | Все статусы регистрации, включая FINISHED quests |
+| `QuestResponse.authorId` / `authorName` | — | 🔵 | Авторство в ответе квеста |
 | Prod compose: PostgreSQL без публичного 5432 | `docker-compose.prod.yml` | 🔵 | БД только во внутренней docker-сети                                                                                                                                  |
 | CI                                          | `.github/workflows/build.yml` | 🔵 | Spotless, тесты, Docker image, GHCR, JaCoCo/test artifacts                                                                                                           |
 | JaCoCo + k6 smoke (Сценарий 6)              | ADR-0017, `07-quality/testing-strategy.md` | 🔵 | ADR-0017 amended: жёсткий coverage threshold/fail-build отменены; JaCoCo отчёт и k6 smoke добавлены как проверочные инструменты, k6 не является CI-gate              |
@@ -58,17 +61,6 @@
    - не возвращаться автоматически к `CodeSubmissionOperation`/HTTP-idempotency ledger: сначала проверить, достаточно ли текущей бизнес-модели и какого минимального контракта не хватает.
 
 ### 3. API для frontend / Game Mode
-
-9. ⚪ **Добавить получение квестов/регистраций текущей команды**
-   - убрать N+1 запросы frontend через `upcoming`;
-   - вернуть также прошедшие (`FINISHED`) квесты.
-
-10. ⚪ **Определить отображаемое имя команды**
-    - решить `username` vs `publicName` для `TeamMemberDto.name` и `TeamResponse.captainName`;
-    - зафиксировать единое правило и привести API/frontend к нему.
-
-12. ⚪ **Добавить `authorId` / `authorName` в `QuestResponse`**
-    - frontend должен понимать авторство без обходного поиска через `/users/search`.
 
 13. ⚪ **Добавить API для текущего уровня команды**
     - упростить Game Mode: текущий `LevelProgress`, содержимое уровня, `autoTransitionAt` и доступные подсказки должны быть получаемы одним понятным контрактом.
@@ -127,4 +119,4 @@ CD намеренно не включён до выхода в production. По�
 
 **Немедленных блокеров сейчас нет.**
 
-Следующий рабочий фокус — API/Game Mode (п. 9–13). После них — статистика/SSE и технический долг документации. JaCoCo/k6 остаются уже готовым инструментарием качества, а не отдельным блокером.
+Следующий рабочий фокус — API текущего уровня для Game Mode (п. 13). После него — статистика/SSE и технический долг документации. JaCoCo/k6 остаются уже готовым инструментарием качества, а не отдельным блокером.

@@ -2,10 +2,14 @@ package dn.questenginev2.team.service;
 
 import dn.questenginev2.common.dto.PageResponse;
 import dn.questenginev2.common.exceptions.*;
+import dn.questenginev2.quest.entity.Quest;
+import dn.questenginev2.quest.entity.QuestRegistration;
+import dn.questenginev2.quest.repository.QuestRegistrationRepository;
 import dn.questenginev2.team.dto.CreateTeamRequest;
 import dn.questenginev2.team.dto.TeamFilterRequest;
 import dn.questenginev2.team.dto.TeamJoinResponse;
 import dn.questenginev2.team.dto.TeamMemberDto;
+import dn.questenginev2.team.dto.TeamQuestItemResponse;
 import dn.questenginev2.team.dto.TeamResponse;
 import dn.questenginev2.team.entity.JoinRequestType;
 import dn.questenginev2.team.entity.Team;
@@ -17,6 +21,7 @@ import dn.questenginev2.team.repository.TeamMemberRepository;
 import dn.questenginev2.team.repository.TeamRepository;
 import dn.questenginev2.team.specification.TeamSpecification;
 import dn.questenginev2.user.entity.User;
+import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.service.UserService;
 import java.time.Instant;
 import java.util.List;
@@ -35,6 +40,7 @@ public class TeamServiceImpl implements TeamService {
   private final TeamMemberRepository teamMemberRepository;
   private final TeamJoinRequestRepository joinRequestRepository;
   private final UserService userService;
+  private final QuestRegistrationRepository questRegistrationRepository;
 
   @Override
   @Transactional
@@ -162,7 +168,7 @@ public class TeamServiceImpl implements TeamService {
     User newCaptain = userService.getUser(userId);
     TeamMember target =
         teamMemberRepository
-            .findByTeamAndUser(team, newCaptain)
+            .findByUserAndTeam(newCaptain, team)
             .orElseThrow(() -> new RequestNotFoundException("User is not a team member"));
 
     currentMembership.setRole(TeamRole.MEMBER);
@@ -186,6 +192,52 @@ public class TeamServiceImpl implements TeamService {
             .and(TeamSpecification.createdAtAfter(filter.createdAtAfter()))
             .and(TeamSpecification.createdAtBefore(filter.createdAtBefore()));
     return PageResponse.from(teamRepository.findAll(spec, pageable).map(this::buildTeamResponse));
+  }
+
+  @Override
+  public List<TeamQuestItemResponse> getTeamQuests(Long teamId, Authentication auth) {
+    User currentUser = userService.getCurrentUser(auth);
+    Team team = getTeam(teamId);
+    validateTeamMemberOrAdmin(team, currentUser);
+
+    return questRegistrationRepository.findByTeamIdOrderByCreatedAtDesc(teamId).stream()
+        .map(this::toTeamQuestItem)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<TeamQuestItemResponse> getMyTeamQuests(Authentication auth) {
+    User currentUser = userService.getCurrentUser(auth);
+    TeamMember membership =
+        teamMemberRepository
+            .findByUser(currentUser)
+            .orElseThrow(() -> new TeamNotFoundException("Команда не найдена"));
+    return getTeamQuests(membership.getTeam().getId(), auth);
+  }
+
+  private void validateTeamMemberOrAdmin(Team team, User user) {
+    if (user.getRole() == UserRole.ADMIN) {
+      return;
+    }
+    boolean member = teamMemberRepository.findByUserAndTeam(user, team).isPresent();
+    if (!member) {
+      throw new ForbiddenOperationException("Только участник команды или ADMIN");
+    }
+  }
+
+  private TeamQuestItemResponse toTeamQuestItem(QuestRegistration reg) {
+    Quest q = reg.getQuest();
+    return new TeamQuestItemResponse(
+        reg.getId(),
+        reg.getStatus(),
+        reg.getCreatedAt(),
+        q.getId(),
+        q.getTitle(),
+        q.getDescription(),
+        q.getType(),
+        q.getStatus(),
+        q.getStartTime(),
+        q.getFinishTime());
   }
 
   private List<TeamMemberDto> teamMemberstoDto(List<TeamMember> teamMembers) {

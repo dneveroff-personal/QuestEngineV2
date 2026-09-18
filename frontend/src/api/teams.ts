@@ -36,6 +36,24 @@ export interface TeamJoinRequestItem {
   createdAt: string;
 }
 
+export type RegistrationStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type QuestStatus = "DRAFT" | "REGISTRATION" | "RUNNING" | "FINISHED";
+export type QuestType = "SINGLE" | "TEAM";
+
+/** Registration of the team on a quest + quest summary (backlog #9). */
+export interface TeamQuestItem {
+  registrationId: number;
+  registrationStatus: RegistrationStatus;
+  registrationCreatedAt: string;
+  questId: number;
+  title: string;
+  description: string;
+  type: QuestType;
+  questStatus: QuestStatus;
+  startTime: string | null;
+  finishTime: string | null;
+}
+
 export function getMyTeam(): Promise<Team> {
   return apiFetch<Team>("/api/teams/my");
 }
@@ -72,4 +90,12 @@ export function leaveTeam(): Promise<boolean> {
 
 export function transferCaptain(userId: number): Promise<boolean> {
   return apiFetch<boolean>(`/api/teams/transfer-captain/${userId}`, { method: "POST" });
+}
+
+export function getTeamQuests(teamId: number): Promise<TeamQuestItem[]> {
+  return apiFetch<TeamQuestItem[]>(`/api/teams/${teamId}/quests`);
+}
+
+export function getMyTeamQuests(): Promise<TeamQuestItem[]> {
+  return apiFetch<TeamQuestItem[]>("/api/teams/my/quests");
 }
