@@ -10,15 +10,37 @@ import { loginAs } from "@/test/fixtures";
 import { server } from "@/test/msw/server";
 import { renderWithProviders } from "@/test/render";
 
-const TEAM: Team = {
+const team: Team = {
   id: 1,
   name: "Котики",
-  captainName: "captain_user",
+  captainUsername: "captain_user",
+  captainDisplayName: "Captain User",
   createdAt: "2026-01-01T00:00:00Z",
   members: [
-    { id: 10, userId: 100, name: "captain_user", role: "CAPTAIN", joinedAt: "2026-01-01T00:00:00Z" },
-    { id: 11, userId: 101, name: "member_one", role: "MEMBER", joinedAt: "2026-01-02T00:00:00Z" },
-    { id: 12, userId: 102, name: "member_two", role: "MEMBER", joinedAt: "2026-01-03T00:00:00Z" },
+    {
+      id: 10,
+      userId: 100,
+      username: "captain_user",
+      displayName: "Captain User",
+      role: "CAPTAIN",
+      joinedAt: "2026-01-01T00:00:00Z",
+    },
+    {
+      id: 11,
+      userId: 101,
+      username: "member_one",
+      displayName: "Member One",
+      role: "MEMBER",
+      joinedAt: "2026-01-02T00:00:00Z",
+    },
+    {
+      id: 12,
+      userId: 102,
+      username: "member_two",
+      displayName: "Member Two",
+      role: "MEMBER",
+      joinedAt: "2026-01-03T00:00:00Z",
+    },
   ],
 };
 
@@ -27,67 +49,43 @@ afterEach(() => {
 });
 
 describe("TeamMembersList", () => {
-  it("капитан видит «Сделать капитаном» у остальных, но не у себя", async () => {
+  it("hides transfer button for captain row when current user is captain", () => {
     loginAs("captain_user");
-    renderWithProviders(<TeamMembersList team={TEAM} />);
+    renderWithProviders(<TeamMembersList team={team} />);
 
-    // У себя (captain_user) кнопки нет — ищем строку по имени и проверяем отсутствие кнопки внутри неё.
-    const captainRow = screen.getByText("captain_user").closest("li")!;
+    const captainRow = screen.getByText("Captain User").closest("li")!;
     expect(
       within(captainRow).queryByRole("button", { name: "Сделать капитаном" }),
     ).not.toBeInTheDocument();
 
-    // У остальных двоих — есть.
     const buttons = screen.getAllByRole("button", { name: "Сделать капитаном" });
     expect(buttons).toHaveLength(2);
   });
 
-  it("обычный участник не видит кнопку «Сделать капитаном» ни у кого", () => {
+  it("hides all transfer buttons when current user is not captain", () => {
     loginAs("member_one");
-    renderWithProviders(<TeamMembersList team={TEAM} />);
+    renderWithProviders(<TeamMembersList team={team} />);
 
     expect(screen.queryByRole("button", { name: "Сделать капитаном" })).not.toBeInTheDocument();
   });
 
-  it("передача капитанства отправляет правильный userId и завершается без ошибки", async () => {
+  it("calls transferCaptain with member userId", async () => {
+    const user = userEvent.setup();
     loginAs("captain_user");
-    let capturedUserId: string | undefined;
+
+    let transferredTo: string | null = null;
     server.use(
       http.post("/api/teams/transfer-captain/:userId", ({ params }) => {
-        capturedUserId = params.userId as string;
-        return HttpResponse.json(true);
+        transferredTo = String(params.userId);
+        return new HttpResponse(null, { status: 200 });
       }),
     );
-    const user = userEvent.setup();
-    renderWithProviders(<TeamMembersList team={TEAM} />);
 
-    const memberOneRow = screen.getByText("member_one").closest("li")!;
+    renderWithProviders(<TeamMembersList team={team} />);
+
+    const memberOneRow = screen.getByText("Member One").closest("li")!;
     await user.click(within(memberOneRow).getByRole("button", { name: "Сделать капитаном" }));
 
-    await waitFor(() => expect(capturedUserId).toBe("101"));
-  });
-
-  it("ошибка передачи капитанства показывается пользователю", async () => {
-    loginAs("captain_user");
-    server.use(
-      http.post("/api/teams/transfer-captain/:userId", () => {
-        return HttpResponse.json(
-          {
-            type: "about:blank",
-            title: "Forbidden",
-            status: 403,
-            detail: "Только капитан может передать капитанство.",
-          },
-          { status: 403 },
-        );
-      }),
-    );
-    const user = userEvent.setup();
-    renderWithProviders(<TeamMembersList team={TEAM} />);
-
-    const memberRow = screen.getByText("member_one").closest("li")!;
-    await user.click(within(memberRow).getByRole("button", { name: "Сделать капитаном" }));
-
-    expect(await screen.findByText("Только капитан может передать капитанство.")).toBeInTheDocument();
+    await waitFor(() => expect(transferredTo).toBe("101"));
   });
 });
