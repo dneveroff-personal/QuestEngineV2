@@ -30,6 +30,10 @@
 | HTTP error semantics / pagination | ADR-0011, ADR-0012 | 🟡 | Реализованы `403/404/409` и `PageResponse<T>`; отдельное контрактное покрытие ещё стоит усилить |
 | DNF для команды | `01-domain/registration.md`, `progress.md` | 🟡 | `PUT /api/quests/progress/{questId}/{teamId}/dnf` есть; бизнес-семантика момента вызова ещё требует решения |
 | Rate limiting | ADR-0016 | 🔵 | `LoginRateLimitFilter`, 5/мин на IP; CodeSubmission намеренно не ограничивается |
+| Diagnostic `GET /api/test/secure` | — | 🔵 | Удалён перед публичным релизом |
+| `/api/users/search` field policy | `05-security/threat-model.md` | 🔵 | Auth user; non-ADMIN — только id/username/publicName; ADMIN — полный ответ |
+| `UserResponse.username` | — | 🔵 | Поле добавлено (поиск / transfer captain) |
+| Prod compose: PostgreSQL без публичного 5432 | `docker-compose.prod.yml` | 🔵 | БД только во внутренней docker-сети |
 | CI | `.github/workflows/build.yml` | 🔵 | Spotless, тесты, Docker image, GHCR, JaCoCo/test artifacts |
 | JaCoCo + k6 smoke (Сценарий 6) | ADR-0017, `07-quality/testing-strategy.md` | 🔵 | ADR-0017 amended: жёсткий coverage threshold/fail-build отменены; JaCoCo отчёт и k6 smoke добавлены как проверочные инструменты, k6 не является CI-gate |
 
@@ -60,18 +64,6 @@
    - `/api/auth/refresh` и `/api/auth/logout`;
    - обновить frontend и документацию.
 
-5. ⚪ **Разобраться с диагностическим `GET /api/test/secure`**
-   - удалить перед первым публичным релизом либо явно оставить и документировать назначение.
-
-6. ⚪ **Проверить безопасность `/api/users/search`**
-   - решить, кто имеет право искать пользователей;
-   - определить, какие поля (`email`, `role`, и т.п.) доступны не-ADMIN;
-   - зафиксировать решение в threat model и тестах.
-
-7. ⚪ **Убрать публикацию PostgreSQL `5432` из production compose**
-   - БД должна быть доступна приложению через внутреннюю Docker-сеть;
-   - публичный вход в production остаётся через frontend/nginx.
-
 ### 3. API для frontend / Game Mode
 
 8. ⚪ **Добавить `GET /api/users/me`**
@@ -85,9 +77,6 @@
 10. ⚪ **Определить отображаемое имя команды**
     - решить `username` vs `publicName` для `TeamMemberDto.name` и `TeamResponse.captainName`;
     - зафиксировать единое правило и привести API/frontend к нему.
-
-11. ⚪ **Добавить `username` в `UserResponse` для поиска пользователей**
-    - frontend должен однозначно идентифицировать результат поиска при передаче капитанства.
 
 12. ⚪ **Добавить `authorId` / `authorName` в `QuestResponse`**
     - frontend должен понимать авторство без обходного поиска через `/users/search`.
@@ -149,4 +138,4 @@ CD намеренно не включён до выхода в production. По�
 
 **Немедленных блокеров сейчас нет.**
 
-Следующий рабочий фокус — API/Game Mode и security. После них — статистика/SSE и технический долг документации. JaCoCo/k6 остаются уже готовым инструментарием качества, а не отдельным блокером.
+Следующий рабочий фокус — **access + refresh tokens (п. 4)** и API/Game Mode. После них — статистика/SSE и технический долг документации. JaCoCo/k6 остаются уже готовым инструментарием качества, а не отдельным блокером.
