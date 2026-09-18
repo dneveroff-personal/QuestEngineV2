@@ -37,6 +37,7 @@
 | Team username + displayName | `TeamMemberDto` / `TeamResponse` | 🔵 | username + displayName (publicName fallback) |
 | Team quest registrations | `GET /api/teams/{id}/quests`, `/teams/my/quests` | 🔵 | Все статусы регистрации, включая FINISHED quests |
 | `QuestResponse.authorId` / `authorName` | — | 🔵 | Авторство в ответе квеста |
+| Current level (Game Mode) | `GET .../progress/{questId}/{teamId}/current-level` | 🔵 | LevelProgress + content + autoTransitionAt + hints + mainCodesSolved |
 | Prod compose: PostgreSQL без публичного 5432 | `docker-compose.prod.yml` | 🔵 | БД только во внутренней docker-сети                                                                                                                                  |
 | CI                                          | `.github/workflows/build.yml` | 🔵 | Spotless, тесты, Docker image, GHCR, JaCoCo/test artifacts                                                                                                           |
 | JaCoCo + k6 smoke (Сценарий 6)              | ADR-0017, `07-quality/testing-strategy.md` | 🔵 | ADR-0017 amended: жёсткий coverage threshold/fail-build отменены; JaCoCo отчёт и k6 smoke добавлены как проверочные инструменты, k6 не является CI-gate              |
@@ -62,8 +63,7 @@
 
 ### 3. API для frontend / Game Mode
 
-13. ⚪ **Добавить API для текущего уровня команды**
-    - упростить Game Mode: текущий `LevelProgress`, содержимое уровня, `autoTransitionAt` и доступные подсказки должны быть получаемы одним понятным контрактом.
+*(раздел закрыт — п. 8–13 выполнены)*
 
 ### 4. Бизнес-правила, требующие решения
 
@@ -119,4 +119,4 @@ CD намеренно не включён до выхода в production. По�
 
 **Немедленных блокеров сейчас нет.**
 
-Следующий рабочий фокус — API текущего уровня для Game Mode (п. 13). После него — статистика/SSE и технический долг документации. JaCoCo/k6 остаются уже готовым инструментарием качества, а не отдельным блокером.
+Следующий рабочий фокус — бизнес-решения (DNF / статусы регистрации / удаление Quest) или `Quest.maximumTeams` / статистика. JaCoCo/k6 остаются готовым инструментарием качества.
