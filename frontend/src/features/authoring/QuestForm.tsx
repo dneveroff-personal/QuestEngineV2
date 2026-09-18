@@ -15,22 +15,19 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-/** Сверено с CreateQuestRequest.java: title 1–255, description max 5000. */
+/** Сверено с CreateQuestRequest.java: title 1–255, description max 5000, maximumTeams 1–10000. */
 const questSchema = z
   .object({
     title: z.string().min(1, "Название не может быть пустым").max(255),
     description: z.string().max(5000, "Описание должно быть не более 5000 символов"),
     type: z.enum(["SINGLE", "TEAM"]),
-    // datetime-local input отдаёт "" для пустого поля, а не undefined —
-    // приводим к null явно перед отправкой (см. onSubmit).
     startTime: z.string(),
     finishTime: z.string(),
+    maximumTeams: z.coerce.number().int().min(1, "Минимум 1 команда").max(10000),
   })
   .refine(
     (values) => !values.startTime || !values.finishTime || values.finishTime > values.startTime,
     {
-      // Backend это не проверяет (QuestServiceImpl.buildQuest не валидирует
-      // порядок дат) — чисто клиентская подсказка, не гарантия.
       message: "Дата завершения должна быть позже даты начала",
       path: ["finishTime"],
     },
@@ -40,7 +37,6 @@ type QuestFormValues = z.infer<typeof questSchema>;
 
 function toDatetimeLocal(iso?: string | null): string {
   if (!iso) return "";
-  // datetime-local ожидает "YYYY-MM-DDTHH:mm" в локальном времени, без секунд/зоны.
   const date = new Date(iso);
   const offset = date.getTimezoneOffset();
   return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
@@ -63,6 +59,7 @@ export function QuestForm({ quest, onSubmit, isPending, error, submitLabel }: Qu
       type: quest?.type ?? "TEAM",
       startTime: toDatetimeLocal(quest?.startTime),
       finishTime: toDatetimeLocal(quest?.finishTime),
+      maximumTeams: quest?.maximumTeams ?? 100,
     },
   });
 
@@ -73,6 +70,7 @@ export function QuestForm({ quest, onSubmit, isPending, error, submitLabel }: Qu
       type: values.type,
       startTime: values.startTime ? new Date(values.startTime).toISOString() : null,
       finishTime: values.finishTime ? new Date(values.finishTime).toISOString() : null,
+      maximumTeams: values.maximumTeams,
     });
   }
 
@@ -162,6 +160,20 @@ export function QuestForm({ quest, onSubmit, isPending, error, submitLabel }: Qu
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="maximumTeams"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Лимит команд</FormLabel>
+              <FormControl>
+                <Input type="number" min={1} max={10000} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {generalError && <p className="text-destructive text-sm">{generalError}</p>}
 
