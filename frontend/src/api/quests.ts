@@ -1,6 +1,6 @@
 import { apiFetch } from "@/api/client";
 
-/** Сверено с QuestResponse.java / QuestShortProjection.java / QuestRegisterResponse.java */
+/** Сверено с QuestResponse.java / CreateQuestRequest.java */
 
 export type QuestType = "SINGLE" | "TEAM";
 export type QuestStatus = "DRAFT" | "REGISTRATION" | "RUNNING" | "FINISHED";
@@ -21,7 +21,10 @@ export interface Quest {
   createdAt: string;
   startTime: string | null;
   finishTime: string | null;
+  maximumTeams?: number;
   archived?: boolean;
+  authorId?: number;
+  authorName?: string;
 }
 
 export interface QuestRegistration {
@@ -37,6 +40,7 @@ export interface CreateQuestRequest {
   type: QuestType;
   startTime?: string | null;
   finishTime?: string | null;
+  maximumTeams?: number | null;
 }
 
 export function getUpcomingQuests(): Promise<QuestShort[]> {
@@ -47,12 +51,7 @@ export function getQuestById(questId: number): Promise<Quest> {
   return apiFetch<Quest>(`/api/quests/${questId}`);
 }
 
-/**
- * Список квестов конкретного автора — не "мои квесты" сам по себе,
- * нужен authorId. QuestResponse НЕ отдаёт authorId нигде (ни здесь, ни в
- * getQuestById) — frontend вынужден резолвить свой userId окольным путём
- * (features/authoring/useMyAuthorId.ts). См. docs/roadmap/backlog.md.
- */
+/** Список квестов автора. В QuestResponse есть authorId/authorName. */
 export function getQuestsByAuthor(authorId: number): Promise<Quest[]> {
   return apiFetch<Quest[]>(`/api/quests/authors/${authorId}`);
 }
@@ -91,22 +90,28 @@ export function registerTeamForQuest(questId: number, teamId: number): Promise<Q
   });
 }
 
-/** Отменяет регистрацию СВОЕЙ команды (backend берёт team из Authentication, не из параметра). */
+/** Отменяет регистрацию СВОЕЙ команды (backend берёт team из Authentication). */
 export function unregisterTeam(questId: number): Promise<QuestRegistration> {
   return apiFetch<QuestRegistration>(`/api/quests/register/${questId}`, {
     method: "DELETE",
   });
 }
 
-/** Только автор квеста (или ADMIN) — backend проверяет через validateQuestAuthor. */
-export function approveTeamRegistration(questId: number, teamId: number): Promise<QuestRegistration> {
+export function approveTeamRegistration(
+  questId: number,
+  teamId: number,
+): Promise<QuestRegistration> {
   return apiFetch<QuestRegistration>(`/api/quests/register/${questId}/approve/${teamId}`, {
     method: "PUT",
   });
 }
 
-export function rejectTeamRegistration(questId: number, teamId: number): Promise<QuestRegistration> {
-  return apiFetch<QuestRegistration>(`/api/quests/register/${questId}/teams/${teamId}/reject`, {
-    method: "PUT",
-  });
+export function rejectTeamRegistration(
+  questId: number,
+  teamId: number,
+): Promise<QuestRegistration> {
+  return apiFetch<QuestRegistration>(
+    `/api/quests/register/${questId}/teams/${teamId}/reject`,
+    { method: "PUT" },
+  );
 }
