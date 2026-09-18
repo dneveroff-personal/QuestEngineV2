@@ -97,6 +97,18 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
 
     Code matchedCode = matchCode(levelCodes, request.value());
     CodeSubmissionResult result = resolveResult(matchedCode);
+
+    // Одноразовое применение BONUS/PENALTY-кода (bonus-penalty.md):
+    // один и тот же код не должен засчитываться повторно в рамках одного прохождения
+    if (result == CodeSubmissionResult.CORRECT_BONUS
+        || result == CodeSubmissionResult.CORRECT_PENALTY) {
+      if (codeSubmissionRepository.existsByQuestProgressIdAndMatchedCodeIdAndResult(
+          questProgress.getId(), matchedCode.getId(), result)) {
+        throw new ConflictException(
+            "BONUS/PENALTY-код уже был использован на этом уровне: " + matchedCode.getValue());
+      }
+    }
+
     Instant now = clock.instant();
 
     CodeSubmission submission =

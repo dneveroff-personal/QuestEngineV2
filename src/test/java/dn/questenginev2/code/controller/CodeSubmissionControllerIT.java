@@ -322,6 +322,37 @@ class CodeSubmissionControllerIT {
     assertThat(submissions).hasSize(threadCount);
   }
 
+  /**
+   * Проверка одноразового применения BONUS/PENALTY-кода (bonus-penalty.md):
+   * один и тот же код не должен засчитываться повторно в рамках одного прохождения.
+   */
+  @Test
+  void submitCode_bonusCodeCanOnlyBeAppliedOnce() throws Exception {
+    levelProgress =
+        setUpActiveLevelWithCodes(
+            0, Code.builder().value("bonus1").type(CodeType.BONUS).bonusPenaltySeconds(50).build());
+
+    // Первое применение BONUS-кода — должно пройти успешно
+    mockMvc
+        .perform(
+            post("/api/quests/progress/" + quest.getId() + "/" + team.getId() + "/codes")
+                .header("Authorization", "Bearer " + teamMemberToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"value\":\"bonus1\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result").value("CORRECT_BONUS"));
+
+    // Повторное применение того же BONUS-кода — должно вернуть 409 Conflict
+    mockMvc
+        .perform(
+            post("/api/quests/progress/" + quest.getId() + "/" + team.getId() + "/codes")
+                .header("Authorization", "Bearer " + teamMemberToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"value\":\"bonus1\"}"))
+        .andExpect(status().isConflict())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
   @Test
   void submitCode_returns404_whenQuestProgressNotFound() throws Exception {
     mockMvc

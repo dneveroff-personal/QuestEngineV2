@@ -27,4 +27,18 @@ public interface CodeSubmissionRepository extends JpaRepository<CodeSubmission, 
           + "WHERE cs.levelProgress.questProgress.id = :questProgressId AND cs.result = :result")
   long sumEffectSecondsByQuestProgressIdAndResult(
       @Param("questProgressId") Long questProgressId, @Param("result") CodeSubmissionResult result);
+
+  /**
+   * Проверка одноразового применения BONUS/PENALTY-кода (bonus-penalty.md):
+   * один и тот же код не должен засчитываться повторно в рамках одного прохождения.
+   */
+  @Query(
+      "SELECT CASE WHEN COUNT(cs) > 0 THEN true ELSE false END FROM CodeSubmission cs "
+          + "WHERE cs.levelProgress.questProgress.id = :questProgressId "
+          + "AND cs.matchedCode.id = :matchedCodeId "
+          + "AND cs.result = :result")
+  boolean existsByQuestProgressIdAndMatchedCodeIdAndResult(
+      @Param("questProgressId") Long questProgressId,
+      @Param("matchedCodeId") Long matchedCodeId,
+      @Param("result") CodeSubmissionResult result);
 }
