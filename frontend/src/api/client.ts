@@ -1,36 +1,20 @@
-import { clearSession, getSession } from "@/lib/auth-token";
+import { clearSession, getSession, setSession } from "@/lib/auth-token";
 import { ApiError, NetworkError, type ProblemDetail } from "@/api/errors";
-
-/**
- * Единая точка выполнения HTTP-запросов (architecture.md §9). Все файлы
- * в api/ (auth.ts, ...) используют только её, а не сырой fetch напрямую.
- *
- * ВАЖНО про 401 (architecture.md §9.1): полный механизм там описан для
- * целевой access+refresh модели (ADR-0015). Backend её ещё не
- * реализовал (см. roadmap/backlog.md — POST /api/auth/refresh
- * отсутствует), поэтому сейчас 401 просто завершает сессию — повторный
- * запрос через /api/auth/refresh НЕ выполняется, потому что этого
- * эндпоинта физически нет.
- *
- * TODO(ADR-0015): когда backend добавит POST /api/auth/refresh, заменить
- * блок "если 401" ниже на полный механизм из architecture.md §9.1:
- * вызвать /api/auth/refresh, при успехе — повторить исходный запрос один
- * раз, при неудаче — как сейчас (clearSession). Не забыть про дедупликацию
- * конкурентных refresh-вызовов (см. §9.1, "если несколько запросов...").
- */
+import type { LoginResponse } from "@/api/auth";
 
 interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
+  /** Skip auth header / refresh loop (used by refresh itself). */
+  skipAuth?: boolean;
 }
+
+let refreshInFlight: Promise<boolean> | null = null;
 
 async function parseProblemDetail(response: Response): Promise<ApiError> {
   try {
     const problem = (await response.json()) as ProblemDetail;
     return new ApiError(problem);
   } catch {
-    // Backend всегда отвечает ProblemDetail на ошибку (GlobalExceptionHandler
-    // ловит Exception.class как fallback) — сюда попадаем только если
-    // ответ вообще не JSON (например, ошибка самого nginx/прокси).
     return new ApiError({
       type: "about:blank",
       title: response.statusText || "Unknown Error",
@@ -40,9 +24,39 @@ async function parseProblemDetail(response: Response): Promise<ApiError> {
   }
 }
 
+async function tryRefresh(): Promise<boolean> {
+  const current = getSession();
+  if (!current?.refreshToken) return false;
+
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const response = await fetch("/api/auth/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken: current.refreshToken }),
+        });
+        if (!response.ok) {
+          clearSession();
+          return false;
+        }
+        const data = (await response.json()) as LoginResponse;
+        setSession(data.accessToken, data.publicName, data.refreshToken);
+        return true;
+      } catch {
+        clearSession();
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+  return refreshInFlight;
+}
+
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, headers, ...rest } = options;
-  const session = getSession();
+  const { body, headers, skipAuth, ...rest } = options;
+  const session = skipAuth ? null : getSession();
 
   let response: Response;
   try {
@@ -57,6 +71,15 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     });
   } catch (cause) {
     throw new NetworkError(cause);
+  }
+
+  if (response.status === 401 && !skipAuth && !path.includes("/api/auth/")) {
+    const ok = await tryRefresh();
+    if (ok) {
+      return apiFetch<T>(path, { ...options, skipAuth: false });
+    }
+    clearSession();
+    throw await parseProblemDetail(response);
   }
 
   if (response.status === 401) {
