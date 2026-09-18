@@ -6,6 +6,7 @@ import dn.questenginev2.team.dto.CreateTeamRequest;
 import dn.questenginev2.team.dto.TeamFilterRequest;
 import dn.questenginev2.team.dto.TeamJoinResponse;
 import dn.questenginev2.team.dto.TeamMemberDto;
+import dn.questenginev2.team.dto.TeamQuestItemResponse;
 import dn.questenginev2.team.dto.TeamResponse;
 import dn.questenginev2.team.service.TeamService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,17 +63,16 @@ public class TeamController {
     return ResponseEntity.status(HttpStatus.OK).body(teamService.rejectRequest(requestId, auth));
   }
 
-  @Operation(
-      summary = "Transfer captain",
-      description = "Transfer team captain role to another user")
+  @Operation(summary = "Transfer captain", description = "Transfer captain role to another member")
   @PostMapping(Routes.TRANSFER_CAPTAIN)
-  public ResponseEntity<Boolean> transferCaptain(@PathVariable Long userId, Authentication auth) {
+  public ResponseEntity<Boolean> transferCaptain(
+      @PathVariable Long userId, Authentication auth) {
     return ResponseEntity.status(HttpStatus.OK).body(teamService.transferCaptain(userId, auth));
   }
 
   @Operation(summary = "Get team by ID", description = "Retrieve team details by ID")
   @GetMapping(Routes.TEAM_ID)
-  public ResponseEntity<TeamResponse> getTeamById(@PathVariable Long teamId, Authentication auth) {
+  public ResponseEntity<TeamResponse> getTeamById(@PathVariable Long teamId) {
     return ResponseEntity.status(HttpStatus.OK).body(teamService.getTeamById(teamId));
   }
 
@@ -94,6 +94,24 @@ public class TeamController {
   @GetMapping(Routes.MEMBERS)
   public ResponseEntity<List<TeamMemberDto>> getTeamMembers(@PathVariable Long teamId) {
     return ResponseEntity.status(HttpStatus.OK).body(teamService.getTeamMembers(teamId));
+  }
+
+  @Operation(
+      summary = "Team quest registrations",
+      description =
+          "All quest registrations of the team (PENDING/APPROVED/REJECTED), including FINISHED quests. Member or ADMIN.")
+  @GetMapping(Routes.TEAM_QUESTS)
+  public ResponseEntity<List<TeamQuestItemResponse>> getTeamQuests(
+      @PathVariable Long teamId, Authentication auth) {
+    return ResponseEntity.ok(teamService.getTeamQuests(teamId, auth));
+  }
+
+  @Operation(
+      summary = "My team quest registrations",
+      description = "Same as GET /teams/{teamId}/quests for the caller's current team.")
+  @GetMapping(Routes.MY_QUESTS)
+  public ResponseEntity<List<TeamQuestItemResponse>> getMyTeamQuests(Authentication auth) {
+    return ResponseEntity.ok(teamService.getMyTeamQuests(auth));
   }
 
   @Operation(
