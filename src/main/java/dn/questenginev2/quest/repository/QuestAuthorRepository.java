@@ -2,7 +2,6 @@ package dn.questenginev2.quest.repository;
 
 import dn.questenginev2.quest.entity.QuestAuthor;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,13 +16,4 @@ public interface QuestAuthorRepository extends JpaRepository<QuestAuthor, Long> 
 
   @Query("SELECT qa FROM QuestAuthor qa JOIN FETCH qa.quest WHERE qa.user.id = :userId")
   List<QuestAuthor> findByUserId(@Param("userId") Long userId);
-
-  @Query(
-      "SELECT qa FROM QuestAuthor qa JOIN FETCH qa.user WHERE qa.quest.id = :questId ORDER BY qa.id ASC")
-  List<QuestAuthor> findByQuestIdWithUser(@Param("questId") Long questId);
-
-  default Optional<QuestAuthor> findPrimaryAuthor(Long questId) {
-    List<QuestAuthor> authors = findByQuestIdWithUser(questId);
-    return authors.isEmpty() ? Optional.empty() : Optional.of(authors.get(0));
-  }
 }

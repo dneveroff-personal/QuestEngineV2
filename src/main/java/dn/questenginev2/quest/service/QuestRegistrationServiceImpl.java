@@ -44,7 +44,7 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
     User currentUser = userService.getCurrentUser(auth);
 
     Quest quest = validateQuestExist(questId);
-    validateQuestNotFinished(quest);
+    validateQuestAcceptsRegistration(quest);
 
     Team team = validateTeamExist(teamId);
     validateTeamCaptain(currentUser, team);
@@ -147,9 +147,11 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
         .orElseThrow(() -> new ResourceNotFoundException("Квест не найден: " + questId));
   }
 
-  private void validateQuestNotFinished(Quest quest) {
-    if (quest.getStatus() == QuestStatus.FINISHED) {
-      throw new ConflictException("Нельзя подать заявку на завершённый квест");
+  private void validateQuestAcceptsRegistration(Quest quest) {
+    if (quest.getStatus() != QuestStatus.REGISTRATION && quest.getStatus() != QuestStatus.RUNNING) {
+      throw new ConflictException(
+          "Подать заявку можно только пока квест в статусе REGISTRATION или RUNNING (поздняя"
+              + " регистрация)");
     }
   }
 

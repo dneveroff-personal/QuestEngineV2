@@ -57,9 +57,11 @@ public class QuestProgressController {
   @Operation(
       summary = "Set DNF for team",
       description =
-          "Author marks team as Did Not Finish (any non-finished status -> DNF). Used when a"
-              + " team was admitted but never completed the quest by the time the author"
-              + " officially closes it — see 01-domain/statistics-ranking.md.")
+          "Manual DNF override, available only after Quest.status = FINISHED. All teams that did"
+              + " not finish are already marked DNF automatically when the author finishes the"
+              + " Quest; this endpoint additionally lets the author disqualify an already"
+              + " FINISHED team retroactively (e.g. a confirmed rules violation discovered"
+              + " during review) — see 01-domain/progress.md.")
   @PutMapping(Routes.QUEST_ID + Routes.TEAM_ID + "/dnf")
   public ResponseEntity<QuestProgressResponse> setDnf(
       @PathVariable Long questId, @PathVariable Long teamId, Authentication auth) {

@@ -79,7 +79,12 @@ public class QuestController {
     return ResponseEntity.status(HttpStatus.OK).body(questService.finishQuest(questId, auth));
   }
 
-  @Operation(summary = "Delete quest", description = "Delete quest by ID")
+  @Operation(
+      summary = "Archive quest",
+      description =
+          "Soft-delete: marks the quest as archived instead of removing it, so registration and"
+              + " progress history is preserved. Archived quests are excluded from public"
+              + " listings and their lifecycle (publish/finish/update) is frozen.")
   @DeleteMapping(Routes.QUEST_ID)
   public ResponseEntity<Void> delete(@PathVariable Long questId, Authentication auth) {
     questService.delete(questId, auth);

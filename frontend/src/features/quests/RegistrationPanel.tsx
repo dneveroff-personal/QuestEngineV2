@@ -66,9 +66,12 @@ export function RegistrationPanel({ quest, registrations }: RegistrationPanelPro
     <div className="space-y-2 rounded-lg border border-border p-4">
       {errorMessage && <p className="text-destructive text-sm">{errorMessage}</p>}
 
-      {!myRegistration && quest.status === "REGISTRATION" && (
+      {!myRegistration && (quest.status === "REGISTRATION" || quest.status === "RUNNING") && (
         <>
-          <p className="text-sm">Ваша команда «{myTeam.name}» ещё не подала заявку.</p>
+          <p className="text-sm">
+            Ваша команда «{myTeam.name}» ещё не подала заявку.
+            {quest.status === "RUNNING" && " Квест уже идёт — это будет поздняя регистрация."}
+          </p>
           <Button
             onClick={() => registerMutation.mutate(myTeam.id)}
             disabled={registerMutation.isPending}
@@ -82,7 +85,7 @@ export function RegistrationPanel({ quest, registrations }: RegistrationPanelPro
         <p className="text-muted-foreground text-sm">Регистрация ещё не открыта.</p>
       )}
 
-      {!myRegistration && (quest.status === "RUNNING" || quest.status === "FINISHED") && (
+      {!myRegistration && quest.status === "FINISHED" && (
         <p className="text-muted-foreground text-sm">Регистрация на этот квест закрыта.</p>
       )}
 

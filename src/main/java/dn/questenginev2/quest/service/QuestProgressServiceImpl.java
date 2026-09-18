@@ -191,12 +191,13 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     User currentUser = userService.getCurrentUser(auth);
     validateQuestAuthor(currentUser, questId);
 
+    Quest quest = validateQuestExist(questId);
+    validateQuestFinished(quest);
+
     QuestProgress progress =
         questProgressRepository
             .findByQuestIdAndTeamId(questId, teamId)
             .orElseThrow(() -> new ResourceNotFoundException("Прогресс не найден"));
-
-    validateProgressNotFinished(progress);
 
     progress.setStatus(QuestProgressStatus.DNF);
     progress.setFinishedAt(clock.instant());
@@ -260,6 +261,13 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     }
   }
 
+  private void validateQuestFinished(Quest quest) {
+    if (quest.getStatus() != QuestStatus.FINISHED) {
+      throw new ConflictException(
+          "Ручной DNF доступен только после завершения Quest автором (Quest.status = FINISHED)");
+    }
+  }
+
   private Team validateTeamExist(Long teamId) {
     return teamRepository
         .findById(teamId)
@@ -289,13 +297,6 @@ public class QuestProgressServiceImpl implements QuestProgressService {
   private void validateProgressRunning(QuestProgress progress) {
     if (progress.getStatus() != QuestProgressStatus.RUNNING) {
       throw new ConflictException("Завершить можно только RUNNING прогресс");
-    }
-  }
-
-  private void validateProgressNotFinished(QuestProgress progress) {
-    if (progress.getStatus() == QuestProgressStatus.FINISHED
-        || progress.getStatus() == QuestProgressStatus.DNF) {
-      throw new ConflictException("Нельзя изменить завершённый прогресс");
     }
   }
 

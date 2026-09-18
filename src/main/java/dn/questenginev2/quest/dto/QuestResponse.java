@@ -22,8 +22,5 @@ public class QuestResponse {
   private Instant createdAt;
   private Instant startTime;
   private Instant finishTime;
-  /** Primary author user id (first QuestAuthor). */
-  private Long authorId;
-  /** Display name of primary author (publicName, fallback username). */
-  private String authorName;
+  private Boolean archived;
 }

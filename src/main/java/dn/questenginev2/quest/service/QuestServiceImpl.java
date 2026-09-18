@@ -40,6 +40,7 @@ public class QuestServiceImpl implements QuestService {
   private final CodeRepository codeRepository;
   private final UserService userService;
 
+  // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
   @Override
   public QuestResponse createQuest(CreateQuestRequest request, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
@@ -73,16 +74,16 @@ public class QuestServiceImpl implements QuestService {
     User currentUser = userService.getCurrentUser(auth);
     Quest quest = validateQuestExist(questId);
     validateQuestAuthor(currentUser, questId);
+    validateQuestNotArchived(quest);
 
     quest.setTitle(request.title());
-    if (request.description() != null) {
-      quest.setDescription(request.description());
-    }
+    quest.setDescription(request.description());
     quest.setType(request.type());
     quest.setStartTime(request.startTime());
     quest.setFinishTime(request.finishTime());
 
-    return buildQuestResponse(questRepository.save(quest));
+    Quest savedQuest = questRepository.save(quest);
+    return buildQuestResponse(savedQuest);
   }
 
   @Override
@@ -90,13 +91,13 @@ public class QuestServiceImpl implements QuestService {
     User currentUser = userService.getCurrentUser(auth);
     Quest quest = validateQuestExist(questId);
     validateQuestAuthor(currentUser, questId);
-    validateLevelsConfigured(questId);
+    validateQuestNotArchived(quest);
+    validateQuestStatus(quest, QuestStatus.DRAFT, "опубликовать");
+    validateQuestPublishable(quest);
 
-    if (quest.getStatus() != QuestStatus.DRAFT) {
-      throw new ConflictException("Quest can only be published from DRAFT status");
-    }
     quest.setStatus(QuestStatus.REGISTRATION);
-    return buildQuestResponse(questRepository.save(quest));
+    Quest savedQuest = questRepository.save(quest);
+    return buildQuestResponse(savedQuest);
   }
 
   @Override
@@ -104,58 +105,87 @@ public class QuestServiceImpl implements QuestService {
     User currentUser = userService.getCurrentUser(auth);
     Quest quest = validateQuestExist(questId);
     validateQuestAuthor(currentUser, questId);
+    validateQuestNotArchived(quest);
+    validateQuestStatus(quest, QuestStatus.RUNNING, "завершить");
 
-    if (quest.getStatus() != QuestStatus.RUNNING) {
-      throw new ConflictException("Quest can only be finished from RUNNING status");
-    }
     quest.setStatus(QuestStatus.FINISHED);
-    quest.setFinishTime(Instant.now());
+    Quest savedQuest = questRepository.save(quest);
     markUnfinishedProgressesAsDnf(questId);
-    return buildQuestResponse(questRepository.save(quest));
+    return buildQuestResponse(savedQuest);
   }
 
   @Override
   public void delete(Long questId, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
-    validateQuestExist(questId);
+    Quest quest = validateQuestExist(questId);
     validateQuestAuthor(currentUser, questId);
-    questAuthorRepository.deleteByQuestId(questId);
-    questRepository.deleteById(questId);
+    validateNotAlreadyArchived(quest);
+
+    quest.setArchived(true);
+    questRepository.save(quest);
   }
 
   @Override
   public List<QuestShortProjection> getAllUpcomingBrief() {
-    return questRepository.findUpcoming(List.of(QuestStatus.REGISTRATION, QuestStatus.RUNNING));
+    return questRepository.findAllByStartTimeAfterAndArchivedFalse(Instant.now());
   }
 
+  // ────── VALIDATIONS ───────────────────────────────────────────────────────────
   @Override
   public Quest validateQuestExist(Long questId) {
     return questRepository
         .findById(questId)
-        .orElseThrow(() -> new ResourceNotFoundException("Quest not found: " + questId));
+        .orElseThrow(() -> new ResourceNotFoundException("Квест не найден: " + questId));
   }
 
   @Override
   public void validateAuthorOrAdmin(User user) {
     if (user.getRole() != UserRole.AUTHOR && user.getRole() != UserRole.ADMIN) {
-      throw new ForbiddenOperationException("Only AUTHOR or ADMIN can create quests");
+      throw new ForbiddenOperationException(
+          "Доступ к редактированию квестов имеют только AUTHOR или ADMIN");
     }
   }
 
   @Override
   public void validateQuestAuthor(User user, Long questId) {
-    if (user.getRole() == UserRole.ADMIN) {
-      return;
-    }
-    if (!questAuthorRepository.existsByQuestIdAndUserId(questId, user.getId())) {
-      throw new ForbiddenOperationException("Not an author of this quest");
+    if (user.getRole() != UserRole.ADMIN
+        && !questAuthorRepository.existsByQuestIdAndUserId(questId, user.getId())) {
+      throw new ForbiddenOperationException("Редактировать квесты могут только Авторы");
     }
   }
 
-  private void validateLevelsConfigured(Long questId) {
-    List<Level> levels = levelRepository.findByQuestIdOrderByOrderIndexAsc(questId);
+  private void validateQuestStatus(Quest quest, QuestStatus required, String action) {
+    if (quest.getStatus() != required) {
+      throw new ConflictException(
+          "Действие \""
+              + action
+              + "\" доступно только для квеста в статусе "
+              + required
+              + ", текущий статус: "
+              + quest.getStatus());
+    }
+  }
+
+  private void validateNotAlreadyArchived(Quest quest) {
+    if (Boolean.TRUE.equals(quest.getArchived())) {
+      throw new ConflictException("Квест уже в архиве");
+    }
+  }
+
+  private void validateQuestNotArchived(Quest quest) {
+    if (Boolean.TRUE.equals(quest.getArchived())) {
+      throw new ConflictException("Квест в архиве, действие недоступно");
+    }
+  }
+
+  /**
+   * Проверка содержимого квеста перед публикацией: должен быть хотя бы один Level, и ни один
+   * Level не должен быть "аномальным" (без кодов и без автоперехода) — см. ADR-0005.
+   */
+  private void validateQuestPublishable(Quest quest) {
+    List<Level> levels = levelRepository.findByQuestIdOrderByOrderIndex(quest.getId());
     if (levels.isEmpty()) {
-      throw new ConflictException("Cannot publish quest without levels");
+      throw new ConflictException("Нельзя опубликовать квест без уровней");
     }
     for (Level level : levels) {
       boolean hasAutoTransition = level.getTimeoutSeconds() != null;
@@ -166,7 +196,8 @@ public class QuestServiceImpl implements QuestService {
                 + level.getTitle()
                 + "\" (id="
                 + level.getId()
-                + ") непроходим: нет ни кодов, ни автоперехода (ADR-0005)");
+                + ") непроходим: нет ни кодов, ни автоперехода (ADR-0005, \"аномальный\""
+                + " уровень)");
       }
     }
   }
@@ -181,32 +212,19 @@ public class QuestServiceImpl implements QuestService {
     questProgressRepository.saveAll(progresses);
   }
 
+  // ────── BUILDERS ───────────────────────────────────────────────────────────
   private QuestResponse buildQuestResponse(Quest quest) {
-    var builder =
-        QuestResponse.builder()
-            .id(quest.getId())
-            .title(quest.getTitle())
-            .description(quest.getDescription())
-            .type(quest.getType())
-            .status(quest.getStatus())
-            .createdAt(quest.getCreatedAt())
-            .startTime(quest.getStartTime())
-            .finishTime(quest.getFinishTime());
-
-    questAuthorRepository
-        .findPrimaryAuthor(quest.getId())
-        .ifPresent(
-            qa -> {
-              var user = qa.getUser();
-              builder.authorId(user.getId());
-              String name =
-                  user.getPublicName() != null && !user.getPublicName().isBlank()
-                      ? user.getPublicName()
-                      : user.getUsername();
-              builder.authorName(name);
-            });
-
-    return builder.build();
+    return QuestResponse.builder()
+        .id(quest.getId())
+        .title(quest.getTitle())
+        .description(quest.getDescription())
+        .type(quest.getType())
+        .status(quest.getStatus())
+        .createdAt(quest.getCreatedAt())
+        .startTime(quest.getStartTime())
+        .finishTime(quest.getFinishTime())
+        .archived(quest.getArchived())
+        .build();
   }
 
   private Quest buildQuest(CreateQuestRequest request) {

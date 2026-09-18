@@ -24,6 +24,8 @@ public interface QuestRepository extends JpaRepository<Quest, Long> {
 
   List<QuestShortProjection> findAllByStartTimeAfter(Instant startTimeAfter, Pageable pageable);
 
+  List<QuestShortProjection> findAllByStartTimeAfterAndArchivedFalse(Instant startTimeAfter);
+
   // Кандидаты на автостарт (03-architecture/scheduling.md, Job 1)
   List<Quest> findByStatusAndStartTimeLessThanEqual(QuestStatus status, Instant startTime);
 

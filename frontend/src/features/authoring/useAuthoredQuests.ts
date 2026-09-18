@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  archiveQuest,
   createQuest,
-  deleteQuest,
   finishQuest,
   getQuestsByAuthor,
   publishQuest,
@@ -53,7 +53,7 @@ export function useQuestLifecycleActions(questId: number) {
 
   const publish = useMutation({ mutationFn: () => publishQuest(questId), onSuccess: invalidate });
   const finish = useMutation({ mutationFn: () => finishQuest(questId), onSuccess: invalidate });
-  const remove = useMutation({ mutationFn: () => deleteQuest(questId) });
+  const remove = useMutation({ mutationFn: () => archiveQuest(questId) });
 
   return { publish, finish, remove };
 }

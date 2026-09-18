@@ -47,4 +47,8 @@ public class Quest {
 
   @Column(name = "end_at")
   private Instant finishTime;
+
+  @Column(name = "archived", nullable = false)
+  @Builder.Default
+  private Boolean archived = false;
 }

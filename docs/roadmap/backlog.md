@@ -67,18 +67,29 @@
 
 ### 4. Бизнес-правила, требующие решения
 
-14. 🟣 **DNF: определить прекондицию**
-    - вариант A: ручной `setDnf()` разрешён только после `Quest.status = FINISHED`;
-    - вариант B: `finishQuest()` автоматически переводит все незавершённые команды в DNF, а ручной endpoint не нужен;
-    - после решения обновить `progress.md`, `registration.md`, API и тесты.
+14. 🟡 **DNF: прекондиция определена**
+    - решение: автоматика в `finishQuest()` остаётся (все незавершённые команды → DNF);
+    - ручной `setDnf()` разрешён только при `Quest.status = FINISHED`; дополнительно позволяет перевести в DNF уже `FINISHED` команду — дисквалификация задним числом (например, при выявленном грубом нарушении правил);
+    - 🔵 `QuestProgressServiceImpl.setDnf()` и `QuestProgressController` обновлены;
+    - 🔵 `progress.md` обновлён;
+    - ⚪ тесты на новую прекондицию/дисквалификацию — за Odissey.
 
-15. 🟣 **Регистрация команды: разрешённые статусы Quest**
-    - сейчас backend разрешает регистрацию во всех статусах кроме `FINISHED`, а frontend показывает её только для `REGISTRATION`;
-    - определить, должен ли backend принимать только `REGISTRATION` или поддерживать позднюю регистрацию как отдельный сценарий.
+15. 🟡 **Регистрация команды: разрешённые статусы Quest определены**
+    - решение: заявку можно подавать в `REGISTRATION` и `RUNNING` (поздняя регистрация); в `DRAFT` и `FINISHED` — нельзя;
+    - 🔵 `QuestRegistrationServiceImpl.registerTeam()` — `validateQuestAcceptsRegistration()` вместо `validateQuestNotFinished()`;
+    - 🔵 `RegistrationPanel.tsx` — кнопка «Подать заявку» показывается и в `RUNNING`;
+    - 🔵 `registration.md` обновлён;
+    - ⚪ тесты — за Odissey.
 
-16. 🟣 **Удаление Quest**
-    - определить, разрешено ли удаление `RUNNING`/`FINISHED` квестов;
-    - если нет — запретить на backend или ввести soft-delete/архивирование.
+16. 🟡 **Удаление Quest → архивирование**
+    - решение: hard delete заменён на soft-delete — поле `Quest.archived`; данные (registrations/progress) не удаляются никогда, независимо от статуса;
+    - 🔵 миграция `V17__add_archived_to_quests.sql`, `Quest.archived`, `QuestResponse.archived`;
+    - 🔵 `delete()` → `archived = true` (было: hard delete без всяких проверок, падал 500 при наличии FK-зависимых записей);
+    - 🔵 `publishQuest`/`finishQuest`/`updateQuest` теперь запрещены для архивного квеста;
+    - 🔵 `getAllUpcomingBrief()` — архивные исключены (`findAllByStartTimeAfterAndArchivedFalse`);
+    - 🔵 frontend: `deleteQuest` → `archiveQuest`, `QuestLifecycleActions` упрощён (убрана компенсирующая UX-защита с набором названия квеста — больше не нужна, т.к. backend больше не теряет данные);
+    - ⚪ unarchive/восстановление — не реализовано, не запрашивалось;
+    - ⚪ тесты — за Odissey (`QuestLifecycleActions.test.tsx` полностью завязан на старый UX с "Удалить безвозвратно" и вводом названия — потребует переписывания).
 
 ### 5. Домен и функциональность
 

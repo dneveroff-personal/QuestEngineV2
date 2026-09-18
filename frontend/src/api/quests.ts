@@ -21,6 +21,7 @@ export interface Quest {
   createdAt: string;
   startTime: string | null;
   finishTime: string | null;
+  archived?: boolean;
 }
 
 export interface QuestRegistration {
@@ -64,7 +65,8 @@ export function updateQuest(questId: number, request: CreateQuestRequest): Promi
   return apiFetch<Quest>(`/api/quests/${questId}`, { method: "PUT", body: request });
 }
 
-export function deleteQuest(questId: number): Promise<void> {
+/** Soft-delete: помечает квест архивным, история регистраций/прохождения не теряется. */
+export function archiveQuest(questId: number): Promise<void> {
   return apiFetch<void>(`/api/quests/${questId}`, { method: "DELETE" });
 }
 
