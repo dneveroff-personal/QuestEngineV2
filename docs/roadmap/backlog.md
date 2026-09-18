@@ -13,46 +13,34 @@
 
 | Механика | Спецификация | Статус | Комментарий |
 |---|---|---|---|
-| Quest CRUD, статусы, lifecycle | `01-domain/quest.md` | 🔵 | CRUD и lifecycle реализованы |
-| Level CRUD | `01-domain/level.md`, ADR-0005 | 🔵 | `requiredMainCodesCount` реализован |
-| Team, Captain, membership | `01-domain/team.md` | 🔵 | Реализовано |
-| QuestRegistration | `01-domain/registration.md` | 🔵 | approve/reject, лимит команд |
-| DNF для команды | `01-domain/progress.md` | 🔵 | finishQuest → DNF незавершённым; ручной setDnf только при Quest=FINISHED (в т.ч. FINISHED→DNF) |
-| Late registration | `01-domain/registration.md` | 🔵 | REGISTRATION + RUNNING; DRAFT/FINISHED/archived — нельзя |
-| Quest soft-delete (`archived`) | `01-domain/quest.md` | 🔵 | DELETE → archived=true; publish/finish/update запрещены |
-| Team username + displayName | Team DTOs | 🔵 | username + displayName |
-| Team quest registrations | `/teams/.../quests` | 🔵 | включая FINISHED |
-| `GET /api/users/me` | endpoints | 🔵 | |
-| Current level (Game Mode) | `.../current-level` | 🔵 | |
-| Access + refresh tokens | ADR-0015 | 🔵 | |
+| Quest CRUD, статусы, lifecycle | `01-domain/quest.md` | 🔵 | |
+| `Quest.maximumTeams` в DTO | create/update/response | 🔵 | default 100; Min 1 / Max 10000 |
+| Level CRUD | ADR-0005 | 🔵 | |
+| Team, membership, displayName | team.md | 🔵 | |
+| QuestRegistration + late reg | registration.md | 🔵 | REGISTRATION + RUNNING |
+| DNF | progress.md | 🔵 | finishQuest + manual after FINISHED |
+| Soft-delete archive | quest.md | 🔵 | |
+| Current level API | Game Mode | 🔵 | |
+| Team quests API | `/teams/.../quests` | 🔵 | |
+| Access + refresh | ADR-0015 | 🔵 | |
 | Rate limiting | ADR-0016 | 🔵 | |
-| CI / JaCoCo / k6 | ADR-0017 | 🔵 | без fail-build по coverage |
+| CI / JaCoCo / k6 | ADR-0017 | 🔵 | |
 
 ## Текущие задачи
 
 ### 1. Качество и тестирование
 
-1. 🔵 Контрактные тесты API (403/404/409, PageResponse).
+1. 🔵 Контрактные тесты API.
 2. 🟡 Runtime Bonus/Penalty — агрегат трёх источников.
 3. ⚪ Повтор CodeSubmission после потери соединения.
-4. ⚪ **Тесты по бизнес-правилам 14–16** — за Odissey (setDnf precondition, late registration, archive).
-
-### 3. API для frontend / Game Mode
-
-*(закрыт)*
-
-### 4. Бизнес-правила
-
-*(п. 14–16 решены в коде и спеке; тесты — за Odissey)*
-
-14. 🔵 **DNF** — finishQuest автоматически DNF незавершённым; ручной setDnf только при `Quest.status = FINISHED` (дисквалификация FINISHED→DNF разрешена).
-15. 🔵 **Регистрация** — `REGISTRATION` и `RUNNING`; запрет в `DRAFT`, `FINISHED`, archived.
-16. 🔵 **Удаление Quest** — soft-delete `archived`; unarchive не в MVP.
+4. ⚪ Тесты по бизнес-правилам 14–16 — за Odissey.
 
 ### 5. Домен и функциональность
 
-17. ⚪ **Прокинуть `Quest.maximumTeams` в DTO**
 18. ⚪ **Statistics / Ranking**
+    - пакет `statistic/` по `01-domain/statistics-ranking.md`;
+    - минимальный набор для игрового результата, затем live.
+
 19. ⚪ **Live-статистика через SSE** (ADR-0014)
 
 ### 6. Технический долг
@@ -62,9 +50,8 @@
 
 ## Осознанно отложено
 
-- 💤 Персональные подсказки / ручное открытие подсказки автором.
-- 💤 Unarchive Quest.
+- 💤 Персональные подсказки / unarchive.
 
 ## Итог
 
-**Немедленных блокеров нет.** Фокус: `maximumTeams` в DTO, статистика или тесты 14–16 (Odissey).
+**Немедленных блокеров нет.** Следующий крупный блок — Statistics/Ranking (#18) или техдолг (#20–21). Тесты 14–16 — Odissey.

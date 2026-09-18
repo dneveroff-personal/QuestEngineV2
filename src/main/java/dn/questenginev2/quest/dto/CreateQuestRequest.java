@@ -1,6 +1,8 @@
 package dn.questenginev2.quest.dto;
 
 import dn.questenginev2.quest.entity.QuestType;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,4 +17,8 @@ public record CreateQuestRequest(
         String description,
     @NotNull(message = "Тип квеста не может быть пустым") QuestType type,
     Instant startTime,
-    Instant finishTime) {}
+    Instant finishTime,
+    /** Max approved teams; null → default 100 on create. */
+    @Min(value = 1, message = "maximumTeams must be at least 1")
+        @Max(value = 10000, message = "maximumTeams must be at most 10000")
+        Integer maximumTeams) {}
