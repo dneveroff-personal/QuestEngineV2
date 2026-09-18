@@ -14,8 +14,8 @@ import dn.questenginev2.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -36,7 +36,9 @@ public class AuthController {
   @Value("${admin.reset.secret:change-me-in-production}")
   private String adminResetSecret;
 
-  @Operation(summary = "User login", description = "Authenticate and return access + refresh tokens")
+  @Operation(
+      summary = "User login",
+      description = "Authenticate and return access + refresh tokens")
   @PostMapping(Routes.LOGIN)
   public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
     LoginResponse response = loginService.login(request);
@@ -48,11 +50,9 @@ public class AuthController {
       description = "Exchange refresh token for new access + refresh pair (rotation, ADR-0015)")
   @PostMapping(Routes.REFRESH)
   public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody RefreshRequest request) {
-    RefreshTokenService.RotatedTokens rotated =
-        refreshTokenService.rotate(request.refreshToken());
+    RefreshTokenService.RotatedTokens rotated = refreshTokenService.rotate(request.refreshToken());
     User user = rotated.user();
-    String access =
-        jwtService.generateAccessToken(user.getUsername(), user.getRole().name());
+    String access = jwtService.generateAccessToken(user.getUsername(), user.getRole().name());
     return ResponseEntity.ok(
         new LoginResponse(user.getPublicName(), access, rotated.newRefreshToken()));
   }

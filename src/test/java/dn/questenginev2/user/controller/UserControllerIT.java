@@ -3,8 +3,11 @@ package dn.questenginev2.user.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.auth.repository.RefreshTokenRepository;
+import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.repository.LevelProgressRepository;
 import dn.questenginev2.level.repository.LevelRepository;
@@ -32,6 +35,7 @@ class UserControllerIT {
   @Autowired private MockMvc mockMvc;
 
   @Autowired private UserRepository userRepository;
+  @Autowired private RefreshTokenRepository refreshTokenRepository;
 
   @Autowired private TeamRepository teamRepository;
 
@@ -48,6 +52,8 @@ class UserControllerIT {
   @Autowired private CodeRepository codeRepository;
 
   @Autowired private CodeSubmissionRepository codeSubmissionRepository;
+  @Autowired private HintProgressRepository hintProgressRepository;
+  @Autowired private ManualTimeAdjustmentRepository manualTimeAdjustmentRepository;
 
   @Autowired private LevelProgressRepository levelProgressRepository;
 
@@ -64,7 +70,9 @@ class UserControllerIT {
   void setUp() throws Exception {
     // Clean up in correct order to avoid foreign key constraints
     codeSubmissionRepository.deleteAll();
+    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
+    manualTimeAdjustmentRepository.deleteAll();
     questProgressRepository.deleteAll();
     teamJoinRequestRepository.deleteAll();
     teamMemberRepository.deleteAll();
@@ -75,6 +83,7 @@ class UserControllerIT {
     hintRepository.deleteAll();
     levelRepository.deleteAll();
     questRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
 
     // Register a user and get JWT token
@@ -91,7 +100,7 @@ class UserControllerIT {
             .getResponse()
             .getContentAsString();
 
-    jwtToken = response.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    jwtToken = response.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
 
     // Get the saved user
     testUser = userRepository.findByUsername("testuser").orElseThrow();

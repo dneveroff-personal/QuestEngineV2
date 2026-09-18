@@ -3,8 +3,11 @@ package dn.questenginev2.quest.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.auth.repository.RefreshTokenRepository;
+import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.repository.LevelProgressRepository;
@@ -44,6 +47,7 @@ class QuestControllerIT {
   @Autowired private MockMvc mockMvc;
 
   @Autowired private UserRepository userRepository;
+  @Autowired private RefreshTokenRepository refreshTokenRepository;
 
   @Autowired private QuestRepository questRepository;
 
@@ -60,6 +64,8 @@ class QuestControllerIT {
   @Autowired private CodeSubmissionRepository codeSubmissionRepository;
 
   @Autowired private LevelProgressRepository levelProgressRepository;
+  @Autowired private HintProgressRepository hintProgressRepository;
+  @Autowired private ManualTimeAdjustmentRepository manualTimeAdjustmentRepository;
 
   @Autowired private QuestRegistrationRepository questRegistrationRepository;
 
@@ -79,7 +85,9 @@ class QuestControllerIT {
   void setUp() throws Exception {
     loginRateLimitFilter.clear();
     codeSubmissionRepository.deleteAll();
+    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
+    manualTimeAdjustmentRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();
     hintRepository.deleteAll();
@@ -90,6 +98,7 @@ class QuestControllerIT {
     teamJoinRequestRepository.deleteAll();
     teamRepository.deleteAll();
     questRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
 
     // Create an author user directly with properly encoded password
@@ -114,7 +123,7 @@ class QuestControllerIT {
             .getResponse()
             .getContentAsString();
 
-    authorToken = response.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    authorToken = response.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
   }
 
   @Test
@@ -393,7 +402,7 @@ class QuestControllerIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    nonAuthorToken = nonAuthorToken.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    nonAuthorToken = nonAuthorToken.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
 
     mockMvc
         .perform(
@@ -432,7 +441,7 @@ class QuestControllerIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    nonAuthorToken = nonAuthorToken.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    nonAuthorToken = nonAuthorToken.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
 
     mockMvc
         .perform(

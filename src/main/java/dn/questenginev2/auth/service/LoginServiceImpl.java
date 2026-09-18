@@ -47,8 +47,7 @@ public class LoginServiceImpl implements LoginService {
   }
 
   private LoginResponse buildLoginResponse(User user) {
-    String accessToken =
-        jwtService.generateAccessToken(user.getUsername(), user.getRole().name());
+    String accessToken = jwtService.generateAccessToken(user.getUsername(), user.getRole().name());
     String refreshToken = refreshTokenService.issue(user);
     return new LoginResponse(user.getPublicName(), accessToken, refreshToken);
   }

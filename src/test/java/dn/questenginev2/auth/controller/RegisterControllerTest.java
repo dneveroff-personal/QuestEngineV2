@@ -28,7 +28,7 @@ class RegisterControllerTest {
   @BeforeEach
   void setUp() {
     when(registerService.register(any(RegisterRequest.class)))
-        .thenReturn(new LoginResponse("Test User", "test-jwt-token"));
+        .thenReturn(new LoginResponse("Test User", "test-access-token", "test-refresh-token"));
   }
 
   @Test
@@ -42,6 +42,7 @@ class RegisterControllerTest {
         .andExpect(status().isCreated())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.publicName").value("Test User"))
-        .andExpect(jsonPath("$.token").value("test-jwt-token"));
+        .andExpect(jsonPath("$.accessToken").value("test-access-token"))
+        .andExpect(jsonPath("$.refreshToken").value("test-refresh-token"));
   }
 }

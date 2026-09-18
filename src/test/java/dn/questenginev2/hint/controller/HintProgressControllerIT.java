@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.auth.repository.RefreshTokenRepository;
+import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
 import dn.questenginev2.hint.entity.Hint;
@@ -54,6 +56,7 @@ class HintProgressControllerIT {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private UserRepository userRepository;
+  @Autowired private RefreshTokenRepository refreshTokenRepository;
   @Autowired private QuestRepository questRepository;
   @Autowired private LevelRepository levelRepository;
   @Autowired private HintRepository hintRepository;
@@ -64,6 +67,7 @@ class HintProgressControllerIT {
   @Autowired private TeamMemberRepository teamMemberRepository;
   @Autowired private QuestProgressRepository questProgressRepository;
   @Autowired private LevelProgressRepository levelProgressRepository;
+  @Autowired private ManualTimeAdjustmentRepository manualTimeAdjustmentRepository;
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private HintRevealScheduler hintRevealScheduler;
   @Autowired private LoginRateLimitFilter loginRateLimitFilter;
@@ -82,6 +86,7 @@ class HintProgressControllerIT {
     hintProgressRepository.deleteAll();
     codeSubmissionRepository.deleteAll();
     levelProgressRepository.deleteAll();
+    manualTimeAdjustmentRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();
     hintRepository.deleteAll();
@@ -89,6 +94,7 @@ class HintProgressControllerIT {
     teamMemberRepository.deleteAll();
     teamRepository.deleteAll();
     questRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
 
     User teamMemberUser = new User();
@@ -109,7 +115,7 @@ class HintProgressControllerIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    teamMemberToken = response.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    teamMemberToken = response.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
 
     team = teamRepository.save(Team.builder().name("Hint Team").captain(teamMemberUser).build());
     teamMemberRepository.save(
@@ -324,7 +330,7 @@ class HintProgressControllerIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    String outsiderToken = outsiderResponse.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    String outsiderToken = outsiderResponse.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
 
     mockMvc
         .perform(

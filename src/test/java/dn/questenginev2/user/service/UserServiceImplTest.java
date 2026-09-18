@@ -90,8 +90,7 @@ class UserServiceImplTest {
     Page<User> userPage = new PageImpl<>(List.of(user1, user2), pageable, 2);
     when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
 
-    PageResponse<UserResponse> result =
-        userService.searchUsers(filter, pageable, authentication);
+    PageResponse<UserResponse> result = userService.searchUsers(filter, pageable, authentication);
 
     assertThat(result).isNotNull();
     assertThat(result.content()).hasSize(2);
@@ -109,8 +108,7 @@ class UserServiceImplTest {
     Page<User> userPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
     when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
 
-    PageResponse<UserResponse> result =
-        userService.searchUsers(filter, pageable, authentication);
+    PageResponse<UserResponse> result = userService.searchUsers(filter, pageable, authentication);
 
     assertThat(result.content()).isEmpty();
     assertThat(result.totalElements()).isEqualTo(0);
@@ -135,8 +133,7 @@ class UserServiceImplTest {
     Page<User> userPage = new PageImpl<>(List.of(other), pageable, 1);
     when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
 
-    PageResponse<UserResponse> result =
-        userService.searchUsers(filter, pageable, authentication);
+    PageResponse<UserResponse> result = userService.searchUsers(filter, pageable, authentication);
 
     assertThat(result.content()).hasSize(1);
     UserResponse row = result.content().get(0);

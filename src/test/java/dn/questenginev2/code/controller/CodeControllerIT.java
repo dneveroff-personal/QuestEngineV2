@@ -4,10 +4,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.auth.repository.RefreshTokenRepository;
+import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.entity.Code;
 import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.repository.LevelProgressRepository;
@@ -42,6 +45,7 @@ class CodeControllerIT {
   @Autowired private MockMvc mockMvc;
 
   @Autowired private UserRepository userRepository;
+  @Autowired private RefreshTokenRepository refreshTokenRepository;
 
   @Autowired private QuestRepository questRepository;
 
@@ -52,6 +56,10 @@ class CodeControllerIT {
   @Autowired private CodeRepository codeRepository;
 
   @Autowired private CodeSubmissionRepository codeSubmissionRepository;
+
+  @Autowired private HintProgressRepository hintProgressRepository;
+
+  @Autowired private ManualTimeAdjustmentRepository manualTimeAdjustmentRepository;
 
   @Autowired private LevelProgressRepository levelProgressRepository;
 
@@ -75,7 +83,9 @@ class CodeControllerIT {
   @BeforeEach
   void setUp() throws Exception {
     codeSubmissionRepository.deleteAll();
+    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
+    manualTimeAdjustmentRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();
     hintRepository.deleteAll();
@@ -86,6 +96,7 @@ class CodeControllerIT {
     teamJoinRequestRepository.deleteAll();
     teamRepository.deleteAll();
     questRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
 
     authorUser = new User();
@@ -108,7 +119,7 @@ class CodeControllerIT {
             .getResponse()
             .getContentAsString();
 
-    authorToken = response.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    authorToken = response.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
   }
 
   @Test

@@ -4,9 +4,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.auth.repository.RefreshTokenRepository;
+import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
 import dn.questenginev2.hint.entity.Hint;
+import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.repository.LevelProgressRepository;
@@ -42,6 +45,7 @@ class HintControllerIT {
   @Autowired private MockMvc mockMvc;
 
   @Autowired private UserRepository userRepository;
+  @Autowired private RefreshTokenRepository refreshTokenRepository;
 
   @Autowired private QuestRepository questRepository;
 
@@ -51,7 +55,8 @@ class HintControllerIT {
 
   @Autowired private HintRepository hintRepository;
 
-  @Autowired private dn.questenginev2.hint.repository.HintProgressRepository hintProgressRepository;
+  @Autowired private HintProgressRepository hintProgressRepository;
+  @Autowired private ManualTimeAdjustmentRepository manualTimeAdjustmentRepository;
 
   @Autowired private CodeRepository codeRepository;
 
@@ -79,10 +84,11 @@ class HintControllerIT {
   void setUp() throws Exception {
     loginRateLimitFilter.clear();
     codeSubmissionRepository.deleteAll();
+    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
+    manualTimeAdjustmentRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();
-    hintProgressRepository.deleteAll();
     hintRepository.deleteAll();
     levelRepository.deleteAll();
     questRegistrationRepository.deleteAll();
@@ -91,6 +97,7 @@ class HintControllerIT {
     teamJoinRequestRepository.deleteAll();
     teamRepository.deleteAll();
     questRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
 
     authorUser = new User();
@@ -113,7 +120,7 @@ class HintControllerIT {
             .getResponse()
             .getContentAsString();
 
-    authorToken = response.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    authorToken = response.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
   }
 
   @Test
@@ -242,7 +249,7 @@ class HintControllerIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    nonAuthorToken = nonAuthorToken.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    nonAuthorToken = nonAuthorToken.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
 
     mockMvc
         .perform(

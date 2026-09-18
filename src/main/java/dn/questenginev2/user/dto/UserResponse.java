@@ -11,9 +11,4 @@ import java.time.Instant;
  * threat-model / backlog Auth #6).
  */
 public record UserResponse(
-    Long id,
-    String username,
-    String publicName,
-    String email,
-    UserRole role,
-    Instant createdAt) {}
+    Long id, String username, String publicName, String email, UserRole role, Instant createdAt) {}

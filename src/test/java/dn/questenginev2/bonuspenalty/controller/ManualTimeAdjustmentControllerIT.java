@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.auth.repository.RefreshTokenRepository;
 import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.entity.Code;
 import dn.questenginev2.code.entity.CodeSubmission;
@@ -58,6 +59,7 @@ class ManualTimeAdjustmentControllerIT {
   @Autowired private MockMvc mockMvc;
 
   @Autowired private UserRepository userRepository;
+  @Autowired private RefreshTokenRepository refreshTokenRepository;
   @Autowired private QuestRepository questRepository;
   @Autowired private QuestAuthorRepository questAuthorRepository;
   @Autowired private QuestProgressRepository questProgressRepository;
@@ -101,6 +103,7 @@ class ManualTimeAdjustmentControllerIT {
     teamJoinRequestRepository.deleteAll();
     teamRepository.deleteAll();
     questRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
 
     // Create author user
@@ -132,7 +135,7 @@ class ManualTimeAdjustmentControllerIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    authorToken = authorResponse.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    authorToken = authorResponse.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
 
     String playerResponse =
         mockMvc
@@ -144,7 +147,7 @@ class ManualTimeAdjustmentControllerIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    playerToken = playerResponse.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    playerToken = playerResponse.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
 
     // Create team with player as captain
     team = teamRepository.save(Team.builder().name("Team A").captain(playerUser).build());

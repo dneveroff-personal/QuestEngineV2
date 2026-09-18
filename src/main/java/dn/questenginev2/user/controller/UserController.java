@@ -54,7 +54,8 @@ public class UserController {
   @Operation(
       summary = "Search users",
       description =
-          "Search users. Non-ADMIN: username filter and limited fields (id, username, publicName). ADMIN: full filters and fields.")
+          "Search users. Non-ADMIN: username filter and limited fields (id, username, publicName)."
+              + " ADMIN: full filters and fields.")
   @GetMapping("/search")
   public ResponseEntity<PageResponse<UserResponse>> searchUsers(
       @Valid UserFilterRequest filter, Pageable pageable, Authentication auth) {

@@ -57,14 +57,16 @@ class RegisterServiceImplTest {
     when(userService.saveUser(any(User.class))).thenReturn(savedUser);
     when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
 
-    LoginResponse loginResponse = new LoginResponse("New User", "test-jwt-token");
+    LoginResponse loginResponse =
+        new LoginResponse("New User", "test-jwt-token", "test-refresh-token");
     when(loginService.login(any(RegisterRequest.class), eq(savedUser))).thenReturn(loginResponse);
 
     LoginResponse response = registerService.register(request);
 
     assertThat(response).isNotNull();
     assertThat(response.publicName()).isEqualTo("New User");
-    assertThat(response.token()).isEqualTo("test-jwt-token");
+    assertThat(response.accessToken()).isEqualTo("test-jwt-token");
+    assertThat(response.refreshToken()).isEqualTo("test-refresh-token");
 
     verify(userService).saveUser(any(User.class));
     verify(loginService).login(any(RegisterRequest.class), eq(savedUser));
@@ -90,7 +92,8 @@ class RegisterServiceImplTest {
     when(userService.saveUser(any(User.class))).thenReturn(savedUser);
     when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
 
-    LoginResponse loginResponse = new LoginResponse("newuser", "test-jwt-token");
+    LoginResponse loginResponse =
+        new LoginResponse("newuser", "test-jwt-token", "test-refresh-token");
     when(loginService.login(any(RegisterRequest.class), eq(savedUser))).thenReturn(loginResponse);
 
     LoginResponse response = registerService.register(request);
@@ -119,7 +122,8 @@ class RegisterServiceImplTest {
     when(userService.saveUser(any(User.class))).thenReturn(savedUser);
     when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
 
-    LoginResponse loginResponse = new LoginResponse("newuser", "test-jwt-token");
+    LoginResponse loginResponse =
+        new LoginResponse("newuser", "test-jwt-token", "test-refresh-token");
     when(loginService.login(any(RegisterRequest.class), eq(savedUser))).thenReturn(loginResponse);
 
     LoginResponse response = registerService.register(request);
@@ -184,7 +188,8 @@ class RegisterServiceImplTest {
     when(userService.saveUser(any(User.class))).thenReturn(savedUser);
     when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
 
-    LoginResponse loginResponse = new LoginResponse("newuser", "test-jwt-token");
+    LoginResponse loginResponse =
+        new LoginResponse("newuser", "test-jwt-token", "test-refresh-token");
     when(loginService.login(any(RegisterRequest.class), eq(savedUser))).thenReturn(loginResponse);
 
     // Should not throw

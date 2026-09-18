@@ -27,6 +27,8 @@ class LoginServiceImplTest {
 
   @Mock private JwtService jwtService;
 
+  @Mock private RefreshTokenService refreshTokenService;
+
   @InjectMocks private LoginServiceImpl loginService;
 
   private User testUser;
@@ -51,16 +53,19 @@ class LoginServiceImplTest {
 
     when(userService.findByUsername("testuser")).thenReturn(java.util.Optional.of(testUser));
     when(jwtService.validatePassword("password123", "hashedPassword")).thenReturn(true);
-    when(jwtService.generateToken("testuser", "PLAYER")).thenReturn("test-jwt-token");
+    when(jwtService.generateAccessToken("testuser", "PLAYER")).thenReturn("test-access-token");
+    when(refreshTokenService.issue(testUser)).thenReturn("test-refresh-token");
 
     LoginResponse response = loginService.login(request);
 
     assertThat(response).isNotNull();
     assertThat(response.publicName()).isEqualTo("Test User");
-    assertThat(response.token()).isEqualTo("test-jwt-token");
+    assertThat(response.accessToken()).isEqualTo("test-access-token");
+    assertThat(response.refreshToken()).isEqualTo("test-refresh-token");
     verify(userService).findByUsername("testuser");
     verify(jwtService).validatePassword("password123", "hashedPassword");
-    verify(jwtService).generateToken("testuser", "PLAYER");
+    verify(jwtService).generateAccessToken("testuser", "PLAYER");
+    verify(refreshTokenService).issue(testUser);
   }
 
   @Test
@@ -94,7 +99,8 @@ class LoginServiceImplTest {
 
     verify(userService).findByUsername("testuser");
     verify(jwtService).validatePassword("wrongpassword", "hashedPassword");
-    verify(jwtService, never()).generateToken(any(), any());
+    verify(jwtService, never()).generateAccessToken(any(), any());
+    verify(refreshTokenService, never()).issue(any());
   }
 
   @Test
@@ -104,15 +110,18 @@ class LoginServiceImplTest {
     request.setPassword("password123");
 
     when(jwtService.validatePassword("password123", "hashedPassword")).thenReturn(true);
-    when(jwtService.generateToken("testuser", "PLAYER")).thenReturn("test-jwt-token");
+    when(jwtService.generateAccessToken("testuser", "PLAYER")).thenReturn("test-access-token");
+    when(refreshTokenService.issue(testUser)).thenReturn("test-refresh-token");
 
     LoginResponse response = loginService.login(request, testUser);
 
     assertThat(response).isNotNull();
     assertThat(response.publicName()).isEqualTo("Test User");
-    assertThat(response.token()).isEqualTo("test-jwt-token");
+    assertThat(response.accessToken()).isEqualTo("test-access-token");
+    assertThat(response.refreshToken()).isEqualTo("test-refresh-token");
     verify(jwtService).validatePassword("password123", "hashedPassword");
-    verify(jwtService).generateToken("testuser", "PLAYER");
+    verify(jwtService).generateAccessToken("testuser", "PLAYER");
+    verify(refreshTokenService).issue(testUser);
   }
 
   @Test
@@ -128,6 +137,7 @@ class LoginServiceImplTest {
         .hasMessageContaining("Invalid password");
 
     verify(jwtService).validatePassword("wrongpassword", "hashedPassword");
-    verify(jwtService, never()).generateToken(any(), any());
+    verify(jwtService, never()).generateAccessToken(any(), any());
+    verify(refreshTokenService, never()).issue(any());
   }
 }

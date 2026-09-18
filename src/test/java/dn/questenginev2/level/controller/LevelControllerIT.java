@@ -3,8 +3,11 @@ package dn.questenginev2.level.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.auth.repository.RefreshTokenRepository;
+import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.repository.LevelProgressRepository;
 import dn.questenginev2.level.repository.LevelRepository;
@@ -39,6 +42,7 @@ class LevelControllerIT {
   @Autowired private MockMvc mockMvc;
 
   @Autowired private UserRepository userRepository;
+  @Autowired private RefreshTokenRepository refreshTokenRepository;
 
   @Autowired private QuestRepository questRepository;
 
@@ -51,6 +55,8 @@ class LevelControllerIT {
   @Autowired private CodeRepository codeRepository;
 
   @Autowired private CodeSubmissionRepository codeSubmissionRepository;
+  @Autowired private HintProgressRepository hintProgressRepository;
+  @Autowired private ManualTimeAdjustmentRepository manualTimeAdjustmentRepository;
 
   @Autowired private LevelProgressRepository levelProgressRepository;
 
@@ -74,7 +80,9 @@ class LevelControllerIT {
   void setUp() throws Exception {
     loginRateLimitFilter.clear();
     codeSubmissionRepository.deleteAll();
+    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
+    manualTimeAdjustmentRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();
     hintRepository.deleteAll();
@@ -85,6 +93,7 @@ class LevelControllerIT {
     teamJoinRequestRepository.deleteAll();
     teamRepository.deleteAll();
     questRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
 
     // Create an author user directly with properly encoded password
@@ -109,7 +118,7 @@ class LevelControllerIT {
             .getResponse()
             .getContentAsString();
 
-    authorToken = response.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    authorToken = response.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
   }
 
   @Test

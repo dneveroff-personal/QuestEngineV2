@@ -4,10 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dn.questenginev2.auth.repository.RefreshTokenRepository;
+import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.entity.Code;
 import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
@@ -56,6 +59,7 @@ class LevelAutoTransitionRaceIT {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private UserRepository userRepository;
+  @Autowired private RefreshTokenRepository refreshTokenRepository;
   @Autowired private QuestRepository questRepository;
   @Autowired private LevelRepository levelRepository;
   @Autowired private CodeRepository codeRepository;
@@ -64,6 +68,8 @@ class LevelAutoTransitionRaceIT {
   @Autowired private TeamMemberRepository teamMemberRepository;
   @Autowired private QuestProgressRepository questProgressRepository;
   @Autowired private LevelProgressRepository levelProgressRepository;
+  @Autowired private HintProgressRepository hintProgressRepository;
+  @Autowired private ManualTimeAdjustmentRepository manualTimeAdjustmentRepository;
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private LevelAutoTransitionScheduler levelAutoTransitionScheduler;
   @Autowired private QuestAuthorRepository questAuthorRepository;
@@ -78,7 +84,9 @@ class LevelAutoTransitionRaceIT {
   @BeforeEach
   void setUp() throws Exception {
     codeSubmissionRepository.deleteAll();
+    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
+    manualTimeAdjustmentRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();
     levelRepository.deleteAll();
@@ -88,6 +96,7 @@ class LevelAutoTransitionRaceIT {
     questRegistrationRepository.deleteAll();
     questAuthorRepository.deleteAll();
     questRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
 
     User teamMemberUser = new User();
@@ -108,7 +117,7 @@ class LevelAutoTransitionRaceIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    teamMemberToken = response.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    teamMemberToken = response.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
 
     team = teamRepository.save(Team.builder().name("Racing Team").captain(teamMemberUser).build());
     teamMemberRepository.save(

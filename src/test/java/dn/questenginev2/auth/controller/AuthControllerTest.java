@@ -7,7 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dn.questenginev2.auth.dto.LoginRequest;
 import dn.questenginev2.auth.dto.LoginResponse;
+import dn.questenginev2.auth.service.JwtService;
 import dn.questenginev2.auth.service.LoginService;
+import dn.questenginev2.auth.service.RefreshTokenService;
 import dn.questenginev2.auth.service.RegisterService;
 import dn.questenginev2.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,16 +31,20 @@ class AuthControllerTest {
 
   @MockitoBean private LoginService loginService;
 
+  @MockitoBean private JwtService jwtService;
+
+  @MockitoBean private RefreshTokenService refreshTokenService;
+
   @MockitoBean private UserService userService;
 
   @BeforeEach
   void setUp() {
     when(loginService.login(any(LoginRequest.class)))
-        .thenReturn(new LoginResponse("Test User", "test-jwt-token"));
+        .thenReturn(new LoginResponse("Test User", "test-access-token", "test-refresh-token"));
   }
 
   @Test
-  void login_returnsToken_whenCredentialsAreValid() throws Exception {
+  void login_returnsTokens_whenCredentialsAreValid() throws Exception {
     mockMvc
         .perform(
             post("/api/auth/login")
@@ -47,7 +53,8 @@ class AuthControllerTest {
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.publicName").value("Test User"))
-        .andExpect(jsonPath("$.token").value("test-jwt-token"));
+        .andExpect(jsonPath("$.accessToken").value("test-access-token"))
+        .andExpect(jsonPath("$.refreshToken").value("test-refresh-token"));
   }
 
   @Test

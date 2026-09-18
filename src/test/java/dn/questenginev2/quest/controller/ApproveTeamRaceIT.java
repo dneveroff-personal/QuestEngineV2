@@ -5,8 +5,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dn.questenginev2.auth.repository.RefreshTokenRepository;
+import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.repository.LevelProgressRepository;
 import dn.questenginev2.level.repository.LevelRepository;
@@ -54,6 +57,7 @@ class ApproveTeamRaceIT {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private UserRepository userRepository;
+  @Autowired private RefreshTokenRepository refreshTokenRepository;
   @Autowired private QuestRepository questRepository;
   @Autowired private QuestAuthorRepository questAuthorRepository;
   @Autowired private QuestRegistrationRepository questRegistrationRepository;
@@ -62,9 +66,11 @@ class ApproveTeamRaceIT {
   @Autowired private TeamJoinRequestRepository teamJoinRequestRepository;
   @Autowired private QuestProgressRepository questProgressRepository;
   @Autowired private LevelProgressRepository levelProgressRepository;
+  @Autowired private HintProgressRepository hintProgressRepository;
   @Autowired private LevelRepository levelRepository;
   @Autowired private HintRepository hintRepository;
   @Autowired private CodeRepository codeRepository;
+  @Autowired private ManualTimeAdjustmentRepository manualTimeAdjustmentRepository;
   @Autowired private CodeSubmissionRepository codeSubmissionRepository;
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private LoginRateLimitFilter loginRateLimitFilter;
@@ -80,7 +86,9 @@ class ApproveTeamRaceIT {
   void setUp() throws Exception {
     loginRateLimitFilter.clear();
     codeSubmissionRepository.deleteAll();
+    hintProgressRepository.deleteAll();
     levelProgressRepository.deleteAll();
+    manualTimeAdjustmentRepository.deleteAll();
     questProgressRepository.deleteAll();
     codeRepository.deleteAll();
     hintRepository.deleteAll();
@@ -91,6 +99,7 @@ class ApproveTeamRaceIT {
     teamJoinRequestRepository.deleteAll();
     teamRepository.deleteAll();
     questRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
 
     User authorUser = new User();
@@ -111,7 +120,7 @@ class ApproveTeamRaceIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    authorToken = response.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    authorToken = response.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
 
     quest =
         questRepository.save(

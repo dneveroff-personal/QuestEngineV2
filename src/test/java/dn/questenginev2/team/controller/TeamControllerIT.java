@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.auth.repository.RefreshTokenRepository;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
 import dn.questenginev2.config.containers.BaseIntegrationTest;
@@ -32,6 +33,7 @@ class TeamControllerIT extends BaseIntegrationTest {
   @Autowired private MockMvc mockMvc;
 
   @Autowired private UserRepository userRepository;
+  @Autowired private RefreshTokenRepository refreshTokenRepository;
 
   @Autowired private TeamRepository teamRepository;
 
@@ -74,6 +76,7 @@ class TeamControllerIT extends BaseIntegrationTest {
     hintRepository.deleteAll();
     levelRepository.deleteAll();
     questRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
 
     // Get JWT token by registering
@@ -90,7 +93,7 @@ class TeamControllerIT extends BaseIntegrationTest {
             .getContentAsString();
 
     // Extract token from response (simple JSON parsing)
-    jwtToken = response.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    jwtToken = response.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
 
     // Get the saved user
     testUser = userRepository.findByUsername("testuser").orElseThrow();

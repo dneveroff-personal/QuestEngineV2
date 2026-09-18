@@ -38,7 +38,8 @@ class UserControllerTest {
   @BeforeEach
   void setUp() {
     userResponse =
-        new UserResponse(1L, "testuser", "Test User", "test@example.com", UserRole.PLAYER, Instant.now());
+        new UserResponse(
+            1L, "testuser", "Test User", "test@example.com", UserRole.PLAYER, Instant.now());
   }
 
   @Test
@@ -68,9 +69,11 @@ class UserControllerTest {
   @Test
   void searchUsers_returnsPageResponse_whenUsersExist() throws Exception {
     UserResponse user1 =
-        new UserResponse(1L, "user1", "User One", "user1@example.com", UserRole.PLAYER, Instant.now());
+        new UserResponse(
+            1L, "user1", "User One", "user1@example.com", UserRole.PLAYER, Instant.now());
     UserResponse user2 =
-        new UserResponse(2L, "user2", "User Two", "user2@example.com", UserRole.AUTHOR, Instant.now());
+        new UserResponse(
+            2L, "user2", "User Two", "user2@example.com", UserRole.AUTHOR, Instant.now());
     PageResponse<UserResponse> pageResponse =
         new PageResponse<>(List.of(user1, user2), 0, 20, 2L, 1);
 
@@ -102,7 +105,8 @@ class UserControllerTest {
   @Test
   void searchUsers_returnsPageResponse_withPaginationParams() throws Exception {
     UserResponse user1 =
-        new UserResponse(1L, "user1", "User One", "user1@example.com", UserRole.PLAYER, Instant.now());
+        new UserResponse(
+            1L, "user1", "User One", "user1@example.com", UserRole.PLAYER, Instant.now());
     PageResponse<UserResponse> pageResponse = new PageResponse<>(List.of(user1), 1, 10, 15L, 2);
 
     when(userService.searchUsers(any(), any(PageRequest.class), any())).thenReturn(pageResponse);
@@ -117,7 +121,8 @@ class UserControllerTest {
   @Test
   void searchUsers_returnsPageResponse_withFilterParams() throws Exception {
     UserResponse user1 =
-        new UserResponse(1L, "user1", "User One", "user1@example.com", UserRole.PLAYER, Instant.now());
+        new UserResponse(
+            1L, "user1", "User One", "user1@example.com", UserRole.PLAYER, Instant.now());
     PageResponse<UserResponse> pageResponse = new PageResponse<>(List.of(user1), 0, 20, 1L, 1);
 
     when(userService.searchUsers(any(), any(PageRequest.class), any())).thenReturn(pageResponse);
