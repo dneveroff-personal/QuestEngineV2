@@ -3,9 +3,11 @@ package dn.questenginev2.quest.service;
 import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.ResourceNotFoundException;
-import dn.questenginev2.common.exceptions.TeamNotFoundException;
 import dn.questenginev2.quest.dto.QuestRegisterResponse;
-import dn.questenginev2.quest.entity.*;
+import dn.questenginev2.quest.entity.Quest;
+import dn.questenginev2.quest.entity.QuestRegistration;
+import dn.questenginev2.quest.entity.QuestStatus;
+import dn.questenginev2.quest.entity.RegistrationStatus;
 import dn.questenginev2.quest.repository.QuestAuthorRepository;
 import dn.questenginev2.quest.repository.QuestRegistrationRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
@@ -18,27 +20,24 @@ import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.service.UserService;
 import jakarta.transaction.Transactional;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 @Service
 @Transactional
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class QuestRegistrationServiceImpl implements QuestRegistrationService {
 
   private final QuestRegistrationRepository questRegistrationRepository;
   private final QuestRepository questRepository;
-  private final QuestProgressService questProgressService;
   private final TeamRepository teamRepository;
   private final TeamMemberRepository teamMemberRepository;
   private final QuestAuthorRepository questAuthorRepository;
   private final UserService userService;
 
-  // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
   @Override
   public QuestRegisterResponse registerTeam(Long questId, Long teamId, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
@@ -100,59 +99,57 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
             .findByQuestIdAndTeamId(questId, teamId)
             .orElseThrow(() -> new ResourceNotFoundException("Регистрация не найдена"));
 
-    validateRegistrationPending(registration);
-    validateApprovedTeamsLimit(questId);
-
-    registration.setStatus(RegistrationStatus.APPROVED);
-    registration.setUpdatedAt(Instant.now());
-
-    QuestRegistration savedRegistration = questRegistrationRepository.save(registration);
-
-    Quest quest = validateQuestExist(questId);
-    if (quest.getStatus() == QuestStatus.RUNNING) {
-      questProgressService.createProgress(questId, teamId);
+    if (registration.getStatus() != RegistrationStatus.PENDING) {
+      throw new ConflictException("Можно подтвердить только PENDING регистрацию");
     }
 
-    return buildQuestRegisterResponse(savedRegistration);
+    Quest quest = registration.getQuest();
+    if (Boolean.TRUE.equals(quest.getArchived())) {
+      throw new ConflictException("Нельзя подтверждать регистрацию на архивный квест");
+    }
+
+    long approved = questRegistrationRepository.countByQuestIdAndStatus(questId, RegistrationStatus.APPROVED);
+    if (approved >= quest.getMaximumTeams()) {
+      throw new ConflictException("Достигнут лимит команд на квест");
+    }
+
+    registration.setStatus(RegistrationStatus.APPROVED);
+    return buildQuestRegisterResponse(questRegistrationRepository.save(registration));
   }
 
   @Override
   public QuestRegisterResponse rejectTeam(Long teamId, Long questId, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
-
-    validateTeamExist(teamId);
-    validateQuestExist(questId);
+    validateQuestAuthor(currentUser, questId);
 
     QuestRegistration registration =
         questRegistrationRepository
-            .findByTeamIdAndQuestIdAndStatus(teamId, questId, RegistrationStatus.PENDING)
-            .stream()
-            .findFirst()
-            .orElseThrow(() -> new ResourceNotFoundException("Активная заявка не найдена"));
+            .findByQuestIdAndTeamId(questId, teamId)
+            .orElseThrow(() -> new ResourceNotFoundException("Регистрация не найдена"));
 
-    validateQuestAuthor(currentUser, registration.getQuest().getId());
-    validateRegistrationPending(registration);
+    if (registration.getStatus() != RegistrationStatus.PENDING) {
+      throw new ConflictException("Можно отклонить только PENDING регистрацию");
+    }
 
     registration.setStatus(RegistrationStatus.REJECTED);
-    registration.setUpdatedAt(Instant.now());
-
-    QuestRegistration savedRegistration = questRegistrationRepository.save(registration);
-    return buildQuestRegisterResponse(savedRegistration);
-  }
-
-  // ────── VALIDATIONS ───────────────────────────────────────────────────────────
-  private Quest validateQuestExist(Long questId) {
-    return questRepository
-        .findById(questId)
-        .orElseThrow(() -> new ResourceNotFoundException("Квест не найден: " + questId));
+    return buildQuestRegisterResponse(questRegistrationRepository.save(registration));
   }
 
   private void validateQuestAcceptsRegistration(Quest quest) {
+    if (Boolean.TRUE.equals(quest.getArchived())) {
+      throw new ConflictException("Нельзя подавать заявку на архивный квест");
+    }
     if (quest.getStatus() != QuestStatus.REGISTRATION && quest.getStatus() != QuestStatus.RUNNING) {
       throw new ConflictException(
           "Подать заявку можно только пока квест в статусе REGISTRATION или RUNNING (поздняя"
               + " регистрация)");
     }
+  }
+
+  private Quest validateQuestExist(Long questId) {
+    return questRepository
+        .findById(questId)
+        .orElseThrow(() -> new ResourceNotFoundException("Квест не найден: " + questId));
   }
 
   private Team validateTeamExist(Long teamId) {
@@ -169,57 +166,38 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
                 () -> new ForbiddenOperationException("Пользователь не состоит в команде"));
 
     if (teamMember.getRole() != TeamRole.CAPTAIN) {
-      throw new ForbiddenOperationException("Подать заявку может только капитан команды");
+      throw new ForbiddenOperationException("Только капитан может подать заявку на квест");
     }
   }
 
   private void validateNoDuplicateRegistration(Long questId, Long teamId) {
     if (questRegistrationRepository.existsByQuestIdAndTeamId(questId, teamId)) {
-      throw new IllegalArgumentException("Команда уже подала заявку на этот квест");
+      throw new ConflictException("Команда уже зарегистрирована на этот квест");
     }
   }
 
   private void validateRegistrationPending(QuestRegistration registration) {
     if (registration.getStatus() != RegistrationStatus.PENDING) {
-      throw new ConflictException(
-          "Можно отменить/подтвердить/отклонить только заявку в статусе PENDING");
+      throw new ConflictException("Отменить можно только PENDING регистрацию");
     }
   }
 
   private void validateQuestAuthor(User user, Long questId) {
-    if (user.getRole() != UserRole.ADMIN
-        && !questAuthorRepository.existsByQuestIdAndUserId(questId, user.getId())) {
-      throw new ForbiddenOperationException("Подтверждать заявки может только Автор квеста");
+    if (user.getRole() == UserRole.ADMIN) {
+      return;
     }
-  }
-
-  private void validateApprovedTeamsLimit(Long questId) {
-    // ADR-0010, Сценарий 1: пессимистичная блокировка строки Quest сериализует конкурентные
-    // approveTeam() для одного и того же Quest — без неё count-then-check пропускает гонку
-    // (две параллельные заявки на последнее место обе проходят проверку).
-    Quest quest =
-        questRepository
-            .findByIdForUpdate(questId)
-            .orElseThrow(() -> new ResourceNotFoundException("Квест не найден: " + questId));
-    long approvedCount =
-        questRegistrationRepository.countByQuestIdAndStatus(questId, RegistrationStatus.APPROVED);
-
-    if (approvedCount >= quest.getMaximumTeams()) {
-      throw new ConflictException(
-          "Достигнут лимит команд для этого квеста: " + quest.getMaximumTeams());
+    if (!questAuthorRepository.existsByQuestIdAndUserId(questId, user.getId())) {
+      throw new ForbiddenOperationException("Вы не являетесь автором этого квеста");
     }
   }
 
   private Team getCurrentUserTeam(User user) {
-    TeamMember teamMember =
-        teamMemberRepository
-            .findByUser(user)
-            .orElseThrow(() -> new TeamNotFoundException("Команда пользователя не найдена"));
-
-    return teamMember.getTeam();
+    return teamMemberRepository
+        .findByUser(user)
+        .orElseThrow(() -> new ResourceNotFoundException("Пользователь не состоит в команде"))
+        .getTeam();
   }
 
-  // ────── BUILDERS ───────────────────────────────────────────────────────────
   private QuestRegisterResponse buildQuestRegisterResponse(QuestRegistration registration) {
     return QuestRegisterResponse.builder()
         .questId(registration.getQuest().getId())

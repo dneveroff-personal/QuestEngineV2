@@ -2,112 +2,47 @@
 
 Статус: 🟡 Draft.
 
-Это не полный контракт — для полей запросов/ответов используйте сгенерированную OpenAPI-спеку. Здесь — карта ресурсов по группам, их статус и связь с доменной документацией.
-
-Соглашения (формат ошибок, аутентификация, пагинация, версионирование) — в `04-api/conventions.md`.
-
 ---
 
 ## Auth — `/api/auth`
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST | `/auth/login` | 🔵 *(access + refresh, ADR-0015)* |
+| POST | `/auth/login` | 🔵 |
 | POST | `/auth/register` | 🔵 |
-| POST | `/auth/reset-admin-password` | 🔵 |
 | POST | `/auth/refresh` | 🔵 |
 | POST | `/auth/logout` | 🔵 |
 
----
+## Users / Teams
 
-## Users — `/api/users`
-
-| Метод | Путь | Статус |
-|---|---|---|
-| GET | `/users/me` | 🔵 |
-| PUT | `/users/{userId}/role` | 🔵 |
-| POST | `/users/{userId}/reset-password` | 🔵 |
-| GET | `/users/search` | 🔵 |
-
----
-
-## Teams — `/api/teams`
-
-| Метод | Путь | Статус |
-|---|---|---|
-| POST | `/teams` | 🔵 |
-| GET | `/teams/{teamId}` | 🔵 |
-| GET | `/teams/my` | 🔵 |
-| GET | `/teams/{teamId}/members` | 🔵 |
-| GET | `/teams/{teamId}/quests` | 🔵 |
-| GET | `/teams/my/quests` | 🔵 |
-| GET | `/teams/search` | 🔵 |
-| POST | `/teams/{teamId}/request` | 🔵 |
-| GET | `/teams/requests` | 🔵 |
-| POST | `/teams/requests/{requestId}/approve` | 🔵 |
-| POST | `/teams/requests/{requestId}/reject` | 🔵 |
-| DELETE | `/teams/leave` | 🔵 |
-| POST | `/teams/transfer-captain/{userId}` | 🔵 |
-
----
+См. предыдущие ревизии — `/users/me`, team displayName, `/teams/.../quests` — 🔵.
 
 ## Quests — `/api/quests`
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST | `/quests` | 🔵 |
-| GET | `/quests/{questId}` | 🔵 |
-| GET | `/quests/authors/{authorId}` | 🔵 |
-| GET | `/quests/upcoming` | 🔵 |
-| PUT | `/quests/{questId}` | 🔵 |
-| DELETE | `/quests/{questId}` | 🟡 |
-| POST | `/quests/{questId}/publish` | 🔵 |
-| POST | `/quests/{questId}/finish` | 🔵 |
+| POST/GET/PUT | `/quests`, `/quests/{id}`, ... | 🔵 |
+| DELETE | `/quests/{questId}` | 🔵 *(soft-delete → `archived=true`, данные сохраняются)* |
+| POST | `/quests/{id}/publish` | 🔵 *(запрещено для archived)* |
+| POST | `/quests/{id}/finish` | 🔵 *(→ DNF незавершённым; запрещено для archived)* |
 
----
-
-## Quest Registration — `/api/quests/register`
+## Quest Registration
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST | `/quests/register/{questId}/{teamId}` | 🟡 |
-| GET | `/quests/register/{questId}` | 🔵 |
-| DELETE | `/quests/register/{questId}` | 🔵 |
-| PUT | `/quests/register/{questId}/approve/{teamId}` | 🔵 |
-| PUT | `/quests/register/{questId}/teams/{teamId}/reject` | 🔵 |
+| POST | `/quests/register/{questId}/{teamId}` | 🔵 *(REGISTRATION + RUNNING; DRAFT/FINISHED/archived — нет)* |
+| GET/DELETE/approve/reject | ... | 🔵 |
 
----
-
-## Quest Progress — `/api/quests/progress`
+## Quest Progress
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST | `/quests/progress/{questId}/enter` | 🔵 |
-| GET | `/quests/progress/{questId}/{teamId}` | 🔵 |
-| GET | `/quests/progress/{questId}/{teamId}/current-level` | 🔵 *(Game Mode: ACTIVE level + content + autoTransitionAt + hints + mainCodesSolved)* |
-| GET | `/quests/progress/{questId}` | 🔵 |
-| PUT | `/quests/progress/{questId}/{teamId}/finish` | 🟡 |
-| POST | `/quests/progress/{questId}/{teamId}/codes` | 🔵 |
-| GET | `/quests/progress/{questId}/{teamId}/hints` | 🔵 |
-| POST | `/quests/progress/{questId}/{teamId}/hints/{hintId}/take` | 🔵 |
-| PUT | `/quests/progress/{questId}/{teamId}/dnf` | 🟡 |
+| GET | `.../current-level` | 🔵 |
+| PUT | `.../dnf` | 🔵 *(только Quest.status=FINISHED; FINISHED→DNF = дисквалификация)* |
+| enter / codes / hints | ... | 🔵 |
 
----
-
-## Levels / Hints / Codes / Bonus-Penalty
-
-CRUD уровней, подсказок, кодов и ручные корректировки — 🔵 / 🟡 как прежде (см. предыдущие ревизии).
-
----
-
-## Statistics — не существует
-
-Пакет `statistic/` пуст. См. backlog §5.
-
----
-
-## Сводка по крупным пробелам
+## Сводка пробелов
 
 1. Statistics / Ranking.
 2. `Quest.maximumTeams` в DTO.
-3. Бизнес-решения: DNF, статусы регистрации, удаление Quest.
+3. Тесты по 14–16 (Odissey).

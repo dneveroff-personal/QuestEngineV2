@@ -11,123 +11,60 @@
 
 ## Состояние реализованной части
 
-| Механика                                    | Спецификация | Статус | Комментарий                                                                                                                                                          |
-|---------------------------------------------|---|---|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Quest CRUD, статусы, lifecycle              | `01-domain/quest.md` | 🔵 | CRUD и lifecycle реализованы                                                                                                                                         |
-| Level CRUD                                  | `01-domain/level.md`, ADR-0005 | 🔵 | `requiredMainCodesCount` реализован; `codeIndex` относится к `Code`, а не к `Level`                                                                                  |
-| Team, Captain, membership                   | `01-domain/team.md` | 🔵 | Реализовано                                                                                                                                                          |
-| QuestRegistration                           | `01-domain/registration.md` | 🔵 | Регистрация, approve/reject и лимит команд реализованы; подтверждённая гонка закрыта                                                                                 |
-| Автоматический старт Quest (Job 1)          | `01-domain/progress.md`, ADR-002 | 🔵 | `QuestStartScheduler`, атомарный переход, конкурентный тест                                                                                                          |
-| Публикация Quest                            | `02-processes/quest-lifecycle.md` | 🔵 | `POST /api/quests/{id}/publish`, включая проверку конфигурации уровней                                                                                               |
-| Завершение Quest автором                    | `02-processes/quest-lifecycle.md` | 🔵 | `POST /api/quests/{id}/finish`, незавершённые QuestProgress получают DNF                                                                                             |
-| Автопереход уровня (Job 2)                  | `03-architecture/scheduling.md` | 🔵 | Атомарный переход, конкурентный тест Job 2 vs CodeSubmission                                                                                                         |
-| Оркестрация завершения уровня / QuestProgress | ADR-0009 | 🔵 | `advanceAfterLevelCompleted()` используется реальными точками входа                                                                                                  |
-| Hint CRUD и runtime                         | ADR-0020, ADR-0021 | 🔵 | REGULAR auto-reveal, BONUS/PENALTY take, три состояния видимости                                                                                                     |
-| Code CRUD                                   | ADR-0004, ADR-0005 | 🔵 | Уникальность `code_value` в пределах Level и `codeIndex` реализованы                                                                                                 |
-| CodeSubmission                              | ADR-0004/0005/0006 | 🔵 | Аудит попыток, нормализация, атомарный порог, unit/controller/IT и конкурентные тесты                                                                                |
-| Bonus/Penalty                               | ADR-0007 | 🟡 | Все три источника и агрегация реализованы; есть unit-тесты агрегатора, но ещё нужна проверка полного runtime/API-контракта и одноразового эффекта BONUS/PENALTY-кода |
-| Permissions / Security                      | `05-security/permissions.md` | 🔵 | Базовая ролевая модель реализована                                                                                                                                   |
-| HTTP error semantics / pagination           | ADR-0011, ADR-0012 | 🟡 | Реализованы `403/404/409` и `PageResponse<T>`; отдельное контрактное покрытие ещё стоит усилить                                                                      |
-| DNF для команды                             | `01-domain/registration.md`, `progress.md` | 🟡 | `PUT /api/quests/progress/{questId}/{teamId}/dnf` есть; бизнес-семантика момента вызова ещё требует решения                                                          |
-| Rate limiting                               | ADR-0016 | 🔵 | `LoginRateLimitFilter`, 5/мин на IP; CodeSubmission намеренно не ограничивается                                                                                      |
-| Diagnostic `GET /api/test/secure`           | — | 🔵 | Удалён перед публичным релизом                                                                                                                                       |
-| `/api/users/search` field policy            | `05-security/threat-model.md` | 🔵 | Auth user; non-ADMIN — только id/username/publicName; ADMIN — полный ответ                                                                                           |
-| `UserResponse.username`                     | — | 🔵 | Поле добавлено (поиск / transfer captain)                                                                                                                            |
-| `GET /api/users/me` | `04-api/endpoints.md` | 🔵 | Профиль текущего пользователя |
-| Team username + displayName | `TeamMemberDto` / `TeamResponse` | 🔵 | username + displayName (publicName fallback) |
-| Team quest registrations | `GET /api/teams/{id}/quests`, `/teams/my/quests` | 🔵 | Все статусы регистрации, включая FINISHED quests |
-| `QuestResponse.authorId` / `authorName` | — | 🔵 | Авторство в ответе квеста |
-| Current level (Game Mode) | `GET .../progress/{questId}/{teamId}/current-level` | 🔵 | LevelProgress + content + autoTransitionAt + hints + mainCodesSolved |
-| Prod compose: PostgreSQL без публичного 5432 | `docker-compose.prod.yml` | 🔵 | БД только во внутренней docker-сети                                                                                                                                  |
-| CI                                          | `.github/workflows/build.yml` | 🔵 | Spotless, тесты, Docker image, GHCR, JaCoCo/test artifacts                                                                                                           |
-| JaCoCo + k6 smoke (Сценарий 6)              | ADR-0017, `07-quality/testing-strategy.md` | 🔵 | ADR-0017 amended: жёсткий coverage threshold/fail-build отменены; JaCoCo отчёт и k6 smoke добавлены как проверочные инструменты, k6 не является CI-gate              |
-| Перешли на access + refresh tokens  | ADR-0015 | 🔵 | ADR-0015: access token 15 минут; refresh token в БД; rotation; `/api/auth/refresh` и `/api/auth/logout`;                       |
+| Механика | Спецификация | Статус | Комментарий |
+|---|---|---|---|
+| Quest CRUD, статусы, lifecycle | `01-domain/quest.md` | 🔵 | CRUD и lifecycle реализованы |
+| Level CRUD | `01-domain/level.md`, ADR-0005 | 🔵 | `requiredMainCodesCount` реализован |
+| Team, Captain, membership | `01-domain/team.md` | 🔵 | Реализовано |
+| QuestRegistration | `01-domain/registration.md` | 🔵 | approve/reject, лимит команд |
+| DNF для команды | `01-domain/progress.md` | 🔵 | finishQuest → DNF незавершённым; ручной setDnf только при Quest=FINISHED (в т.ч. FINISHED→DNF) |
+| Late registration | `01-domain/registration.md` | 🔵 | REGISTRATION + RUNNING; DRAFT/FINISHED/archived — нельзя |
+| Quest soft-delete (`archived`) | `01-domain/quest.md` | 🔵 | DELETE → archived=true; publish/finish/update запрещены |
+| Team username + displayName | Team DTOs | 🔵 | username + displayName |
+| Team quest registrations | `/teams/.../quests` | 🔵 | включая FINISHED |
+| `GET /api/users/me` | endpoints | 🔵 | |
+| Current level (Game Mode) | `.../current-level` | 🔵 | |
+| Access + refresh tokens | ADR-0015 | 🔵 | |
+| Rate limiting | ADR-0016 | 🔵 | |
+| CI / JaCoCo / k6 | ADR-0017 | 🔵 | без fail-build по coverage |
 
 ## Текущие задачи
 
 ### 1. Качество и тестирование
 
-1. 🔵 **Расширить контрактные тесты API**
-   - 🔵 отдельно проверить семантику `403/404/409`;
-   - 🔵 проверить `PageResponse<T>` для listing endpoints;
-   - 🔵 не дублировать уже существующие domain/integration tests.
-
-2. 🟡 **Проверить runtime-семантику Bonus/Penalty**
-   - 🔵 покрыть API/integration путь ручной корректировки;
-   - 🔵 проверить одноразовое применение BONUS/PENALTY-кода;
-   - 🟡 проверить агрегат кода + подсказки + ручной корректировки вместе.
-
-3. ⚪ **Проверить повторную отправку CodeSubmission после потери соединения**
-   - отдельно зафиксировать контракт для повтора после успешного завершения уровня и перехода на следующий;
-   - не возвращаться автоматически к `CodeSubmissionOperation`/HTTP-idempotency ledger: сначала проверить, достаточно ли текущей бизнес-модели и какого минимального контракта не хватает.
+1. 🔵 Контрактные тесты API (403/404/409, PageResponse).
+2. 🟡 Runtime Bonus/Penalty — агрегат трёх источников.
+3. ⚪ Повтор CodeSubmission после потери соединения.
+4. ⚪ **Тесты по бизнес-правилам 14–16** — за Odissey (setDnf precondition, late registration, archive).
 
 ### 3. API для frontend / Game Mode
 
-*(раздел закрыт — п. 8–13 выполнены)*
+*(закрыт)*
 
-### 4. Бизнес-правила, требующие решения
+### 4. Бизнес-правила
 
-14. 🟡 **DNF: прекондиция определена**
-    - решение: автоматика в `finishQuest()` остаётся (все незавершённые команды → DNF);
-    - ручной `setDnf()` разрешён только при `Quest.status = FINISHED`; дополнительно позволяет перевести в DNF уже `FINISHED` команду — дисквалификация задним числом (например, при выявленном грубом нарушении правил);
-    - 🔵 `QuestProgressServiceImpl.setDnf()` и `QuestProgressController` обновлены;
-    - 🔵 `progress.md` обновлён;
-    - ⚪ тесты на новую прекондицию/дисквалификацию — за Odissey.
+*(п. 14–16 решены в коде и спеке; тесты — за Odissey)*
 
-15. 🟡 **Регистрация команды: разрешённые статусы Quest определены**
-    - решение: заявку можно подавать в `REGISTRATION` и `RUNNING` (поздняя регистрация); в `DRAFT` и `FINISHED` — нельзя;
-    - 🔵 `QuestRegistrationServiceImpl.registerTeam()` — `validateQuestAcceptsRegistration()` вместо `validateQuestNotFinished()`;
-    - 🔵 `RegistrationPanel.tsx` — кнопка «Подать заявку» показывается и в `RUNNING`;
-    - 🔵 `registration.md` обновлён;
-    - ⚪ тесты — за Odissey.
-
-16. 🟡 **Удаление Quest → архивирование**
-    - решение: hard delete заменён на soft-delete — поле `Quest.archived`; данные (registrations/progress) не удаляются никогда, независимо от статуса;
-    - 🔵 миграция `V17__add_archived_to_quests.sql`, `Quest.archived`, `QuestResponse.archived`;
-    - 🔵 `delete()` → `archived = true` (было: hard delete без всяких проверок, падал 500 при наличии FK-зависимых записей);
-    - 🔵 `publishQuest`/`finishQuest`/`updateQuest` теперь запрещены для архивного квеста;
-    - 🔵 `getAllUpcomingBrief()` — архивные исключены (`findAllByStartTimeAfterAndArchivedFalse`);
-    - 🔵 frontend: `deleteQuest` → `archiveQuest`, `QuestLifecycleActions` упрощён (убрана компенсирующая UX-защита с набором названия квеста — больше не нужна, т.к. backend больше не теряет данные);
-    - ⚪ unarchive/восстановление — не реализовано, не запрашивалось;
-    - ⚪ тесты — за Odissey (`QuestLifecycleActions.test.tsx` полностью завязан на старый UX с "Удалить безвозвратно" и вводом названия — потребует переписывания).
+14. 🔵 **DNF** — finishQuest автоматически DNF незавершённым; ручной setDnf только при `Quest.status = FINISHED` (дисквалификация FINISHED→DNF разрешена).
+15. 🔵 **Регистрация** — `REGISTRATION` и `RUNNING`; запрет в `DRAFT`, `FINISHED`, archived.
+16. 🔵 **Удаление Quest** — soft-delete `archived`; unarchive не в MVP.
 
 ### 5. Домен и функциональность
 
 17. ⚪ **Прокинуть `Quest.maximumTeams` в DTO**
-    - добавить поле в create/update/response;
-    - дать автору возможность задавать лимит, а клиенту — видеть его.
-
 18. ⚪ **Statistics / Ranking**
-    - реализовать пакет `statistic/` согласно `01-domain/statistics-ranking.md`;
-    - начать с минимального набора данных, необходимого для игрового результата, затем расширять live-статистику.
-
-19. ⚪ **Live-статистика через SSE**
-    - реализовать ADR-0014;
-    - определить события/данные, которые действительно нужны статистике;
-    - подключить frontend без polling.
+19. ⚪ **Live-статистика через SSE** (ADR-0014)
 
 ### 6. Технический долг
 
-20. ⚪ **Удалить/заменить deprecated `LevelProgressServiceImpl.autoTransitionLevel()`**
-    - оставить единственную безопасную конкурентную реализацию через атомарный repository method;
-    - после миграции тестов удалить deprecated метод.
-
-21. ⚪ **Свести `progress.md` и `runtime.md`**
-    - убрать дублирование правил QuestProgress/LevelProgress и `autoTransitionAt`;
-    - оставить один источник истины.
+20. ⚪ Deprecated `LevelProgressServiceImpl.autoTransitionLevel()`
+21. ⚪ Свести `progress.md` и `runtime.md`
 
 ## Осознанно отложено
 
-- 💤 Персональные подсказки.
-- 💤 Ручное досрочное открытие подсказки автором.
-- 💤 Подробный список отличий QuestEngine от Encounter — можно уточнять по мере развития продукта, это не блокирует текущую разработку.
-
-## Отдельно: production CD
-
-CD намеренно не включён до выхода в production. Поэтому исправление `deploy.yml` сейчас **не является задачей текущего backlog**. Когда появится реальный production deployment, отдельным deployment-заходом нужно проверить trigger/`if`, рабочую директорию и весь production compose.
+- 💤 Персональные подсказки / ручное открытие подсказки автором.
+- 💤 Unarchive Quest.
 
 ## Итог
 
-**Немедленных блокеров сейчас нет.**
-
-Следующий рабочий фокус — бизнес-решения (DNF / статусы регистрации / удаление Quest) или `Quest.maximumTeams` / статистика. JaCoCo/k6 остаются готовым инструментарием качества.
+**Немедленных блокеров нет.** Фокус: `maximumTeams` в DTO, статистика или тесты 14–16 (Odissey).
