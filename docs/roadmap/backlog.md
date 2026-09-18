@@ -33,6 +33,7 @@
 | Diagnostic `GET /api/test/secure`           | — | 🔵 | Удалён перед публичным релизом                                                                                                                                       |
 | `/api/users/search` field policy            | `05-security/threat-model.md` | 🔵 | Auth user; non-ADMIN — только id/username/publicName; ADMIN — полный ответ                                                                                           |
 | `UserResponse.username`                     | — | 🔵 | Поле добавлено (поиск / transfer captain)                                                                                                                            |
+| `GET /api/users/me` | `04-api/endpoints.md` | 🔵 | Профиль текущего пользователя |
 | Prod compose: PostgreSQL без публичного 5432 | `docker-compose.prod.yml` | 🔵 | БД только во внутренней docker-сети                                                                                                                                  |
 | CI                                          | `.github/workflows/build.yml` | 🔵 | Spotless, тесты, Docker image, GHCR, JaCoCo/test artifacts                                                                                                           |
 | JaCoCo + k6 smoke (Сценарий 6)              | ADR-0017, `07-quality/testing-strategy.md` | 🔵 | ADR-0017 amended: жёсткий coverage threshold/fail-build отменены; JaCoCo отчёт и k6 smoke добавлены как проверочные инструменты, k6 не является CI-gate              |
@@ -57,10 +58,6 @@
    - не возвращаться автоматически к `CodeSubmissionOperation`/HTTP-idempotency ledger: сначала проверить, достаточно ли текущей бизнес-модели и какого минимального контракта не хватает.
 
 ### 3. API для frontend / Game Mode
-
-8. ⚪ **Добавить `GET /api/users/me`**
-   - вернуть профиль текущего пользователя;
-   - frontend должен получать `id`, `publicName`, `email`, `role` без обходных запросов.
 
 9. ⚪ **Добавить получение квестов/регистраций текущей команды**
    - убрать N+1 запросы frontend через `upcoming`;
@@ -130,4 +127,4 @@ CD намеренно не включён до выхода в production. По�
 
 **Немедленных блокеров сейчас нет.**
 
-Следующий рабочий фокус — **access + refresh tokens (п. 4)** и API/Game Mode. После них — статистика/SSE и технический долг документации. JaCoCo/k6 остаются уже готовым инструментарием качества, а не отдельным блокером.
+Следующий рабочий фокус — API/Game Mode (п. 9–13). После них — статистика/SSE и технический долг документации. JaCoCo/k6 остаются уже готовым инструментарием качества, а не отдельным блокером.

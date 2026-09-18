@@ -25,6 +25,9 @@ public interface UserService {
 
   User getUser(Long userId);
 
+  /** Full profile of the authenticated user (GET /api/users/me). */
+  UserResponse getMe(Authentication auth);
+
   UserResponse setUserRole(Long userId, UserRole role, Authentication auth);
 
   void resetPassword(Long userId, ResetPasswordRequest request, Authentication auth);

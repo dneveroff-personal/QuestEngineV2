@@ -25,6 +25,14 @@ public class UserController {
 
   private final UserService userService;
 
+  @Operation(
+      summary = "Current user profile",
+      description = "Returns id, username, publicName, email, role for the authenticated user")
+  @GetMapping(Routes.USER_ME)
+  public ResponseEntity<UserResponse> me(Authentication auth) {
+    return ResponseEntity.ok(userService.getMe(auth));
+  }
+
   @Operation(summary = "Set user role", description = "Set role for a user")
   @PutMapping(Routes.SET_ROLE)
   public ResponseEntity<UserResponse> setUserRole(

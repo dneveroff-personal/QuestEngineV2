@@ -49,6 +49,11 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public UserResponse getMe(Authentication auth) {
+    return buildUserResponse(getCurrentUser(auth));
+  }
+
+  @Override
   public UserResponse setUserRole(Long userId, UserRole role, Authentication auth) {
     User currentUser = getCurrentUser(auth);
     validateAdmin(currentUser);
@@ -83,7 +88,6 @@ public class UserServiceImpl implements UserService {
     User currentUser = getCurrentUser(auth);
     boolean admin = currentUser.getRole() == UserRole.ADMIN;
 
-    // Non-ADMIN may only filter by username/public identity, not email/role/dates.
     String emailFilter = admin ? filter.email() : null;
     UserRole roleFilter = admin ? filter.role() : null;
     var createdAfter = admin ? filter.createdAtAfter() : null;
@@ -126,7 +130,6 @@ public class UserServiceImpl implements UserService {
         user.getCreatedAt());
   }
 
-  /** Limited projection for non-ADMIN search (id, username, publicName only). */
   private UserResponse buildPublicUserResponse(User user) {
     return new UserResponse(
         user.getId(), user.getUsername(), user.getPublicName(), null, null, null);

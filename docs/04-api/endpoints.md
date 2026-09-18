@@ -12,11 +12,11 @@
 
 | Метод | Путь | Статус |
 |---|---|---|
-| POST | `/auth/login` | 🟡 *(будет возвращать пару access+refresh вместо одного токена — ADR-0015)* |
+| POST | `/auth/login` | 🔵 *(access + refresh, ADR-0015)* |
 | POST | `/auth/register` | 🔵 |
 | POST | `/auth/reset-admin-password` | 🔵 |
-| POST | `/auth/refresh` | ⚪ **Отсутствует.** Обмен refresh-токена на новый access-токен, с ротацией (ADR-0015). |
-| POST | `/auth/logout` | ⚪ **Отсутствует.** Отзыв refresh-токена текущей сессии (ADR-0015). |
+| POST | `/auth/refresh` | 🔵 |
+| POST | `/auth/logout` | 🔵 |
 
 ---
 
@@ -24,10 +24,10 @@
 
 | Метод | Путь | Статус |
 |---|---|---|
-| GET | `/users/me` | ⚪ **Отсутствует.** Нужен frontend для профиля и role-based UI. |
+| GET | `/users/me` | 🔵 |
 | PUT | `/users/{userId}/role` | 🔵 |
 | POST | `/users/{userId}/reset-password` | 🔵 |
-| GET | `/users/search` | 🟡 *(пагинация реализована; остаются вопросы по доступности поиска и составу `UserResponse`)* |
+| GET | `/users/search` | 🔵 *(non-ADMIN: limited fields; ADMIN: full — threat-model)* |
 
 ---
 
@@ -157,9 +157,8 @@ CRUD автором и игровой ввод командой — см. `01-do
 ## Сводка по крупным пробелам
 
 1. Statistics / Ranking (`statistic/`) не реализованы.
-2. Auth всё ещё использует один JWT вместо access+refresh (ADR-0015).
-3. Отсутствует `GET /api/users/me`.
-4. Отсутствует получение квестов текущей команды одним API-запросом.
-5. `QuestResponse` не содержит автора.
-6. `Quest.maximumTeams` не прокинут в DTO.
-7. Требуется решение по статусам регистрации, DNF и удалению Quest.
+2. Отсутствует получение квестов текущей команды одним API-запросом.
+3. `QuestResponse` не содержит автора.
+4. `Quest.maximumTeams` не прокинут в DTO.
+5. Требуется решение по статусам регистрации, DNF и удалению Quest.
+6. Нужен агрегированный API текущего уровня для Game Mode.

@@ -17,6 +17,7 @@ public final class Routes {
   public static final String RESET_ADMIN_PASSWORD = AUTH + "/reset-admin-password";
 
   // User
+  public static final String USER_ME = "/me";
   public static final String USER_ID = "/{userId:\\d+}";
   public static final String SET_ROLE = USER_ID + "/role";
   public static final String RESET_PASSWORD = USER_ID + "/reset-password";
