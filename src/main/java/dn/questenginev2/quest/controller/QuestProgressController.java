@@ -1,7 +1,9 @@
 package dn.questenginev2.quest.controller;
 
 import dn.questenginev2.common.constants.Routes;
+import dn.questenginev2.quest.dto.CurrentLevelResponse;
 import dn.questenginev2.quest.dto.QuestProgressResponse;
+import dn.questenginev2.quest.service.CurrentLevelService;
 import dn.questenginev2.quest.service.QuestProgressService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class QuestProgressController {
 
   private final QuestProgressService questProgressService;
+  private final CurrentLevelService currentLevelService;
 
   @Operation(summary = "Enter quest", description = "Team enters the quest (WAITING -> RUNNING)")
   @PostMapping(Routes.QUEST_ID + "/enter")
@@ -26,6 +29,17 @@ public class QuestProgressController {
       @PathVariable Long questId, Authentication auth) {
     return ResponseEntity.status(HttpStatus.OK)
         .body(questProgressService.enterQuest(questId, auth));
+  }
+
+  @Operation(
+      summary = "Current level (Game Mode)",
+      description =
+          "ACTIVE LevelProgress + level content + autoTransitionAt + visible hints + main codes"
+              + " solved. 404 if no active level.")
+  @GetMapping(Routes.QUEST_PROGRESS_CURRENT_LEVEL)
+  public ResponseEntity<CurrentLevelResponse> getCurrentLevel(
+      @PathVariable Long questId, @PathVariable Long teamId, Authentication auth) {
+    return ResponseEntity.ok(currentLevelService.getCurrentLevel(questId, teamId, auth));
   }
 
   @Operation(summary = "Get team progress", description = "Get progress for specific team on quest")
