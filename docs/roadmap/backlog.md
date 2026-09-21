@@ -1,7 +1,5 @@
 # Roadmap / Backlog
 
-Единый рабочий список: что уже реализовано и проверено, что ещё нужно сделать.
-
 Статусы: 🔵 Done · 🟡 In Progress · ⚪ Planned · 🟣 Decision · 💤 Deferred
 
 ## Состояние реализованной части
@@ -11,34 +9,27 @@
 | Quest CRUD / lifecycle / archive / maximumTeams | 🔵 | |
 | Registration + late reg / DNF | 🔵 | |
 | Game Mode APIs (current-level, team quests) | 🔵 | |
-| **Statistics ranking snapshot** | 🔵 | `GET /api/quests/{id}/statistics` — live + final rules |
+| Statistics ranking snapshot | 🔵 | `GET /api/quests/{id}/statistics` |
+| Live statistics SSE (ADR-0014) | 🔵 | `GET .../statistics/stream` — **merge PR #22** |
 | Auth refresh / rate limit / CI | 🔵 | |
+| Удалён unsafe `autoTransitionLevel` | 🔵 | только `tryAutoTransition` (Job 2) |
+| `progress.md` / `runtime.md` | 🔵 | runtime = обзор, progress = детали |
 
 ## Текущие задачи
 
-### 1. Качество и тестирование
+### Качество (не блокеры)
 
-1. 🔵 Контрактные тесты API.
-2. 🟡 Runtime Bonus/Penalty — агрегат трёх источников.
-3. ⚪ Повтор CodeSubmission после потери соединения.
-4. ⚪ Тесты 14–16 и ranking — за Odissey / по мере необходимости.
+1. 🟡 Runtime Bonus/Penalty — полный integration-путь трёх источников.
+2. ⚪ Повтор CodeSubmission после потери соединения (контракт).
+3. ⚪ Тесты ranking/SSE / 14–16 — по мере необходимости (Odissey).
 
-### 5. Домен и функциональность
+### Отложено
 
-19. ⚪ **Live-статистика через SSE** (ADR-0014)
-    - транспорт поверх уже готового snapshot ranking;
-    - события при изменении QuestProgress / LevelProgress.
-
-### 6. Технический долг
-
-20. ⚪ Deprecated `LevelProgressServiceImpl.autoTransitionLevel()`
-21. ⚪ Свести `progress.md` и `runtime.md`
-
-## Осознанно отложено
-
-- 💤 Персональные подсказки / unarchive.
-- 💤 Детальная статистика попыток кода автору (отдельный endpoint при необходимости).
+- 💤 WebSocket игрового процесса (ADR-022).
+- 💤 Unarchive / персональные подсказки.
+- 💤 Детальная статистика попыток кодов автору.
 
 ## Итог
 
-**#18 ranking snapshot готов.** Следующее: SSE (#19) или техдолг (#20–21).
+**Доменный backlog MVP закрыт** (кроме опционального качества тестов).  
+Открытый PR: **#22 SSE** — смержить, если ещё не в main.
