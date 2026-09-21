@@ -21,6 +21,7 @@ import dn.questenginev2.quest.repository.QuestAuthorRepository;
 import dn.questenginev2.quest.repository.QuestProgressRepository;
 import dn.questenginev2.quest.repository.QuestRegistrationRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
+import dn.questenginev2.statistic.event.StatisticsChangedEvent;
 import dn.questenginev2.team.entity.Team;
 import dn.questenginev2.team.entity.TeamMember;
 import dn.questenginev2.team.repository.TeamMemberRepository;
@@ -33,6 +34,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -50,6 +52,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
   private final LevelProgressService levelProgressService;
   private final BonusPenaltyService bonusPenaltyService;
   private final Clock clock;
+  private ApplicationEventPublisher eventPublisher;
   private LevelProgressRepository levelProgressRepository;
   private LevelRepository levelRepository;
 
@@ -104,15 +107,23 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     this.clock = clock;
   }
 
-  // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
+  @Autowired
+  public void setEventPublisher(ApplicationEventPublisher eventPublisher) {
+    this.eventPublisher = eventPublisher;
+  }
+
+  private void notifyStatistics(Long questId) {
+    if (eventPublisher != null && questId != null) {
+      eventPublisher.publishEvent(new StatisticsChangedEvent(questId));
+    }
+  }
+
   @Override
   public QuestProgressResponse createProgress(Long questId, Long teamId) {
     Quest quest = validateQuestExist(questId);
     validateQuestRunning(quest);
-
     Team team = validateTeamExist(teamId);
     validateApprovedRegistration(questId, teamId);
-    validateNoDuplicateProgress(questId, teamId);
 
     QuestProgress progress =
         QuestProgress.builder()
@@ -127,10 +138,8 @@ public class QuestProgressServiceImpl implements QuestProgressService {
   }
 
   @Override
-  @Transactional
   public QuestProgressResponse enterQuest(Long questId, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
-
     Team team = getCurrentUserTeam(currentUser);
     QuestProgress progress =
         questProgressRepository
@@ -142,9 +151,8 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     progress.setStatus(QuestProgressStatus.RUNNING);
     progress.setEnteredAt(clock.instant());
     QuestProgress savedProgress = questProgressRepository.save(progress);
-
     levelProgressService.createFirstLevelProgress(savedProgress);
-
+    notifyStatistics(questId);
     return buildQuestProgressResponse(savedProgress);
   }
 
@@ -154,14 +162,12 @@ public class QuestProgressServiceImpl implements QuestProgressService {
         questProgressRepository
             .findByQuestIdAndTeamId(questId, teamId)
             .orElseThrow(() -> new ResourceNotFoundException("Прогресс не найден"));
-
     return buildQuestProgressResponse(progress);
   }
 
   @Override
   public List<QuestProgressResponse> getAllByQuest(Long questId) {
     validateQuestExist(questId);
-
     return questProgressRepository.findByQuestId(questId).stream()
         .map(this::buildQuestProgressResponse)
         .collect(Collectors.toList());
@@ -181,8 +187,8 @@ public class QuestProgressServiceImpl implements QuestProgressService {
 
     progress.setStatus(QuestProgressStatus.FINISHED);
     progress.setFinishedAt(clock.instant());
-
     QuestProgress savedProgress = questProgressRepository.save(progress);
+    notifyStatistics(questId);
     return buildQuestProgressResponse(savedProgress);
   }
 
@@ -201,54 +207,48 @@ public class QuestProgressServiceImpl implements QuestProgressService {
 
     progress.setStatus(QuestProgressStatus.DNF);
     progress.setFinishedAt(clock.instant());
-
     QuestProgress savedProgress = questProgressRepository.save(progress);
+    notifyStatistics(questId);
     return buildQuestProgressResponse(savedProgress);
   }
 
   @Override
   public QuestProgressResponse completeLevel(Long levelProgressId, Authentication auth) {
-    // TODO устранить проблему N+1
     LevelProgress levelProgress =
         levelProgressRepository
             .findById(levelProgressId)
             .orElseThrow(() -> new LevelProgressNotFoundException("Текущий Level Progress найден"));
 
     QuestProgress questProgress = levelProgress.getQuestProgress();
-
     validateTeamProgress(questProgress, auth);
-
     levelProgressService.completeLevel(levelProgressId);
-
     return advanceAfterLevelCompleted(levelProgress);
   }
 
   @Override
   public QuestProgressResponse advanceAfterLevelCompleted(LevelProgress completedLevelProgress) {
     QuestProgress questProgress = completedLevelProgress.getQuestProgress();
+    Long questId = questProgress.getQuest().getId();
 
     int nextLevelOrderIdx = completedLevelProgress.getLevel().getOrderIndex() + 1;
     Level nextLevel =
         levelRepository
-            .findByQuestIdAndOrderIndex(questProgress.getQuest().getId(), nextLevelOrderIdx)
+            .findByQuestIdAndOrderIndex(questId, nextLevelOrderIdx)
             .orElse(null);
 
     if (nextLevel != null) {
       levelProgressService.createNextLevelProgress(questProgress, nextLevelOrderIdx);
-
+      notifyStatistics(questId);
       return buildQuestProgressResponse(questProgress);
     }
 
-    // ADR-0009: QuestProgress завершается автоматически при завершении последнего уровня —
-    // независимо от способа завершения (CODES/AUTO_TRANSITION), разницы нет.
     questProgress.setStatus(QuestProgressStatus.FINISHED);
     questProgress.setFinishedAt(clock.instant());
     QuestProgress savedQuestProgress = questProgressRepository.save(questProgress);
-
+    notifyStatistics(questId);
     return buildQuestProgressResponse(savedQuestProgress);
   }
 
-  // ────── VALIDATIONS ───────────────────────────────────────────────────────────
   private Quest validateQuestExist(Long questId) {
     return questRepository
         .findById(questId)
@@ -277,26 +277,23 @@ public class QuestProgressServiceImpl implements QuestProgressService {
   private void validateApprovedRegistration(Long questId, Long teamId) {
     QuestRegistration registration =
         questRegistrationRepository
-            .findByQuestIdAndTeamIdAndStatus(
-                questId, teamId, dn.questenginev2.quest.entity.RegistrationStatus.APPROVED)
-            .orElseThrow(() -> new ConflictException("Команда не подтверждена для этого квеста"));
-  }
-
-  private void validateNoDuplicateProgress(Long questId, Long teamId) {
-    if (questProgressRepository.existsByQuestIdAndTeamId(questId, teamId)) {
-      throw new IllegalArgumentException("Прогресс для этой команды уже существует");
+            .findByQuestIdAndTeamId(questId, teamId)
+            .orElseThrow(() -> new ResourceNotFoundException("Регистрация не найдена"));
+    if (registration.getStatus()
+        != dn.questenginev2.quest.entity.RegistrationStatus.APPROVED) {
+      throw new ConflictException("Команда должна быть APPROVED для создания прогресса");
     }
   }
 
   private void validateProgressWaiting(QuestProgress progress) {
     if (progress.getStatus() != QuestProgressStatus.WAITING) {
-      throw new ConflictException("Войти в квест можно только из статуса WAITING");
+      throw new ConflictException("Войти можно только из статуса WAITING");
     }
   }
 
   private void validateProgressRunning(QuestProgress progress) {
     if (progress.getStatus() != QuestProgressStatus.RUNNING) {
-      throw new ConflictException("Завершить можно только RUNNING прогресс");
+      throw new ConflictException("Операция доступна только для RUNNING прогресса");
     }
   }
 
@@ -312,25 +309,18 @@ public class QuestProgressServiceImpl implements QuestProgressService {
         teamMemberRepository
             .findByUser(user)
             .orElseThrow(() -> new TeamNotFoundException("Команда пользователя не найдена"));
-
     return teamMember.getTeam();
   }
 
   private void validateTeamProgress(QuestProgress progress, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
     Team team = getCurrentUserTeam(currentUser);
-
-    if (team == null) {
-      throw new TeamNotFoundException("Команда пользователя не найдена");
-    }
-
     if (!team.getId().equals(progress.getTeam().getId())) {
       throw new ForbiddenOperationException(
           "Попытка пользователя управлять не своим QuestProgress");
     }
   }
 
-  // ────── BUILDERS ───────────────────────────────────────────────────────────
   private QuestProgressResponse buildQuestProgressResponse(QuestProgress progress) {
     return QuestProgressResponse.builder()
         .id(progress.getId())

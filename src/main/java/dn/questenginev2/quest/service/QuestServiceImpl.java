@@ -17,6 +17,7 @@ import dn.questenginev2.quest.entity.QuestStatus;
 import dn.questenginev2.quest.repository.QuestAuthorRepository;
 import dn.questenginev2.quest.repository.QuestProgressRepository;
 import dn.questenginev2.quest.repository.QuestRepository;
+import dn.questenginev2.statistic.event.StatisticsChangedEvent;
 import dn.questenginev2.user.entity.User;
 import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.service.UserService;
@@ -25,6 +26,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +41,13 @@ public class QuestServiceImpl implements QuestService {
   private final LevelRepository levelRepository;
   private final CodeRepository codeRepository;
   private final UserService userService;
+  private final ApplicationEventPublisher eventPublisher;
+
+  private void notifyStatistics(Long questId) {
+    if (questId != null) {
+      eventPublisher.publishEvent(new StatisticsChangedEvent(questId));
+    }
+  }
 
   @Override
   public QuestResponse createQuest(CreateQuestRequest request, Authentication auth) {
@@ -113,6 +122,7 @@ public class QuestServiceImpl implements QuestService {
     quest.setStatus(QuestStatus.FINISHED);
     Quest savedQuest = questRepository.save(quest);
     markUnfinishedProgressesAsDnf(questId);
+    notifyStatistics(questId);
     return buildQuestResponse(savedQuest);
   }
 

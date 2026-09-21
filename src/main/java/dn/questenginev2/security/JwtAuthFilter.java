@@ -25,13 +25,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
-    String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+    String token = resolveToken(request);
 
-    if (header == null || !header.startsWith("Bearer ")) {
+    if (token == null) {
       filterChain.doFilter(request, response);
       return;
     }
-    String token = header.replace("Bearer ", "");
 
     try {
       Claims claims =
@@ -56,5 +55,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     filterChain.doFilter(request, response);
+  }
+
+  /**
+   * Bearer header (REST) or {@code access_token} query param (native EventSource cannot set
+   * Authorization header).
+   */
+  private String resolveToken(HttpServletRequest request) {
+    String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+    if (header != null && header.startsWith("Bearer ")) {
+      return header.substring(7);
+    }
+    String queryToken = request.getParameter("access_token");
+    if (queryToken != null && !queryToken.isBlank()) {
+      return queryToken;
+    }
+    return null;
   }
 }
