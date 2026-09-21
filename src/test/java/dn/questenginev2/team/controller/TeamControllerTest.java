@@ -39,7 +39,8 @@ class TeamControllerTest {
   @BeforeEach
   void setUp() {
     teamResponse =
-        new TeamResponse(1L, "Test Team", "testuser", "Test User", Instant.now(), Collections.emptyList());
+        new TeamResponse(
+            1L, "Test Team", "testuser", "Test User", Instant.now(), Collections.emptyList());
     memberDto =
         new TeamMemberDto(1L, 1L, "member", "Member Display", TeamRole.MEMBER, Instant.now());
   }
@@ -85,9 +86,9 @@ class TeamControllerTest {
   @Test
   void searchTeams_returnsPage() throws Exception {
     TeamResponse team1 =
-        new TeamResponse(1L, "Team Alpha", "captain1", "Captain One", Instant.now(), Collections.emptyList());
-    PageResponse<TeamResponse> pageResponse =
-        new PageResponse<>(List.of(team1), 0, 20, 1L, 1);
+        new TeamResponse(
+            1L, "Team Alpha", "captain1", "Captain One", Instant.now(), Collections.emptyList());
+    PageResponse<TeamResponse> pageResponse = new PageResponse<>(List.of(team1), 0, 20, 1L, 1);
     when(teamService.searchTeams(any(), any(PageRequest.class))).thenReturn(pageResponse);
 
     mockMvc

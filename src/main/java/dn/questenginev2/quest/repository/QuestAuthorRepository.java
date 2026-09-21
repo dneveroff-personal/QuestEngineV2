@@ -19,7 +19,8 @@ public interface QuestAuthorRepository extends JpaRepository<QuestAuthor, Long> 
   List<QuestAuthor> findByUserId(@Param("userId") Long userId);
 
   @Query(
-      "SELECT qa FROM QuestAuthor qa JOIN FETCH qa.user WHERE qa.quest.id = :questId ORDER BY qa.id ASC")
+      "SELECT qa FROM QuestAuthor qa JOIN FETCH qa.user WHERE qa.quest.id = :questId ORDER BY qa.id"
+          + " ASC")
   List<QuestAuthor> findByQuestIdWithUser(@Param("questId") Long questId);
 
   default Optional<QuestAuthor> findPrimaryAuthor(Long questId) {

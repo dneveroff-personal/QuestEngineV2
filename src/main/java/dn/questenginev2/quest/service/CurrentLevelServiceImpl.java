@@ -54,8 +54,7 @@ public class CurrentLevelServiceImpl implements CurrentLevelService {
             .findByQuestProgressIdAndStatus(questProgress.getId(), LevelProgressStatus.ACTIVE)
             .orElseThrow(
                 () ->
-                    new ResourceNotFoundException(
-                        "У команды нет активного уровня на этом квесте"));
+                    new ResourceNotFoundException("У команды нет активного уровня на этом квесте"));
 
     Level level = levelProgress.getLevel();
     long mainCodesSolved =

@@ -36,15 +36,16 @@ class QuestControllerTest {
   @BeforeEach
   void setUp() {
     questResponse =
-        new QuestResponse(
-            1L,
-            "Test Quest",
-            "Test Description",
-            QuestType.TEAM,
-            dn.questenginev2.quest.entity.QuestStatus.DRAFT,
-            Instant.now(),
-            Instant.now(),
-            Instant.now());
+        QuestResponse.builder()
+            .id(1L)
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(dn.questenginev2.quest.entity.QuestStatus.DRAFT)
+            .createdAt(Instant.now())
+            .startTime(Instant.now())
+            .finishTime(Instant.now())
+            .build();
   }
 
   @Test
@@ -82,15 +83,16 @@ class QuestControllerTest {
   @Test
   void updateQuest_returnsUpdatedQuest_whenRequestIsValid() throws Exception {
     QuestResponse updatedResponse =
-        new QuestResponse(
-            1L,
-            "Updated Quest",
-            "Updated Description",
-            QuestType.SINGLE,
-            dn.questenginev2.quest.entity.QuestStatus.REGISTRATION,
-            Instant.now(),
-            Instant.now(),
-            Instant.now());
+        QuestResponse.builder()
+            .id(1L)
+            .title("Updated Quest")
+            .description("Updated Description")
+            .type(QuestType.SINGLE)
+            .status(dn.questenginev2.quest.entity.QuestStatus.REGISTRATION)
+            .createdAt(Instant.now())
+            .startTime(Instant.now())
+            .finishTime(Instant.now())
+            .build();
     when(questService.updateQuest(eq(1L), any(CreateQuestRequest.class), any()))
         .thenReturn(updatedResponse);
 
@@ -117,15 +119,16 @@ class QuestControllerTest {
   @Test
   void publishQuest_returnsPublishedQuest_whenRequestIsValid() throws Exception {
     QuestResponse publishedResponse =
-        new QuestResponse(
-            1L,
-            "Test Quest",
-            "Test Description",
-            QuestType.TEAM,
-            dn.questenginev2.quest.entity.QuestStatus.REGISTRATION,
-            Instant.now(),
-            Instant.now(),
-            Instant.now());
+        QuestResponse.builder()
+            .id(1L)
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(dn.questenginev2.quest.entity.QuestStatus.REGISTRATION)
+            .createdAt(Instant.now())
+            .startTime(Instant.now())
+            .finishTime(Instant.now())
+            .build();
     when(questService.publishQuest(eq(1L), any())).thenReturn(publishedResponse);
 
     mockMvc
@@ -153,15 +156,16 @@ class QuestControllerTest {
   @Test
   void finishQuest_returnsFinishedQuest_whenRequestIsValid() throws Exception {
     QuestResponse finishedResponse =
-        new QuestResponse(
-            1L,
-            "Test Quest",
-            "Test Description",
-            QuestType.TEAM,
-            dn.questenginev2.quest.entity.QuestStatus.FINISHED,
-            Instant.now(),
-            Instant.now(),
-            Instant.now());
+        QuestResponse.builder()
+            .id(1L)
+            .title("Test Quest")
+            .description("Test Description")
+            .type(QuestType.TEAM)
+            .status(dn.questenginev2.quest.entity.QuestStatus.FINISHED)
+            .createdAt(Instant.now())
+            .startTime(Instant.now())
+            .finishTime(Instant.now())
+            .build();
     when(questService.finishQuest(eq(1L), any())).thenReturn(finishedResponse);
 
     mockMvc

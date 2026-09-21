@@ -35,42 +35,48 @@ export function QuestDetailPage() {
 
   if (questQuery.isError || !questQuery.data) {
     return (
-      <p className="text-destructive text-sm">
-        Не удалось загрузить квест. Возможно, он был удалён.
-      </p>
+        <p className="text-destructive text-sm">
+          Не удалось загрузить квест. Возможно, он был удалён.
+        </p>
     );
   }
 
   const quest = questQuery.data;
+  const approvedCount =
+      registrationsQuery.data?.filter((r) => r.status === "APPROVED").length ?? null;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">{quest.title}</h1>
-          {(role === "AUTHOR" || role === "ADMIN") && (
-            <Link
-              to={`/author/quests/${quest.id}/edit`}
-              className="text-primary text-sm underline underline-offset-4"
-            >
-              Редактировать
-            </Link>
-          )}
+      <div className="space-y-6">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold">{quest.title}</h1>
+            {(role === "AUTHOR" || role === "ADMIN") && (
+                <Link
+                    to={`/author/quests/${quest.id}/edit`}
+                    className="text-primary text-sm underline underline-offset-4"
+                >
+                  Редактировать
+                </Link>
+            )}
+          </div>
+          <div className="text-muted-foreground flex gap-3 text-sm">
+            <span>{QUEST_STATUS_LABEL[quest.status] ?? quest.status}</span>
+            <span>·</span>
+            <span>{QUEST_TYPE_LABEL[quest.type] ?? quest.type}</span>
+            <span>·</span>
+            <span>{formatDateTime(quest.startTime)}</span>
+            <span>·</span>
+            <span>
+            Команды: {approvedCount ?? "…"} / {quest.maximumTeams ?? "—"}
+          </span>
+          </div>
         </div>
-        <div className="text-muted-foreground flex gap-3 text-sm">
-          <span>{QUEST_STATUS_LABEL[quest.status] ?? quest.status}</span>
-          <span>·</span>
-          <span>{QUEST_TYPE_LABEL[quest.type] ?? quest.type}</span>
-          <span>·</span>
-          <span>{formatDateTime(quest.startTime)}</span>
-        </div>
+
+        {quest.description && <p className="whitespace-pre-wrap text-sm">{quest.description}</p>}
+
+        {registrationsQuery.data && (
+            <RegistrationPanel quest={quest} registrations={registrationsQuery.data} />
+        )}
       </div>
-
-      {quest.description && <p className="whitespace-pre-wrap text-sm">{quest.description}</p>}
-
-      {registrationsQuery.data && (
-        <RegistrationPanel quest={quest} registrations={registrationsQuery.data} />
-      )}
-    </div>
   );
 }

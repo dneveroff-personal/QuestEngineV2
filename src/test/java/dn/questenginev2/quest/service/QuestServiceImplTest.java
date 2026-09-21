@@ -94,7 +94,7 @@ class QuestServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
 
     CreateQuestRequest request =
-        new CreateQuestRequest("Test Quest", "Test Description", QuestType.TEAM, null, null);
+        new CreateQuestRequest("Test Quest", "Test Description", QuestType.TEAM, null, null, null);
 
     Quest savedQuest =
         Quest.builder()
@@ -134,7 +134,8 @@ class QuestServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(adminUser);
 
     CreateQuestRequest request =
-        new CreateQuestRequest("Admin Quest", "Admin Description", QuestType.SINGLE, null, null);
+        new CreateQuestRequest(
+            "Admin Quest", "Admin Description", QuestType.SINGLE, null, null, null);
 
     Quest savedQuest =
         Quest.builder()
@@ -169,7 +170,7 @@ class QuestServiceImplTest {
     when(userService.getCurrentUser(authentication)).thenReturn(playerUser);
 
     CreateQuestRequest request =
-        new CreateQuestRequest("Player Quest", "Player Description", null, null, null);
+        new CreateQuestRequest("Player Quest", "Player Description", null, null, null, null);
 
     assertThatThrownBy(() -> questService.createQuest(request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
@@ -241,7 +242,7 @@ class QuestServiceImplTest {
     when(questRepository.save(any(Quest.class))).thenReturn(updatedQuest);
 
     CreateQuestRequest request =
-        new CreateQuestRequest("New Title", "New Description", QuestType.SINGLE, null, null);
+        new CreateQuestRequest("New Title", "New Description", QuestType.SINGLE, null, null, null);
 
     QuestResponse response = questService.updateQuest(1L, request, authentication);
 
@@ -269,7 +270,7 @@ class QuestServiceImplTest {
     when(questAuthorRepository.existsByQuestIdAndUserId(any(Long.class), eq(playerUser.getId())))
         .thenReturn(false);
 
-    CreateQuestRequest request = new CreateQuestRequest("New Title", null, null, null, null);
+    CreateQuestRequest request = new CreateQuestRequest("New Title", null, null, null, null, null);
 
     assertThatThrownBy(() -> questService.updateQuest(1L, request, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
