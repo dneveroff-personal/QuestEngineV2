@@ -22,12 +22,15 @@ public class QuestResponse {
   private Instant createdAt;
   private Instant startTime;
   private Instant finishTime;
-  /** Max number of APPROVED teams (registration limit). */
-  private Integer maximumTeams;
+
   /** Soft-delete flag (backlog #16). Archived quests keep registrations/progress. */
   private Boolean archived;
+
   /** Primary author user id (first QuestAuthor). */
   private Long authorId;
+
   /** Display name of primary author (publicName, fallback username). */
   private String authorName;
+
+  private Integer maximumTeams;
 }

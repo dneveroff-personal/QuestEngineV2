@@ -65,8 +65,7 @@ public class TeamController {
 
   @Operation(summary = "Transfer captain", description = "Transfer captain role to another member")
   @PostMapping(Routes.TRANSFER_CAPTAIN)
-  public ResponseEntity<Boolean> transferCaptain(
-      @PathVariable Long userId, Authentication auth) {
+  public ResponseEntity<Boolean> transferCaptain(@PathVariable Long userId, Authentication auth) {
     return ResponseEntity.status(HttpStatus.OK).body(teamService.transferCaptain(userId, auth));
   }
 
@@ -99,7 +98,8 @@ public class TeamController {
   @Operation(
       summary = "Team quest registrations",
       description =
-          "All quest registrations of the team (PENDING/APPROVED/REJECTED), including FINISHED quests. Member or ADMIN.")
+          "All quest registrations of the team (PENDING/APPROVED/REJECTED), including FINISHED"
+              + " quests. Member or ADMIN.")
   @GetMapping(Routes.TEAM_QUESTS)
   public ResponseEntity<List<TeamQuestItemResponse>> getTeamQuests(
       @PathVariable Long teamId, Authentication auth) {

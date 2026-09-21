@@ -5,14 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import dn.questenginev2.common.dto.PageResponse;
 import dn.questenginev2.common.exceptions.*;
 import dn.questenginev2.team.dto.CreateTeamRequest;
-import dn.questenginev2.team.dto.TeamFilterRequest;
 import dn.questenginev2.team.dto.TeamResponse;
 import dn.questenginev2.team.entity.Team;
-import dn.questenginev2.team.entity.TeamMember;
-import dn.questenginev2.team.entity.TeamRole;
 import dn.questenginev2.team.repository.TeamJoinRequestRepository;
 import dn.questenginev2.team.repository.TeamMemberRepository;
 import dn.questenginev2.team.repository.TeamRepository;
@@ -21,16 +17,12 @@ import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.service.UserService;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 
 @ExtendWith(MockitoExtension.class)

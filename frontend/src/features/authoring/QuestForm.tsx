@@ -6,12 +6,12 @@ import { ApiError } from "@/api/errors";
 import type { CreateQuestRequest, Quest } from "@/api/quests";
 import { Button } from "@/components/ui/button";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
@@ -36,18 +36,19 @@ const questSchema = z
 type QuestFormValues = z.infer<typeof questSchema>;
 
 function toDatetimeLocal(iso?: string | null): string {
-  if (!iso) return "";
-  const date = new Date(iso);
-  const offset = date.getTimezoneOffset();
-  return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
+    if (!iso) return "";
+    // datetime-local ожидает "YYYY-MM-DDTHH:mm" в локальном времени, без секунд/зоны.
+    const date = new Date(iso);
+    const offset = date.getTimezoneOffset();
+    return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
 }
 
 interface QuestFormProps {
-  quest?: Quest;
-  onSubmit: (request: CreateQuestRequest) => void;
-  isPending: boolean;
-  error: unknown;
-  submitLabel: string;
+    quest?: Quest;
+    onSubmit: (request: CreateQuestRequest) => void;
+    isPending: boolean;
+    error: unknown;
+    submitLabel: string;
 }
 
 export function QuestForm({ quest, onSubmit, isPending, error, submitLabel }: QuestFormProps) {
@@ -63,124 +64,124 @@ export function QuestForm({ quest, onSubmit, isPending, error, submitLabel }: Qu
     },
   });
 
-  function handleSubmit(values: QuestFormValues) {
-    onSubmit({
-      title: values.title,
-      description: values.description,
-      type: values.type,
-      startTime: values.startTime ? new Date(values.startTime).toISOString() : null,
-      finishTime: values.finishTime ? new Date(values.finishTime).toISOString() : null,
-      maximumTeams: values.maximumTeams,
-    });
-  }
+    function handleSubmit(values: QuestFormValues) {
+        onSubmit({
+            title: values.title,
+            description: values.description,
+            type: values.type,
+            startTime: values.startTime ? new Date(values.startTime).toISOString() : null,
+            finishTime: values.finishTime ? new Date(values.finishTime).toISOString() : null,
+            maximumTeams: values.maximumTeams,
+        });
+    }
 
-  const generalError = error instanceof ApiError ? error.message : null;
+    const generalError = error instanceof ApiError ? error.message : null;
 
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" noValidate>
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Название</FormLabel>
-              <FormControl>
-                <Input autoFocus {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Описание</FormLabel>
-              <FormControl>
-                <textarea
-                  {...field}
-                  rows={6}
-                  className="border-input flex w-full rounded-lg border bg-transparent px-2.5 py-1.5 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" noValidate>
+                <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Название</FormLabel>
+                            <FormControl>
+                                <Input autoFocus {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Тип</FormLabel>
-              <FormControl>
-                <select
-                  {...field}
-                  className="border-input flex h-8 w-full rounded-lg border bg-transparent px-2.5 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                >
-                  <option value="TEAM">Командный</option>
-                  <option value="SINGLE">Одиночный</option>
-                </select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Описание</FormLabel>
+                            <FormControl>
+                <textarea
+                    {...field}
+                    rows={6}
+                    className="border-input flex w-full rounded-lg border bg-transparent px-2.5 py-1.5 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={form.control}
-            name="startTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Начало</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Тип</FormLabel>
+                            <FormControl>
+                                <select
+                                    {...field}
+                                    className="border-input flex h-8 w-full rounded-lg border bg-transparent px-2.5 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                                >
+                                    <option value="TEAM">Командный</option>
+                                    <option value="SINGLE">Одиночный</option>
+                                </select>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-          <FormField
-            control={form.control}
-            name="finishTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Завершение</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                        control={form.control}
+                        name="startTime"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Начало</FormLabel>
+                                <FormControl>
+                                    <Input type="datetime-local" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-        <FormField
-          control={form.control}
-          name="maximumTeams"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Лимит команд</FormLabel>
-              <FormControl>
-                <Input type="number" min={1} max={10000} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                    <FormField
+                        control={form.control}
+                        name="finishTime"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Завершение</FormLabel>
+                                <FormControl>
+                                    <Input type="datetime-local" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
 
-        {generalError && <p className="text-destructive text-sm">{generalError}</p>}
+                <FormField
+                    control={form.control}
+                    name="maximumTeams"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Лимит команд</FormLabel>
+                            <FormControl>
+                                <Input type="number" min={1} step={1} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Сохраняем..." : submitLabel}
-        </Button>
-      </form>
-    </Form>
-  );
+                {generalError && <p className="text-destructive text-sm">{generalError}</p>}
+
+                <Button type="submit" disabled={isPending}>
+                    {isPending ? "Сохраняем..." : submitLabel}
+                </Button>
+            </form>
+        </Form>
+    );
 }

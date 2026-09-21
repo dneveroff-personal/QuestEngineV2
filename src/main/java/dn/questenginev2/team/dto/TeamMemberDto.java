@@ -10,9 +10,4 @@ import java.time.Instant;
  * {@code displayName} — UI label: {@code publicName} if set, otherwise {@code username}.
  */
 public record TeamMemberDto(
-    Long id,
-    Long userId,
-    String username,
-    String displayName,
-    TeamRole role,
-    Instant joinedAt) {}
+    Long id, Long userId, String username, String displayName, TeamRole role, Instant joinedAt) {}

@@ -108,7 +108,8 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
       throw new ConflictException("Нельзя подтверждать регистрацию на архивный квест");
     }
 
-    long approved = questRegistrationRepository.countByQuestIdAndStatus(questId, RegistrationStatus.APPROVED);
+    long approved =
+        questRegistrationRepository.countByQuestIdAndStatus(questId, RegistrationStatus.APPROVED);
     if (approved >= quest.getMaximumTeams()) {
       throw new ConflictException("Достигнут лимит команд на квест");
     }

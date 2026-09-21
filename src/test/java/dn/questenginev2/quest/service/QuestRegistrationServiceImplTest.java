@@ -187,7 +187,7 @@ class QuestRegistrationServiceImplTest {
 
     assertThatThrownBy(() -> questRegistrationService.registerTeam(1L, 1L, authentication))
         .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("завершённый квест");
+        .hasMessageContaining("REGISTRATION или RUNNING");
 
     verify(questRegistrationRepository, never()).save(any());
   }
@@ -206,7 +206,7 @@ class QuestRegistrationServiceImplTest {
   }
 
   @Test
-  void registerTeam_throwsIllegalArgumentException_whenDuplicateRegistration() {
+  void registerTeam_throwsConflictException_whenDuplicateRegistration() {
     when(userService.getCurrentUser(authentication)).thenReturn(captainUser);
     when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
@@ -215,8 +215,8 @@ class QuestRegistrationServiceImplTest {
     when(questRegistrationRepository.existsByQuestIdAndTeamId(1L, 1L)).thenReturn(true);
 
     assertThatThrownBy(() -> questRegistrationService.registerTeam(1L, 1L, authentication))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("уже подала заявку");
+        .isInstanceOf(ConflictException.class)
+        .hasMessageContaining("уже зарегистрирована");
 
     verify(questRegistrationRepository, never()).save(any());
   }
@@ -298,7 +298,6 @@ class QuestRegistrationServiceImplTest {
   void approveTeam_returnsApprovedRegistration_whenAuthor() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
-    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
     when(questRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(quest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
 
@@ -343,7 +342,7 @@ class QuestRegistrationServiceImplTest {
 
     assertThatThrownBy(() -> questRegistrationService.approveTeam(1L, 1L, authentication))
         .isInstanceOf(ForbiddenOperationException.class)
-        .hasMessageContaining("Автор квеста");
+        .hasMessageContaining("не являетесь автором");
 
     verify(questRegistrationRepository, never()).save(any());
   }

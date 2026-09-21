@@ -28,6 +28,7 @@ public class JwtService {
    * @deprecated use {@link #accessExpiration}; kept so existing {@code jwt.expiration} configs still
    *     apply if access-expiration is not set.
    */
+  @Deprecated
   @Value("${jwt.expiration:900000}")
   private Long expiration;
 
