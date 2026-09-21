@@ -13,16 +13,6 @@ public interface LevelProgressService {
 
   LevelProgressResponse completeLevel(Long levelProgressId);
 
-  /**
-   * Проверяет и применяет автопереход, если время вышло.
-   *
-   * @deprecated Небезопасен для планировщика: делает read-then-write и может гоняться с
-   *     завершением уровня через {@code CodeSubmission} (см.
-   *     docs/02-processes/concurrency-scenarios.md, Сценарий 5). Планировщик (Job 2, {@code
-   *     dn.questenginev2.scheduling}) использует атомарный {@link
-   *     dn.questenginev2.level.repository.LevelProgressRepository#tryAutoTransition} напрямую,
-   *     не этот метод. Оставлен для обратной совместимости/ручного использования.
-   */
-  @Deprecated
-  LevelProgressResponse autoTransitionLevel(Long levelProgressId);
+  // Автопереход — только атомарный LevelProgressRepository.tryAutoTransition (Job 2).
+  // Небезопасный read-then-write autoTransitionLevel удалён (backlog #20).
 }
