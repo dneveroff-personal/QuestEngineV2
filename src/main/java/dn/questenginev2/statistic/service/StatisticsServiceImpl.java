@@ -58,7 +58,8 @@ public class StatisticsServiceImpl implements StatisticsService {
             .orElseThrow(() -> new ResourceNotFoundException("Квест не найден: " + questId));
 
     if (quest.getStatus() == QuestStatus.DRAFT || quest.getStatus() == QuestStatus.REGISTRATION) {
-      throw new ConflictException("Статистика доступна только после старта квеста (RUNNING/FINISHED)");
+      throw new ConflictException(
+          "Статистика доступна только после старта квеста (RUNNING/FINISHED)");
     }
 
     List<Level> levels = levelRepository.findByQuestIdOrderByOrderIndex(questId);
@@ -77,9 +78,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     List<LevelProgress> allLp = levelProgressRepository.findAllByQuestId(questId);
     Map<Long, List<LevelProgress>> lpByProgressId = new HashMap<>();
     for (LevelProgress lp : allLp) {
-      lpByProgressId
-          .computeIfAbsent(lp.getQuestProgress().getId(), k -> new ArrayList<>())
-          .add(lp);
+      lpByProgressId.computeIfAbsent(lp.getQuestProgress().getId(), k -> new ArrayList<>()).add(lp);
     }
 
     boolean questFinished = quest.getStatus() == QuestStatus.FINISHED;
@@ -87,8 +86,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     for (QuestProgress qp : progresses) {
       List<LevelProgress> teamLp = lpByProgressId.getOrDefault(qp.getId(), List.of());
-      List<LevelProgress> completed =
-          teamLp.stream().filter(this::isCompleted).toList();
+      List<LevelProgress> completed = teamLp.stream().filter(this::isCompleted).toList();
 
       // Rule 3: during live play, hide teams still on first level (0 completed).
       if (!questFinished && completed.isEmpty()) {
@@ -114,8 +112,7 @@ public class StatisticsServiceImpl implements StatisticsService {
       if (qp.getStatus() == QuestProgressStatus.FINISHED
           && qp.getFinishedAt() != null
           && qp.getQuestStartedAt() != null) {
-        long wall =
-            Duration.between(qp.getQuestStartedAt(), qp.getFinishedAt()).getSeconds();
+        long wall = Duration.between(qp.getQuestStartedAt(), qp.getFinishedAt()).getSeconds();
         totalTime = wall + bonusPenalty;
       }
 
