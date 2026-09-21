@@ -19,22 +19,11 @@ public interface LevelProgressRepository extends JpaRepository<LevelProgress, Lo
 
   Optional<LevelProgress> findTopByQuestProgressIdOrderByIdDesc(Long questProgressId);
 
-  // Job 3 (HintRevealScheduler): сканирует все активные уровни на предмет подсказок к показу.
   List<LevelProgress> findByStatus(LevelProgressStatus status);
 
-  // Кандидаты на автопереход (03-architecture/scheduling.md, Job 2)
   List<LevelProgress> findByStatusAndAutoTransitionAtLessThanEqual(
       LevelProgressStatus status, Instant autoTransitionAt);
 
-  /**
-   * Атомарный переход ACTIVE -> AUTO_TRANSITIONED. Использует то же условие "WHERE status =
-   * ACTIVE", что и {@link #tryCompleteByCodesThreshold}, поэтому корректно разрешает гонку между
-   * Job 2 (эта проверка) и CodeSubmission (завершение кодом) на одном и том же LevelProgress —
-   * см. docs/02-processes/concurrency-scenarios.md, Сценарий 5. Побеждает ровно один из двух
-   * путей. НЕ использовать вместо этого {@link
-   * dn.questenginev2.level.service.LevelProgressService#autoTransitionLevel} — тот метод делает
-   * небезопасный read-then-write и не годится для конкурентного вызова.
-   */
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(
       value =
@@ -43,18 +32,6 @@ public interface LevelProgressRepository extends JpaRepository<LevelProgress, Lo
       nativeQuery = true)
   int tryAutoTransition(@Param("levelProgressId") Long levelProgressId, @Param("now") Instant now);
 
-  /**
-   * Атомарный переход ACTIVE -> COMPLETED, выполняемый только если количество различных решённых
-   * кодов (по CodeSubmission.result = CORRECT_MAIN, сгруппированных по Code.codeIndex) достигло
-   * requiredCount. Считает порог прямо в WHERE, без предварительного чтения счётчика в коде
-   * приложения — под высокой конкурентной нагрузкой (десятки попыток в секунду на одну и ту же
-   * строку) только один конкурентный вызов "выигрывает" переход. См.
-   * docs/02-processes/concurrency-scenarios.md, Сценарий 6.
-   *
-   * @return количество обновлённых строк: 1, если этот вызов выполнил переход, 0 — если уровень
-   *     уже не ACTIVE (переход уже произошёл параллельно, либо статус изменён иначе) или порог
-   *     ещё не достигнут.
-   */
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(
       value =
@@ -76,4 +53,12 @@ public interface LevelProgressRepository extends JpaRepository<LevelProgress, Lo
       @Param("levelProgressId") Long levelProgressId,
       @Param("requiredCount") long requiredCount,
       @Param("now") Instant now);
+
+  /** All level progress for a quest (statistics ranking). */
+  @Query(
+      "SELECT lp FROM LevelProgress lp JOIN FETCH lp.level JOIN FETCH lp.questProgress qp"
+          + " JOIN FETCH qp.team WHERE qp.quest.id = :questId")
+  List<LevelProgress> findAllByQuestId(@Param("questId") Long questId);
+
+  List<LevelProgress> findByQuestProgressId(Long questProgressId);
 }
