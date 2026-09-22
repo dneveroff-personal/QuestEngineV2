@@ -15,6 +15,7 @@ const team: Team = {
   name: "Котики",
   captainUsername: "captain_user",
   captainDisplayName: "Captain User",
+  captainName: "Captain User",
   createdAt: "2026-01-01T00:00:00Z",
   members: [
     {

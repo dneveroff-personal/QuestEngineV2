@@ -21,6 +21,6 @@ public record CreateQuestRequest(
     Instant finishTime,
     /** Max approved teams; null → default 100 on create. */
     @Min(value = 1, message = "maximumTeams must be at least 1")
-    @Max(value = 10000, message = "maximumTeams must be at most 10000")
-    @Positive(message = "Лимит команд должен быть положительным числом")
-    Integer maximumTeams) {}
+        @Max(value = 10000, message = "maximumTeams must be at most 10000")
+        @Positive(message = "Лимит команд должен быть положительным числом")
+        Integer maximumTeams) {}

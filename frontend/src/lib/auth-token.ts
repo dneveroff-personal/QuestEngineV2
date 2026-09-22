@@ -7,6 +7,7 @@ import { decodeJwtPayload } from "@/lib/jwt";
 
 export interface AuthSession {
   token: string;
+  accessToken: string;
   refreshToken: string;
   publicName: string;
   username: string | null;
@@ -32,6 +33,7 @@ export function setSession(
   const payload = decodeJwtPayload(accessToken);
   session = {
     token: accessToken,
+    accessToken,
     refreshToken,
     publicName,
     username: payload?.sub ?? null,

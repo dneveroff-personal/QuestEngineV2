@@ -21,6 +21,7 @@ export interface Team {
   name: string;
   captainUsername: string;
   captainDisplayName: string;
+  captainName: string;
   createdAt: string;
   members: TeamMember[];
 }

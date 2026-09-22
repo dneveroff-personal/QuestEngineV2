@@ -23,6 +23,8 @@ const BASE_QUEST: Quest = {
 const MY_TEAM: Team = {
   id: 42,
   name: "Котики",
+  captainUsername: "captain_user",
+  captainDisplayName: "captain_user",
   captainName: "captain_user",
   createdAt: "2026-01-01T00:00:00Z",
   members: [],

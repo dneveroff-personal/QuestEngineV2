@@ -38,7 +38,9 @@ public class StatisticsController {
       description =
           "Initial event 'statistics' with full snapshot, then same event on each ranking change."
               + " Auth: Authorization Bearer or query access_token (for EventSource).")
-  @GetMapping(value = Routes.QUEST_ID + "/statistics/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  @GetMapping(
+      value = Routes.QUEST_ID + "/statistics/stream",
+      produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public SseEmitter streamStatistics(@PathVariable Long questId) {
     // validates quest is RUNNING/FINISHED via initial snapshot inside hub
     return statisticsSseHub.subscribe(questId);

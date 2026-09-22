@@ -25,6 +25,7 @@ export class ApiError extends Error {
   readonly status: number;
   readonly title: string;
   readonly type: string;
+  readonly detail: string;
   readonly fieldErrors: Array<{ field: string; message: string }>;
 
   constructor(problem: ProblemDetail) {
@@ -33,6 +34,7 @@ export class ApiError extends Error {
     this.status = problem.status;
     this.title = problem.title;
     this.type = problem.type;
+    this.detail = problem.detail || problem.title;
     this.fieldErrors = problem.errors ?? [];
   }
 

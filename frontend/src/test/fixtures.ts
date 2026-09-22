@@ -20,5 +20,5 @@ export function fakeJwt(payload: Record<string, unknown>): string {
  * общий на весь файл, Vitest не сбрасывает его между отдельными it()).
  */
 export function loginAs(username: string, role = "PLAYER", publicName = username): void {
-  setSession(fakeJwt({ sub: username, role, iat: 0, exp: 9999999999 }), publicName);
+  setSession(fakeJwt({ sub: username, role, iat: 0, exp: 9999999999 }), publicName, "fake-refresh-token");
 }
