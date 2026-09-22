@@ -125,11 +125,12 @@ class QuestProgressServiceImplTest {
 
     finishedQuest =
         Quest.builder()
-            .id(3L)
+            .id(1L)
             .title("Finished Quest")
             .description("Test Description")
             .status(QuestStatus.FINISHED)
             .maximumTeams(100)
+            .startTime(questStartTime)
             .createdAt(Instant.now())
             .build();
 
@@ -184,8 +185,7 @@ class QuestProgressServiceImplTest {
   void createProgress_returnsProgress_whenRegistrationApproved() {
     when(questRepository.findById(1L)).thenReturn(Optional.of(runningQuest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team1));
-    when(questRegistrationRepository.findByQuestIdAndTeamIdAndStatus(
-            1L, 1L, RegistrationStatus.APPROVED))
+    when(questRegistrationRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(approvedRegistration));
     when(questProgressRepository.existsByQuestIdAndTeamId(1L, 1L)).thenReturn(false);
 
@@ -214,13 +214,12 @@ class QuestProgressServiceImplTest {
   void createProgress_throwsConflictException_whenRegistrationPending() {
     when(questRepository.findById(1L)).thenReturn(Optional.of(runningQuest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team1));
-    when(questRegistrationRepository.findByQuestIdAndTeamIdAndStatus(
-            1L, 1L, RegistrationStatus.APPROVED))
-        .thenReturn(Optional.empty());
+    when(questRegistrationRepository.findByQuestIdAndTeamId(1L, 1L))
+        .thenReturn(Optional.of(pendingRegistration));
 
     assertThatThrownBy(() -> questProgressService.createProgress(1L, 1L))
         .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("не подтверждена");
+        .hasMessageContaining("APPROVED");
 
     verify(questProgressRepository, never()).save(any());
   }
@@ -229,13 +228,12 @@ class QuestProgressServiceImplTest {
   void createProgress_throwsConflictException_whenRegistrationRejected() {
     when(questRepository.findById(1L)).thenReturn(Optional.of(runningQuest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team1));
-    when(questRegistrationRepository.findByQuestIdAndTeamIdAndStatus(
-            1L, 1L, RegistrationStatus.APPROVED))
-        .thenReturn(Optional.empty());
+    when(questRegistrationRepository.findByQuestIdAndTeamId(1L, 1L))
+        .thenReturn(Optional.of(rejectedRegistration));
 
     assertThatThrownBy(() -> questProgressService.createProgress(1L, 1L))
         .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("не подтверждена");
+        .hasMessageContaining("APPROVED");
 
     verify(questProgressRepository, never()).save(any());
   }
@@ -244,8 +242,7 @@ class QuestProgressServiceImplTest {
   void createProgress_throwsIllegalArgumentException_whenDuplicateProgress() {
     when(questRepository.findById(1L)).thenReturn(Optional.of(runningQuest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team1));
-    when(questRegistrationRepository.findByQuestIdAndTeamIdAndStatus(
-            1L, 1L, RegistrationStatus.APPROVED))
+    when(questRegistrationRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(approvedRegistration));
     when(questProgressRepository.existsByQuestIdAndTeamId(1L, 1L)).thenReturn(true);
 
@@ -532,25 +529,26 @@ class QuestProgressServiceImplTest {
     QuestProgress runningProgress =
         QuestProgress.builder()
             .id(1L)
-            .quest(runningQuest)
+            .quest(finishedQuest)
             .team(team1)
             .status(QuestProgressStatus.RUNNING)
-            .questStartedAt(runningQuest.getStartTime())
+            .questStartedAt(finishedQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
+    when(questRepository.findById(1L)).thenReturn(Optional.of(finishedQuest));
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(runningProgress));
 
     QuestProgress dnfProgress =
         QuestProgress.builder()
             .id(1L)
-            .quest(runningQuest)
+            .quest(finishedQuest)
             .team(team1)
             .status(QuestProgressStatus.DNF)
-            .questStartedAt(runningQuest.getStartTime())
+            .questStartedAt(finishedQuest.getStartTime())
             .finishedAt(Instant.now())
             .createdAt(Instant.now())
             .build();
@@ -566,51 +564,66 @@ class QuestProgressServiceImplTest {
   }
 
   @Test
-  void setDnf_throwsConflictException_whenFinished() {
+  void setDnf_succeeds_whenProgressFinished() {
     QuestProgress finishedProgress =
         QuestProgress.builder()
             .id(1L)
-            .quest(runningQuest)
+            .quest(finishedQuest)
             .team(team1)
             .status(QuestProgressStatus.FINISHED)
-            .questStartedAt(runningQuest.getStartTime())
+            .questStartedAt(finishedQuest.getStartTime())
             .finishedAt(Instant.now())
             .createdAt(Instant.now())
             .build();
 
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
+    when(questRepository.findById(1L)).thenReturn(Optional.of(finishedQuest));
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(finishedProgress));
 
-    assertThatThrownBy(() -> questProgressService.setDnf(1L, 1L, authentication))
-        .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("завершённый прогресс");
+    QuestProgress dnfProgress =
+        QuestProgress.builder()
+            .id(1L)
+            .quest(finishedQuest)
+            .team(team1)
+            .status(QuestProgressStatus.DNF)
+            .questStartedAt(finishedQuest.getStartTime())
+            .finishedAt(Instant.now())
+            .createdAt(Instant.now())
+            .build();
+    when(questProgressRepository.save(any(QuestProgress.class))).thenReturn(dnfProgress);
 
-    verify(questProgressRepository, never()).save(any());
+    QuestProgressResponse response = questProgressService.setDnf(1L, 1L, authentication);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(QuestProgressStatus.DNF);
+    assertThat(response.getFinishedAt()).isNotNull();
+
+    verify(questProgressRepository).save(any(QuestProgress.class));
   }
 
   @Test
-  void setDnf_throwsConflictException_whenAlreadyDnf() {
-    QuestProgress dnfProgress =
+  void setDnf_throwsConflictException_whenQuestNotFinished() {
+    QuestProgress runningProgress =
         QuestProgress.builder()
             .id(1L)
             .quest(runningQuest)
             .team(team1)
-            .status(QuestProgressStatus.DNF)
+            .status(QuestProgressStatus.RUNNING)
             .questStartedAt(runningQuest.getStartTime())
-            .finishedAt(Instant.now())
             .createdAt(Instant.now())
             .build();
 
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
+    when(questRepository.findById(1L)).thenReturn(Optional.of(runningQuest));
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L))
-        .thenReturn(Optional.of(dnfProgress));
+        .thenReturn(Optional.of(runningProgress));
 
     assertThatThrownBy(() -> questProgressService.setDnf(1L, 1L, authentication))
         .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("завершённый прогресс");
+        .hasMessageContaining("FINISHED");
 
     verify(questProgressRepository, never()).save(any());
   }
@@ -643,6 +656,7 @@ class QuestProgressServiceImplTest {
   void setDnf_throwsResourceNotFoundException_whenProgressNotFound() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
+    when(questRepository.findById(1L)).thenReturn(Optional.of(finishedQuest));
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questProgressService.setDnf(1L, 1L, authentication))
@@ -670,8 +684,7 @@ class QuestProgressServiceImplTest {
 
     when(questRepository.findById(1L)).thenReturn(Optional.of(questWithStartTime));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team1));
-    when(questRegistrationRepository.findByQuestIdAndTeamIdAndStatus(
-            1L, 1L, RegistrationStatus.APPROVED))
+    when(questRegistrationRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(approvedRegistration));
     when(questProgressRepository.existsByQuestIdAndTeamId(1L, 1L)).thenReturn(false);
 
@@ -743,8 +756,7 @@ class QuestProgressServiceImplTest {
   void createProgress_throwsIllegalArgumentException_whenProgressAlreadyExists() {
     when(questRepository.findById(1L)).thenReturn(Optional.of(runningQuest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team1));
-    when(questRegistrationRepository.findByQuestIdAndTeamIdAndStatus(
-            1L, 1L, RegistrationStatus.APPROVED))
+    when(questRegistrationRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(approvedRegistration));
     when(questProgressRepository.existsByQuestIdAndTeamId(1L, 1L)).thenReturn(true);
 
@@ -783,11 +795,9 @@ class QuestProgressServiceImplTest {
     when(questRepository.findById(1L)).thenReturn(Optional.of(runningQuest));
     when(questRepository.findById(2L)).thenReturn(Optional.of(quest2));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team1));
-    when(questRegistrationRepository.findByQuestIdAndTeamIdAndStatus(
-            1L, 1L, RegistrationStatus.APPROVED))
+    when(questRegistrationRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(approvedRegistration));
-    when(questRegistrationRepository.findByQuestIdAndTeamIdAndStatus(
-            2L, 1L, RegistrationStatus.APPROVED))
+    when(questRegistrationRepository.findByQuestIdAndTeamId(2L, 1L))
         .thenReturn(Optional.of(approvedRegistration2));
     when(questProgressRepository.existsByQuestIdAndTeamId(1L, 1L)).thenReturn(false);
     when(questProgressRepository.existsByQuestIdAndTeamId(2L, 1L)).thenReturn(false);
@@ -881,25 +891,26 @@ class QuestProgressServiceImplTest {
     QuestProgress runningProgress =
         QuestProgress.builder()
             .id(1L)
-            .quest(runningQuest)
+            .quest(finishedQuest)
             .team(team1)
             .status(QuestProgressStatus.RUNNING)
-            .questStartedAt(runningQuest.getStartTime())
+            .questStartedAt(finishedQuest.getStartTime())
             .createdAt(Instant.now())
             .build();
 
     when(userService.getCurrentUser(authentication)).thenReturn(adminUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 2L)).thenReturn(false);
+    when(questRepository.findById(1L)).thenReturn(Optional.of(finishedQuest));
     when(questProgressRepository.findByQuestIdAndTeamId(1L, 1L))
         .thenReturn(Optional.of(runningProgress));
 
     QuestProgress dnfProgress =
         QuestProgress.builder()
             .id(1L)
-            .quest(runningQuest)
+            .quest(finishedQuest)
             .team(team1)
             .status(QuestProgressStatus.DNF)
-            .questStartedAt(runningQuest.getStartTime())
+            .questStartedAt(finishedQuest.getStartTime())
             .finishedAt(Instant.now())
             .createdAt(Instant.now())
             .build();

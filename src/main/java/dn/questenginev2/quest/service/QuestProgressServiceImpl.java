@@ -124,6 +124,7 @@ public class QuestProgressServiceImpl implements QuestProgressService {
     validateQuestRunning(quest);
     Team team = validateTeamExist(teamId);
     validateApprovedRegistration(questId, teamId);
+    validateNoDuplicateProgress(questId, teamId);
 
     QuestProgress progress =
         QuestProgress.builder()
@@ -279,6 +280,12 @@ public class QuestProgressServiceImpl implements QuestProgressService {
             .orElseThrow(() -> new ResourceNotFoundException("Регистрация не найдена"));
     if (registration.getStatus() != dn.questenginev2.quest.entity.RegistrationStatus.APPROVED) {
       throw new ConflictException("Команда должна быть APPROVED для создания прогресса");
+    }
+  }
+
+  private void validateNoDuplicateProgress(Long questId, Long teamId) {
+    if (questProgressRepository.existsByQuestIdAndTeamId(questId, teamId)) {
+      throw new IllegalArgumentException("Прогресс для этой команды и квеста уже существует");
     }
   }
 
