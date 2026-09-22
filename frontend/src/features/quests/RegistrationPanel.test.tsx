@@ -92,13 +92,14 @@ describe("RegistrationPanel", () => {
     expect(screen.queryByRole("button", { name: "Подать заявку" })).not.toBeInTheDocument();
   });
 
-  it("квест в RUNNING, без заявки — регистрация закрыта", async () => {
+  it("квест в RUNNING, без заявки — поздняя регистрация доступна", async () => {
     mockMyTeam(MY_TEAM);
     renderWithProviders(
       <RegistrationPanel quest={{ ...BASE_QUEST, status: "RUNNING" }} registrations={[]} />,
     );
 
-    expect(await screen.findByText("Регистрация на этот квест закрыта.")).toBeInTheDocument();
+    expect(await screen.findByText(/Квест уже идёт — это будет поздняя регистрация/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Подать заявку" })).toBeInTheDocument();
   });
 
   it("заявка PENDING — показывает кнопку отмены, отмена уходит DELETE-запросом без ошибки", async () => {

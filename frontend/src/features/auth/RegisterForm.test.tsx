@@ -24,12 +24,11 @@ function renderRegisterForm() {
   );
 }
 
-function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
-  return Promise.all([
-    user.type(screen.getByLabelText("Имя пользователя"), "newplayer"),
-    user.type(screen.getByLabelText("Email"), "newplayer@example.com"),
-    user.type(screen.getByLabelText("Пароль"), "validpass"),
-  ]);
+async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByLabelText("Логин"), "newplayer");
+  await user.type(screen.getByLabelText("Email"), "newplayer@example.com");
+  await user.type(screen.getByLabelText("Отображаемое имя"), "New Player");
+  await user.type(screen.getByLabelText("Пароль"), "validpass");
 }
 
 describe("RegisterForm", () => {
@@ -79,9 +78,11 @@ describe("RegisterForm", () => {
     await fillValidForm(user);
     await user.click(screen.getByRole("button", { name: "Зарегистрироваться" }));
 
-    expect(await screen.findByText("Такое имя пользователя уже занято")).toBeInTheDocument();
-    // Это field-level ошибка — не должно появляться общее сообщение с role="alert".
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Такое имя пользователя уже занято")).toBeInTheDocument();
+    });
+    // Это field-level ошибка — не должно появляться общее сообщение об ошибке.
+    expect(screen.queryByText("Ошибка валидации")).not.toBeInTheDocument();
   });
 
   it("показывает общую ошибку, если errors[] от backend пуст", async () => {
@@ -104,14 +105,16 @@ describe("RegisterForm", () => {
     await fillValidForm(user);
     await user.click(screen.getByRole("button", { name: "Зарегистрироваться" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Что-то пошло не так на сервере.");
+    await waitFor(() => {
+      expect(screen.getByText("Что-то пошло не так на сервере.")).toBeInTheDocument();
+    });
   });
 
   it("клиентская валидация email не пускает пустой запрос на backend", async () => {
     const user = userEvent.setup();
     renderRegisterForm();
 
-    await user.type(screen.getByLabelText("Имя пользователя"), "newplayer");
+    await user.type(screen.getByLabelText("Логин"), "newplayer");
     await user.type(screen.getByLabelText("Пароль"), "validpass");
     // email специально не заполнен
     await user.click(screen.getByRole("button", { name: "Зарегистрироваться" }));

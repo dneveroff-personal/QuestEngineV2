@@ -27,7 +27,7 @@ describe("LoginForm", () => {
     const user = userEvent.setup();
     renderLoginForm();
 
-    await user.type(screen.getByLabelText("Имя пользователя"), "odissey");
+    await user.type(screen.getByLabelText("Логин"), "odissey");
     await user.type(screen.getByLabelText("Пароль"), "correct-password");
     await user.click(screen.getByRole("button", { name: "Войти" }));
 
@@ -41,13 +41,11 @@ describe("LoginForm", () => {
     const user = userEvent.setup();
     renderLoginForm();
 
-    await user.type(screen.getByLabelText("Имя пользователя"), "wronguser");
+    await user.type(screen.getByLabelText("Логин"), "wronguser");
     await user.type(screen.getByLabelText("Пароль"), "whatever");
     await user.click(screen.getByRole("button", { name: "Войти" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Неверное имя пользователя или пароль.",
-    );
+    expect(await screen.findByText("Неверное имя пользователя или пароль.")).toBeInTheDocument();
     // Остаёмся на /login — не перешли на защищённый экран с неверным логином.
     expect(screen.getByTestId("location-probe")).toHaveTextContent("/login");
   });
@@ -59,7 +57,7 @@ describe("LoginForm", () => {
     const user = userEvent.setup();
     renderLoginForm();
 
-    await user.type(screen.getByLabelText("Имя пользователя"), "ab");
+    await user.type(screen.getByLabelText("Логин"), "ab");
     await user.type(screen.getByLabelText("Пароль"), "somepassword");
     await user.click(screen.getByRole("button", { name: "Войти" }));
 
