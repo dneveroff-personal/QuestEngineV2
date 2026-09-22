@@ -113,7 +113,7 @@ class TeamControllerIT extends BaseIntegrationTest {
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").isNumber())
         .andExpect(jsonPath("$.name").value("Unique Team Name"))
-        .andExpect(jsonPath("$.captainName").value("testuser"))
+        .andExpect(jsonPath("$.captainUsername").value("testuser"))
         .andExpect(jsonPath("$.createdAt").isString());
   }
 

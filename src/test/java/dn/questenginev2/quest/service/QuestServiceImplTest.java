@@ -34,6 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,6 +51,8 @@ class QuestServiceImplTest {
   @Mock private CodeRepository codeRepository;
 
   @Mock private UserService userService;
+
+  @Mock private ApplicationEventPublisher eventPublisher;
 
   @Mock private Authentication authentication;
 
@@ -300,7 +303,7 @@ class QuestServiceImplTest {
     verify(userService).getCurrentUser(authentication);
     verify(questAuthorRepository).existsByQuestIdAndUserId(1L, 1L);
     verify(questRepository).findById(1L);
-    verify(questRepository).delete(quest);
+    verify(questRepository).save(quest);
   }
 
   @Test

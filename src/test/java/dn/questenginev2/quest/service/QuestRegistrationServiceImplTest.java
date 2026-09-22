@@ -300,6 +300,7 @@ class QuestRegistrationServiceImplTest {
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
     when(questRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(quest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+    when(questRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(quest));
 
     QuestRegistration registration =
         QuestRegistration.builder()
@@ -351,8 +352,8 @@ class QuestRegistrationServiceImplTest {
   void approveTeam_throwsConflictException_whenLimitReached() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
-    when(questRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(quest));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+    when(questRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(quest));
 
     QuestRegistration registration =
         QuestRegistration.builder()
@@ -379,8 +380,6 @@ class QuestRegistrationServiceImplTest {
   void rejectTeam_returnsRejectedRegistration_whenAuthor() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
-    when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
-    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
 
     QuestRegistration registration =
         QuestRegistration.builder()
@@ -391,9 +390,8 @@ class QuestRegistrationServiceImplTest {
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
             .build();
-    when(questRegistrationRepository.findByTeamIdAndQuestIdAndStatus(
-            1L, 1L, RegistrationStatus.PENDING))
-        .thenReturn(Collections.singletonList(registration));
+    when(questRegistrationRepository.findByQuestIdAndTeamId(1L, 1L))
+        .thenReturn(Optional.of(registration));
 
     QuestRegistration rejectedRegistration =
         QuestRegistration.builder()
@@ -418,15 +416,12 @@ class QuestRegistrationServiceImplTest {
   @Test
   void rejectTeam_throwsResourceNotFoundException_whenNoPendingRegistration() {
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
-    when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
-    when(questRepository.findById(1L)).thenReturn(Optional.of(quest));
-    when(questRegistrationRepository.findByTeamIdAndQuestIdAndStatus(
-            1L, 1L, RegistrationStatus.PENDING))
-        .thenReturn(Collections.emptyList());
+    when(questAuthorRepository.existsByQuestIdAndUserId(1L, 1L)).thenReturn(true);
+    when(questRegistrationRepository.findByQuestIdAndTeamId(1L, 1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> questRegistrationService.rejectTeam(1L, 1L, authentication))
         .isInstanceOf(ResourceNotFoundException.class)
-        .hasMessageContaining("Активная заявка не найдена");
+        .hasMessageContaining("Регистрация не найдена");
 
     verify(questRegistrationRepository, never()).save(any());
   }
@@ -478,12 +473,9 @@ class QuestRegistrationServiceImplTest {
 
     when(userService.getCurrentUser(authentication)).thenReturn(authorUser);
     when(questAuthorRepository.existsByQuestIdAndUserId(2L, 1L)).thenReturn(true);
-    when(teamRepository.findById(1L)).thenReturn(Optional.of(teamA));
-    when(questRepository.findById(2L)).thenReturn(Optional.of(quest2));
 
-    when(questRegistrationRepository.findByTeamIdAndQuestIdAndStatus(
-            1L, 2L, RegistrationStatus.PENDING))
-        .thenReturn(Collections.singletonList(registration2));
+    when(questRegistrationRepository.findByQuestIdAndTeamId(2L, 1L))
+        .thenReturn(Optional.of(registration2));
 
     QuestRegistration rejectedRegistration2 =
         QuestRegistration.builder()

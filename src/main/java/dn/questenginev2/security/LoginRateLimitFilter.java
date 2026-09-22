@@ -73,7 +73,8 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
   }
 
   private Bucket createBucket(String key) {
-    Bandwidth limit = Bandwidth.simple(CAPACITY, REFILL_PERIOD);
+    Bandwidth limit =
+        Bandwidth.builder().capacity(CAPACITY).refillGreedy(CAPACITY, REFILL_PERIOD).build();
     return Bucket.builder().addLimit(limit).build();
   }
 

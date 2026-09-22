@@ -40,7 +40,6 @@ public class LevelProgressServiceImpl implements LevelProgressService {
     this.clock = clock;
   }
 
-  // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
   @Override
   public LevelProgressResponse createFirstLevelProgress(QuestProgress questProgress) {
     if (questProgress == null || questProgress.getQuest() == null) {
@@ -84,10 +83,6 @@ public class LevelProgressServiceImpl implements LevelProgressService {
             .autoTransitionAt(autoTransitionAt)
             .build();
 
-    // ADR-0010, Сценарий 2 (concurrency-scenarios.md): вместо read-then-write проверки "уже
-    // создан" перед вставкой — полагаемся на уникальный индекс (quest_progress_id, level_id) как
-    // источник истины и обрабатываем его нарушение идемпотентно (двойной клик, повтор запроса
-    // сетью — ожидаемый случай, не ошибка).
     try {
       LevelProgress saved = levelProgressRepository.saveAndFlush(levelProgress);
       return buildLevelProgressResponse(saved);
@@ -107,7 +102,6 @@ public class LevelProgressServiceImpl implements LevelProgressService {
         levelRepository.findByQuestIdAndOrderIndex(
             questProgress.getQuest().getId(), nextLevelOrderIndex);
 
-    // Возвращаем null если в квесте не осталось больше уровней.
     if (level.isEmpty()) {
       return null;
     }
@@ -133,9 +127,6 @@ public class LevelProgressServiceImpl implements LevelProgressService {
             .autoTransitionAt(autoTransitionAt)
             .build();
 
-    // См. createFirstLevelProgress() — тот же идемпотентный паттерн (ADR-0010, Сценарий 2):
-    // уникальный индекс (quest_progress_id, level_id) как источник истины вместо
-    // read-then-write проверки перед вставкой.
     try {
       LevelProgress saved = levelProgressRepository.saveAndFlush(levelProgress);
       return buildLevelProgressResponse(saved);
@@ -161,38 +152,7 @@ public class LevelProgressServiceImpl implements LevelProgressService {
     return buildLevelProgressResponse(saved);
   }
 
-  @Override
-  public LevelProgressResponse autoTransitionLevel(Long levelProgressId) {
-    LevelProgress levelProgress = validateLevelProgressExist(levelProgressId);
-    validateLevelActive(levelProgress);
-
-    Instant now = clock.instant();
-    Instant autoTransitionAt = levelProgress.getAutoTransitionAt();
-
-    if (autoTransitionAt == null) {
-      return buildLevelProgressResponse(levelProgress);
-    }
-
-    if (!now.isBefore(autoTransitionAt)) {
-      levelProgress.setStatus(LevelProgressStatus.AUTO_TRANSITIONED);
-      levelProgress.setCompletedAt(now);
-
-      LevelProgress saved = levelProgressRepository.save(levelProgress);
-      return buildLevelProgressResponse(saved);
-    }
-
-    return buildLevelProgressResponse(levelProgress);
-  }
-
-  // ────── VALIDATIONS ───────────────────────────────────────────────────────────
-  private Level validateLevelExist(Long levelId) {
-    return levelRepository
-        .findById(levelId)
-        .orElseThrow(() -> new ResourceNotFoundException("Уровень не найден: " + levelId));
-  }
-
   private LevelProgress validateLevelProgressExist(Long levelProgressId) {
-    // TODO тут тоже убрать проблему N+1
     return levelProgressRepository
         .findById(levelProgressId)
         .orElseThrow(
@@ -212,7 +172,6 @@ public class LevelProgressServiceImpl implements LevelProgressService {
     }
   }
 
-  // ────── BUILDERS ───────────────────────────────────────────────────────────
   private LevelProgressResponse buildLevelProgressResponse(LevelProgress levelProgress) {
     return LevelProgressResponse.builder()
         .id(levelProgress.getId())

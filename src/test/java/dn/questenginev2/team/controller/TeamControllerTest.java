@@ -20,9 +20,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(TeamController.class)
@@ -31,7 +31,7 @@ class TeamControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
-  @MockBean private TeamService teamService;
+  @MockitoBean private TeamService teamService;
 
   private TeamResponse teamResponse;
   private TeamMemberDto memberDto;
@@ -54,7 +54,7 @@ class TeamControllerTest {
             post("/api/teams")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Test Team\"}"))
-        .andExpect(status().isOk())
+        .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").value(1))
         .andExpect(jsonPath("$.name").value("Test Team"))
         .andExpect(jsonPath("$.captainUsername").value("testuser"))

@@ -94,6 +94,11 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
     validateQuestAuthor(currentUser, questId);
     validateTeamExist(teamId);
 
+    Quest quest =
+        questRepository
+            .findByIdForUpdate(questId)
+            .orElseThrow(() -> new ResourceNotFoundException("Квест не найден: " + questId));
+
     QuestRegistration registration =
         questRegistrationRepository
             .findByQuestIdAndTeamId(questId, teamId)
@@ -103,7 +108,6 @@ public class QuestRegistrationServiceImpl implements QuestRegistrationService {
       throw new ConflictException("Можно подтвердить только PENDING регистрацию");
     }
 
-    Quest quest = registration.getQuest();
     if (Boolean.TRUE.equals(quest.getArchived())) {
       throw new ConflictException("Нельзя подтверждать регистрацию на архивный квест");
     }
