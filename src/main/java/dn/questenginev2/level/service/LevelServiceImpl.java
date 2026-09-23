@@ -1,5 +1,7 @@
 package dn.questenginev2.level.service;
 
+import dn.questenginev2.code.repository.CodeRepository;
+import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ResourceNotFoundException;
 import dn.questenginev2.level.dto.CreateLevelRequest;
 import dn.questenginev2.level.dto.LevelResponse;
@@ -22,10 +24,10 @@ import org.springframework.stereotype.Service;
 public class LevelServiceImpl implements LevelService {
 
   private final LevelRepository levelRepository;
+  private final CodeRepository codeRepository;
   private final QuestService questService;
   private final UserService userService;
 
-  // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
   @Override
   public LevelResponse createLevel(Long questId, CreateLevelRequest request, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
@@ -64,6 +66,7 @@ public class LevelServiceImpl implements LevelService {
     level.setTimeoutSeconds(request.timeoutSeconds());
     level.setUpdatedAt(Instant.now());
     level.setRequiredMainCodesCount(request.requiredMainCodesCount());
+    validateRequiredMainCodesCount(level);
 
     Level savedLevel = levelRepository.save(level);
     return buildLevelResponse(savedLevel);
@@ -85,14 +88,32 @@ public class LevelServiceImpl implements LevelService {
     return maxIndex != null ? maxIndex : 0;
   }
 
-  // ────── VALIDATIONS ───────────────────────────────────────────────────────────
   private Level validateLevelExist(Long levelId) {
     return levelRepository
         .findById(levelId)
         .orElseThrow(() -> new ResourceNotFoundException("Уровень не найден: " + levelId));
   }
 
-  // ────── BUILDERS ───────────────────────────────────────────────────────────
+  /**
+   * requiredMainCodesCount не может превышать число различных MAIN-кодов уровня (ADR-0005).
+   * При создании уровня кодов ещё нет — проверка срабатывает на update и на publish.
+   */
+  private void validateRequiredMainCodesCount(Level level) {
+    Integer required = level.getRequiredMainCodesCount();
+    if (required == null) {
+      return;
+    }
+    long mainCount = codeRepository.countDistinctMainCodeIndexesByLevelId(level.getId());
+    if (required > mainCount) {
+      throw new ConflictException(
+          "requiredMainCodesCount="
+              + required
+              + " больше числа MAIN-кодов уровня ("
+              + mainCount
+              + ") — порог недостижим (ADR-0005)");
+    }
+  }
+
   private LevelResponse buildLevelResponse(Level level) {
     return LevelResponse.builder()
         .id(level.getId())
