@@ -43,6 +43,7 @@ public final class Routes {
   public static final String QUEST_PUBLISH = QUEST_ID + "/publish";
   public static final String QUEST_FINISH = QUEST_ID + "/finish";
   public static final String QUEST_STATISTICS = QUEST_ID + "/statistics";
+  public static final String QUEST_CODE_SUBMISSIONS = QUEST_ID + "/code-submissions";
 
   public static final String QUEST_REGISTER = QUESTS + "/register";
 
