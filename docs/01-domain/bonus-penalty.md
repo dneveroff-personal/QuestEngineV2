@@ -1,6 +1,6 @@
 # Bonus / Penalty Time
 
-Статус: 🟢 Accepted. Реализовано (`BonusPenaltyServiceImpl`, `ManualTimeAdjustmentController`, миграция V15). Есть unit-тесты агрегатора; полный runtime/API-контракт ещё требует отдельного integration/contract покрытия.
+Статус: 🟢 Accepted. Реализовано (`BonusPenaltyServiceImpl`, `ManualTimeAdjustmentController`, миграция V15). Агрегатор трёх источников покрыт unit-тестами и IT `bonusPenaltySeconds_aggregatesAllThreeSources`; BONUS/PENALTY-код one-shot — V18 + concurrent IT.
 
 ## Назначение
 
