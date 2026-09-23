@@ -49,7 +49,6 @@ public class QuestServiceImpl implements QuestService {
     }
   }
 
-  // ────── IMPLEMENTATIONS ───────────────────────────────────────────────────────────
   @Override
   public QuestResponse createQuest(CreateQuestRequest request, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
@@ -143,7 +142,6 @@ public class QuestServiceImpl implements QuestService {
     return questRepository.findAllByStartTimeAfterAndArchivedFalse(Instant.now());
   }
 
-  // ────── VALIDATIONS ───────────────────────────────────────────────────────────
   @Override
   public Quest validateQuestExist(Long questId) {
     return questRepository
@@ -191,10 +189,6 @@ public class QuestServiceImpl implements QuestService {
     }
   }
 
-  /**
-   * Проверка содержимого квеста перед публикацией: должен быть хотя бы один Level, и ни один
-   * Level не должен быть "аномальным" (без кодов и без автоперехода) — см. ADR-0005.
-   */
   private void validateQuestPublishable(Quest quest) {
     List<Level> levels = levelRepository.findByQuestIdOrderByOrderIndex(quest.getId());
     if (levels.isEmpty()) {
@@ -212,6 +206,23 @@ public class QuestServiceImpl implements QuestService {
                 + ") непроходим: нет ни кодов, ни автоперехода (ADR-0005, \"аномальный\""
                 + " уровень)");
       }
+
+      Integer required = level.getRequiredMainCodesCount();
+      if (required != null) {
+        long mainCount = codeRepository.countDistinctMainCodeIndexesByLevelId(level.getId());
+        if (required > mainCount) {
+          throw new ConflictException(
+              "Уровень \""
+                  + level.getTitle()
+                  + "\" (id="
+                  + level.getId()
+                  + "): requiredMainCodesCount="
+                  + required
+                  + " больше числа MAIN-кодов ("
+                  + mainCount
+                  + ") — порог недостижим (ADR-0005)");
+        }
+      }
     }
   }
 
@@ -225,7 +236,6 @@ public class QuestServiceImpl implements QuestService {
     questProgressRepository.saveAll(progresses);
   }
 
-  // ────── BUILDERS ───────────────────────────────────────────────────────────
   private QuestResponse buildQuestResponse(Quest quest) {
     var builder =
         QuestResponse.builder()

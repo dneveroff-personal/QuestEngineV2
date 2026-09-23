@@ -3,7 +3,7 @@ package dn.questenginev2.common.exceptions;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,6 @@ public class GlobalExceptionHandler {
 
   private static final String BASE_URI = "https://api.questenginev2.dn/problems";
 
-  // ===== MethodArgumentNotValidException (ошибки @Valid в теле запроса) =====
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ProblemDetail handleMethodArgumentNotValid(
       MethodArgumentNotValidException ex, WebRequest request) {
@@ -48,7 +47,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== ConstraintViolationException (ошибки валидации параметров/путей) =====
   @ExceptionHandler(ConstraintViolationException.class)
   public ProblemDetail handleConstraintViolation(
       ConstraintViolationException ex, WebRequest request) {
@@ -74,7 +72,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== AccessDeniedException =====
   @ExceptionHandler(AccessDeniedException.class)
   public ProblemDetail handleAccessDenied(AccessDeniedException ex, WebRequest request) {
     ProblemDetail problemDetail =
@@ -83,7 +80,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== WrongPasswordException =====
   @ExceptionHandler(WrongPasswordException.class)
   public ProblemDetail handleWrongPasswordException(WrongPasswordException ex, WebRequest request) {
     ProblemDetail problemDetail =
@@ -92,7 +88,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== RequestAlreadyExistsException =====
   @ExceptionHandler(RequestAlreadyExistsException.class)
   public ProblemDetail handleRequestAlreadyExists(
       RequestAlreadyExistsException ex, WebRequest request) {
@@ -102,10 +97,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== ForbiddenOperationException =====
-  // ADR-0011: название подразумевает 403 — раньше маппилось на 409, что и
-  // было найденным несоответствием. Теперь используется только для "прав
-  // нет в принципе" (роль/владение), состояние-based случаи — см. ConflictException ниже.
   @ExceptionHandler(ForbiddenOperationException.class)
   public ProblemDetail handleForbiddenOperation(
       ForbiddenOperationException ex, WebRequest request) {
@@ -116,7 +107,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== ConflictException (ADR-0011) =====
   @ExceptionHandler(ConflictException.class)
   public ProblemDetail handleConflictException(ConflictException ex, WebRequest request) {
     ProblemDetail problemDetail =
@@ -125,7 +115,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== ResourceNotFoundException (ADR-0011) =====
   @ExceptionHandler(ResourceNotFoundException.class)
   public ProblemDetail handleResourceNotFoundException(
       ResourceNotFoundException ex, WebRequest request) {
@@ -136,7 +125,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== EntityNotFoundException =====
   @ExceptionHandler(EntityNotFoundException.class)
   public ProblemDetail handleEntityNotFound(EntityNotFoundException ex, WebRequest request) {
     ProblemDetail problemDetail =
@@ -145,7 +133,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== UserNotFoundException =====
   @ExceptionHandler(UserNotFoundException.class)
   public ProblemDetail handleUserNotFound(UserNotFoundException ex, WebRequest request) {
     ProblemDetail problemDetail =
@@ -154,7 +141,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== RequestNotFoundException =====
   @ExceptionHandler(RequestNotFoundException.class)
   public ProblemDetail handleRequestNotFound(RequestNotFoundException ex, WebRequest request) {
     ProblemDetail problemDetail =
@@ -164,7 +150,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== TeamNotFoundException =====
   @ExceptionHandler(TeamNotFoundException.class)
   public ProblemDetail handleTeamNotFound(TeamNotFoundException ex, WebRequest request) {
     ProblemDetail problemDetail =
@@ -173,7 +158,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== LevelProgressNotFoundException =====
   @ExceptionHandler(LevelProgressNotFoundException.class)
   public ProblemDetail handleLevelProgressNotFoundException(
       LevelProgressNotFoundException ex, WebRequest request) {
@@ -184,7 +168,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== UserAlreadyExistsException =====
   @ExceptionHandler(UserAlreadyExistsException.class)
   public ProblemDetail handleUserAlreadyExists(UserAlreadyExistsException ex, WebRequest request) {
     ProblemDetail problemDetail =
@@ -194,7 +177,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== UserAlreadyInTeamException =====
   @ExceptionHandler(UserAlreadyInTeamException.class)
   public ProblemDetail handleUserAlreadyInTeam(UserAlreadyInTeamException ex, WebRequest request) {
     ProblemDetail problemDetail =
@@ -204,7 +186,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== TeamAlreadyExistsException =====
   @ExceptionHandler(TeamAlreadyExistsException.class)
   public ProblemDetail handleTeamAlreadyExists(TeamAlreadyExistsException ex, WebRequest request) {
     ProblemDetail problemDetail =
@@ -214,7 +195,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== IllegalArgumentException / IllegalStateException =====
   @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
   public ProblemDetail handleConflict(RuntimeException ex, WebRequest request) {
     ProblemDetail problemDetail =
@@ -223,7 +203,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== HttpMessageNotReadableException (невалидный JSON) =====
   @ExceptionHandler(HttpMessageNotReadableException.class)
   public ProblemDetail handleHttpMessageNotReadable(
       HttpMessageNotReadableException ex, WebRequest request) {
@@ -238,7 +217,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== MethodArgumentTypeMismatchException (неверный тип параметра) =====
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
   public ProblemDetail handleMethodArgumentTypeMismatch(
       MethodArgumentTypeMismatchException ex, WebRequest request) {
@@ -253,7 +231,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== ResponseStatusException =====
   @ExceptionHandler(ResponseStatusException.class)
   public ProblemDetail handleResponseStatusException(
       ResponseStatusException ex, WebRequest request) {
@@ -268,7 +245,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== NoResourceFoundException (ошибки неправильного роута) =====
   @ExceptionHandler(NoResourceFoundException.class)
   public ProblemDetail handleMethodArgumentNotValid(
       NoResourceFoundException ex, WebRequest request) {
@@ -279,7 +255,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  // ===== Все остальные исключения =====
   @ExceptionHandler(Exception.class)
   public ProblemDetail handleAll(Exception ex, WebRequest request) {
     log.error("Internal server error", ex);
@@ -292,7 +267,7 @@ public class GlobalExceptionHandler {
             "Internal Server Error",
             "An unexpected error occurred. Please try again later.");
 
-    problemDetail.setProperty("timestamp", LocalDateTime.now());
+    problemDetail.setProperty("timestamp", Instant.now());
     return problemDetail;
   }
 
@@ -302,7 +277,7 @@ public class GlobalExceptionHandler {
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(status, detail);
     problemDetail.setTitle(title);
     problemDetail.setType(URI.create(BASE_URI + "/" + getProblemType(ex)));
-    problemDetail.setProperty("timestamp", LocalDateTime.now());
+    problemDetail.setProperty("timestamp", Instant.now());
 
     if (request != null) {
       problemDetail.setInstance(URI.create(request.getDescription(false).replace("uri=", "")));
