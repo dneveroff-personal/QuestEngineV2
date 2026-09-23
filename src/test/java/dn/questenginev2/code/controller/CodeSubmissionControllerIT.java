@@ -268,11 +268,6 @@ class CodeSubmissionControllerIT {
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }
 
-  /**
-   * Реальный конкурентный тест на Сценарий 6 (02-processes/concurrency-scenarios.md): десятки
-   * потоков параллельно вводят один и тот же единственный требуемый код на одном LevelProgress.
-   * Проверяем, что уровень завершается РОВНО ОДИН раз, несмотря на гонку.
-   */
   @Test
   void submitCode_completesLevelExactlyOnce_underConcurrentSubmissions() throws Exception {
     levelProgress =
@@ -332,10 +327,6 @@ class CodeSubmissionControllerIT {
     assertThat(submissions).hasSize(threadCount);
   }
 
-  /**
-   * Проверка одноразового применения BONUS/PENALTY-кода (bonus-penalty.md):
-   * один и тот же код не должен засчитываться повторно в рамках одного прохождения.
-   */
   @Test
   void submitCode_bonusCodeCanOnlyBeAppliedOnce() throws Exception {
     levelProgress =
@@ -361,11 +352,6 @@ class CodeSubmissionControllerIT {
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }
 
-  /**
-   * Реальный конкурентный тест на Сценарий 3 (concurrency-scenarios.md): несколько потоков
-   * одновременно вводят один и тот же BONUS-код. Должен засчитаться ровно один раз; остальные
-   * получают 409. Защита — partial UNIQUE (V18) + перехват DataIntegrityViolationException.
-   */
   @Test
   void submitCode_bonusCodeAppliedExactlyOnce_underConcurrentSubmissions() throws Exception {
     levelProgress =
