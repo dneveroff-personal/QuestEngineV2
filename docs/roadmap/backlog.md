@@ -26,8 +26,8 @@
 7. ⚪ Тесты ranking/SSE / 14–16 — по мере необходимости (Odissey). **Уточнение: `StatisticsServiceImpl`/`StatisticsController`/`StatisticsSseHub` не имеют вообще ни одного теста (0 файлов), как и `CurrentLevelServiceImpl`/`CurrentLevelService` (Game Mode агрегирующий эндпоинт) — оба сейчас непроверены совсем, не просто "недостаточно".**
 8. ⚪ Нет `TeamController`-эндпоинта переименования команды. `01-domain/team.md` явно описывает это как полномочие капитана ("Переименование", отдельный раздел с примером) — в коде ни `TeamService`, ни `TeamController` такого действия не содержат.
 9. ⚪ Статистика попыток ввода кода не реализована как API. `statistics-ranking.md` и `code-submission.md` явно описывают видимость: автору — полная статистика попыток всех команд, команде — только своя на активном уровне. В коде нет ни одного эндпоинта, отдающего список/сводку `CodeSubmission` (кроме самого `POST .../codes`) — фича описана в доменной модели, но не существует как API.
-10. ⚪ `Level.requiredMainCodesCount` не валидируется относительно фактического числа MAIN-кодов уровня — ни при создании/редактировании уровня, ни при `validateQuestPublishable`. Можно опубликовать уровень с порогом, который физически недостижим (например, требуется 5 кодов при 3 настроенных) — по духу это тот же случай, что и уже отклоняемый "аномальный уровень" (ADR-0005), но не покрыт проверкой.
-11. ⚪ `GlobalExceptionHandler.timestamp` — `LocalDateTime.now()` вместо `Instant`, конвенция сама фиксирует это как известное расхождение "исправить при следующей правке файла" (`04-api/conventions.md`) — правка ещё не сделана.
+10. 🔵 `Level.requiredMainCodesCount` валидируется относительно числа MAIN-кодов (по `codeIndex`) при `updateLevel` и при `validateQuestPublishable` — недостижимый порог отклоняется как Conflict (ADR-0005).
+11. 🔵 `GlobalExceptionHandler.timestamp` — `Instant.now()`; расхождение с conventions устранено.
 
 ### Отложено
 
@@ -37,4 +37,4 @@
 
 ## Итог
 
-**Доменный backlog MVP и критичные frontend-баги Game Mode закрыты.** Остались quality-пункты (п. 5–11). Ближайший осмысленный фокус — тесты ranking/SSE/CurrentLevel или rename team / code-attempt stats по продуктовому приоритету.
+**Доменный backlog MVP и критичные frontend-баги Game Mode закрыты.** Quality #10–11 закрыты. Остались quality-пункты (п. 5–9). Ближайший осмысленный фокус — тесты ranking/SSE/CurrentLevel или rename team / code-attempt stats по продуктовому приоритету.
