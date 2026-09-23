@@ -41,4 +41,34 @@ public interface CodeSubmissionRepository extends JpaRepository<CodeSubmission, 
       @Param("questProgressId") Long questProgressId,
       @Param("matchedCodeId") Long matchedCodeId,
       @Param("result") CodeSubmissionResult result);
+
+  /**
+   * Попытки на одном LevelProgress с подгрузкой submittedBy и matchedCode
+   * (для GET команды на активном уровне).
+   */
+  @Query(
+      "SELECT cs FROM CodeSubmission cs "
+          + "JOIN FETCH cs.submittedBy "
+          + "LEFT JOIN FETCH cs.matchedCode "
+          + "WHERE cs.levelProgress.id = :levelProgressId "
+          + "ORDER BY cs.submittedAt DESC")
+  List<CodeSubmission> findDetailedByLevelProgressIdOrderBySubmittedAtDesc(
+      @Param("levelProgressId") Long levelProgressId);
+
+  /**
+   * Все попытки квеста (все команды, все уровни) с контекстом team/level
+   * (для GET автора).
+   */
+  @Query(
+      "SELECT cs FROM CodeSubmission cs "
+          + "JOIN FETCH cs.submittedBy "
+          + "LEFT JOIN FETCH cs.matchedCode "
+          + "JOIN FETCH cs.levelProgress lp "
+          + "JOIN FETCH lp.level "
+          + "JOIN FETCH lp.questProgress qp "
+          + "JOIN FETCH qp.team "
+          + "WHERE qp.quest.id = :questId "
+          + "ORDER BY cs.submittedAt DESC")
+  List<CodeSubmission> findDetailedByQuestIdOrderBySubmittedAtDesc(
+      @Param("questId") Long questId);
 }

@@ -3,15 +3,18 @@ package dn.questenginev2.code.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dn.questenginev2.code.dto.CodeSubmissionAttemptResponse;
 import dn.questenginev2.code.dto.CodeSubmissionResponse;
 import dn.questenginev2.code.dto.SubmitCodeRequest;
 import dn.questenginev2.code.entity.CodeSubmissionResult;
 import dn.questenginev2.code.service.CodeSubmissionService;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import java.time.Instant;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -76,5 +79,46 @@ class CodeSubmissionControllerTest {
                 .content("{\"value\":\"синий\"}"))
         .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  @Test
+  void listTeamAttempts_returnsOk() throws Exception {
+    when(codeSubmissionService.listAttemptsForTeamActiveLevel(eq(1L), eq(2L), any()))
+        .thenReturn(
+            List.of(
+                CodeSubmissionAttemptResponse.builder()
+                    .id(10L)
+                    .rawValue("синий")
+                    .result(CodeSubmissionResult.CORRECT_MAIN)
+                    .submittedAt(Instant.parse("2026-09-23T10:00:00Z"))
+                    .teamId(2L)
+                    .teamName("Wolves")
+                    .build()));
+
+    mockMvc
+        .perform(get("/api/quests/progress/1/2/codes"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].rawValue").value("синий"))
+        .andExpect(jsonPath("$[0].result").value("CORRECT_MAIN"));
+  }
+
+  @Test
+  void listAuthorAttempts_returnsOk() throws Exception {
+    when(codeSubmissionService.listAttemptsForQuestAuthor(eq(1L), any()))
+        .thenReturn(
+            List.of(
+                CodeSubmissionAttemptResponse.builder()
+                    .id(11L)
+                    .rawValue("wrong")
+                    .result(CodeSubmissionResult.INCORRECT)
+                    .teamId(2L)
+                    .teamName("Wolves")
+                    .build()));
+
+    mockMvc
+        .perform(get("/api/quests/1/code-submissions"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].rawValue").value("wrong"))
+        .andExpect(jsonPath("$[0].result").value("INCORRECT"));
   }
 }

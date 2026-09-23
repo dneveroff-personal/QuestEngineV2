@@ -7,6 +7,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 import dn.questenginev2.code.dto.CodeSubmissionResponse;
+import dn.questenginev2.code.dto.CodeSubmissionAttemptResponse;
+import dn.questenginev2.quest.service.QuestService;
 import dn.questenginev2.code.dto.SubmitCodeRequest;
 import dn.questenginev2.code.entity.Code;
 import dn.questenginev2.code.entity.CodeSubmission;
@@ -59,6 +61,7 @@ class CodeSubmissionServiceImplTest {
   @Mock private LevelProgressRepository levelProgressRepository;
   @Mock private TeamMemberRepository teamMemberRepository;
   @Mock private QuestProgressService questProgressService;
+  @Mock private QuestService questService;
   @Mock private dn.questenginev2.user.service.UserService userService;
   @Mock private Clock clock;
   @Mock private Authentication authentication;
@@ -77,6 +80,7 @@ class CodeSubmissionServiceImplTest {
   void setUp() {
     currentUser = new User();
     currentUser.setId(1L);
+    currentUser.setUsername("player1");
     currentUser.setRole(UserRole.PLAYER);
     team = Team.builder().id(10L).name("Team A").captain(currentUser).build();
     quest =
@@ -213,7 +217,7 @@ class CodeSubmissionServiceImplTest {
     codeSubmissionService.submitCode(100L, 10L, new SubmitCodeRequest("anything"), authentication);
 
     ArgumentCaptor<CodeSubmission> captor = ArgumentCaptor.forClass(CodeSubmission.class);
-    verify(codeSubmissionRepository).save(captor.capture());
+    verify(codeSubmissionRepository).saveAndFlush(captor.capture());
     assertThat(captor.getValue().getResult()).isEqualTo(CodeSubmissionResult.INCORRECT);
     assertThat(captor.getValue().getRawValue()).isEqualTo("anything");
     assertThat(captor.getValue().getSubmittedBy()).isEqualTo(currentUser);
@@ -267,7 +271,6 @@ class CodeSubmissionServiceImplTest {
 
   @Test
   void submitCode_usesDefaultRequiredCount_whenLevelRequiredMainCodesCountNotSet() {
-    // 2 коды на уровне, порог не задан -> требуются оба (ADR-0005: null = все коды).
     level.setRequiredMainCodesCount(null);
     when(codeRepository.findByLevelIdOrderByCreatedAt(1000L))
         .thenReturn(List.of(mainCode(1L, "siniy", 1), mainCode(2L, "dekabr", 2)));
@@ -278,5 +281,90 @@ class CodeSubmissionServiceImplTest {
 
     verify(levelProgressRepository).tryCompleteByCodesThreshold(2000L, 2L, fixedNow);
     assertThat(response.getRemainingMainCodes()).isEqualTo(1);
+  }
+
+  @Test
+  void listAttemptsForTeamActiveLevel_returnsAttemptsOnActiveLevel() {
+    CodeSubmission attempt =
+        CodeSubmission.builder()
+            .id(1L)
+            .levelProgress(levelProgress)
+            .submittedBy(currentUser)
+            .rawValue("siniy")
+            .matchedCode(mainCode(1L, "siniy", 1))
+            .result(CodeSubmissionResult.CORRECT_MAIN)
+            .submittedAt(fixedNow)
+            .build();
+    when(codeSubmissionRepository.findDetailedByLevelProgressIdOrderBySubmittedAtDesc(2000L))
+        .thenReturn(List.of(attempt));
+
+    List<CodeSubmissionAttemptResponse> result =
+        codeSubmissionService.listAttemptsForTeamActiveLevel(100L, 10L, authentication);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getRawValue()).isEqualTo("siniy");
+    assertThat(result.get(0).getResult()).isEqualTo(CodeSubmissionResult.CORRECT_MAIN);
+    assertThat(result.get(0).getTeamId()).isEqualTo(10L);
+    assertThat(result.get(0).getLevelOrderIndex()).isEqualTo(1);
+    assertThat(result.get(0).getSubmittedByUsername()).isEqualTo(currentUser.getUsername());
+  }
+
+  @Test
+  void listAttemptsForTeamActiveLevel_returnsEmpty_whenNoActiveLevel() {
+    when(levelProgressRepository.findByQuestProgressIdAndStatus(500L, LevelProgressStatus.ACTIVE))
+        .thenReturn(Optional.empty());
+
+    List<CodeSubmissionAttemptResponse> result =
+        codeSubmissionService.listAttemptsForTeamActiveLevel(100L, 10L, authentication);
+
+    assertThat(result).isEmpty();
+    verify(codeSubmissionRepository, never())
+        .findDetailedByLevelProgressIdOrderBySubmittedAtDesc(anyLong());
+  }
+
+  @Test
+  void listAttemptsForTeamActiveLevel_throwsForbidden_whenNotMember() {
+    when(teamMemberRepository.findByUserAndTeam(currentUser, team)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(
+            () ->
+                codeSubmissionService.listAttemptsForTeamActiveLevel(100L, 10L, authentication))
+        .isInstanceOf(ForbiddenOperationException.class);
+  }
+
+  @Test
+  void listAttemptsForQuestAuthor_returnsAllAttempts() {
+    CodeSubmission attempt =
+        CodeSubmission.builder()
+            .id(1L)
+            .levelProgress(levelProgress)
+            .submittedBy(currentUser)
+            .rawValue("wrong")
+            .matchedCode(null)
+            .result(CodeSubmissionResult.INCORRECT)
+            .submittedAt(fixedNow)
+            .build();
+    when(codeSubmissionRepository.findDetailedByQuestIdOrderBySubmittedAtDesc(100L))
+        .thenReturn(List.of(attempt));
+
+    List<CodeSubmissionAttemptResponse> result =
+        codeSubmissionService.listAttemptsForQuestAuthor(100L, authentication);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getRawValue()).isEqualTo("wrong");
+    assertThat(result.get(0).getMatchedCodeId()).isNull();
+    verify(questService).validateQuestExist(100L);
+    verify(questService).validateQuestAuthor(currentUser, 100L);
+  }
+
+  @Test
+  void listAttemptsForQuestAuthor_propagatesForbidden_whenNotAuthor() {
+    doThrow(new ForbiddenOperationException("Редактировать квесты могут только Авторы"))
+        .when(questService)
+        .validateQuestAuthor(currentUser, 100L);
+
+    assertThatThrownBy(
+            () -> codeSubmissionService.listAttemptsForQuestAuthor(100L, authentication))
+        .isInstanceOf(ForbiddenOperationException.class);
   }
 }
