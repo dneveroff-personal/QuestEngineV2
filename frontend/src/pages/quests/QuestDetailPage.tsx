@@ -74,6 +74,25 @@ export function QuestDetailPage() {
 
         {quest.description && <p className="whitespace-pre-wrap text-sm">{quest.description}</p>}
 
+        {(quest.status === "RUNNING" || quest.status === "FINISHED") && (
+          <div className="flex flex-wrap gap-3 text-sm">
+            <Link
+              to={`/quests/${quest.id}/statistics`}
+              className="text-primary underline underline-offset-4"
+            >
+              Статистика / рейтинг
+            </Link>
+            {quest.status === "RUNNING" && (
+              <Link
+                to={`/quests/${quest.id}/play`}
+                className="text-primary underline underline-offset-4"
+              >
+                Войти в игру
+              </Link>
+            )}
+          </div>
+        )}
+
         {registrationsQuery.data && (
             <RegistrationPanel quest={quest} registrations={registrationsQuery.data} />
         )}
