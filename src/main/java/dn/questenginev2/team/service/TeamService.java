@@ -15,6 +15,9 @@ public interface TeamService {
 
   TeamResponse createTeam(CreateTeamRequest request, Authentication auth);
 
+  /** Captain-only: change team name. Same Team.id identity (01-domain/team.md). */
+  TeamResponse renameTeam(Long teamId, CreateTeamRequest request, Authentication auth);
+
   Boolean createJoinRequest(Authentication auth, Long teamId, String username);
 
   List<TeamJoinResponse> getJoinRequests(Authentication auth);
