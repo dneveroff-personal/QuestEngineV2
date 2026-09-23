@@ -23,7 +23,7 @@
 
 5. 🟡 Runtime Bonus/Penalty — полный integration-путь трёх источников (атомарность BONUS/PENALTY-кода закрыта V18; остаются Hint + Manual).
 6. ⚪ Повтор CodeSubmission после потери соединения (контракт).
-7. ⚪ Тесты ranking/SSE / 14–16 — по мере необходимости (Odissey). **Уточнение: `StatisticsServiceImpl`/`StatisticsController`/`StatisticsSseHub` не имеют вообще ни одного теста (0 файлов), как и `CurrentLevelServiceImpl`/`CurrentLevelService` (Game Mode агрегирующий эндпоинт) — оба сейчас непроверены совсем, не просто "недостаточно".**
+7. 🔵 Тесты ranking/SSE / CurrentLevel — unit-тесты `StatisticsServiceImpl` (runtime/final ranking, hide 0 completed, AUTO_TRANSITIONED), `StatisticsSseHub` (subscribe/publish), `CurrentLevelServiceImpl` (member/admin/forbidden/not-found).
 8. ⚪ Нет `TeamController`-эндпоинта переименования команды. `01-domain/team.md` явно описывает это как полномочие капитана ("Переименование", отдельный раздел с примером) — в коде ни `TeamService`, ни `TeamController` такого действия не содержат.
 9. ⚪ Статистика попыток ввода кода не реализована как API. `statistics-ranking.md` и `code-submission.md` явно описывают видимость: автору — полная статистика попыток всех команд, команде — только своя на активном уровне. В коде нет ни одного эндпоинта, отдающего список/сводку `CodeSubmission` (кроме самого `POST .../codes`) — фича описана в доменной модели, но не существует как API.
 10. 🔵 `Level.requiredMainCodesCount` валидируется относительно числа MAIN-кодов (по `codeIndex`) при `updateLevel` и при `validateQuestPublishable` — недостижимый порог отклоняется как Conflict (ADR-0005).
@@ -37,4 +37,4 @@
 
 ## Итог
 
-**Доменный backlog MVP и критичные frontend-баги Game Mode закрыты.** Quality #10–11 закрыты. Остались quality-пункты (п. 5–9). Ближайший осмысленный фокус — тесты ranking/SSE/CurrentLevel или rename team / code-attempt stats по продуктовому приоритету.
+**Доменный backlog MVP и критичные frontend-баги Game Mode закрыты.** Quality #7, #10–11 закрыты. Остались quality-пункты (п. 5–6, 8–9). Ближайший фокус — rename team / code-attempt stats или Runtime Bonus/Penalty.
