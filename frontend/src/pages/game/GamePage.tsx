@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { ApiError } from "@/api/errors";
 import {
@@ -92,11 +92,19 @@ function GamePageContent({
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{teamName}</h1>
-        <span className="text-muted-foreground text-sm">
-          {STATUS_LABEL[effectiveStatus] ?? effectiveStatus}
-        </span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="space-y-0.5">
+          <h1 className="text-xl font-semibold">{teamName}</h1>
+          <span className="text-muted-foreground text-sm">
+            {STATUS_LABEL[effectiveStatus] ?? effectiveStatus}
+          </span>
+        </div>
+        <Link
+          to={`/quests/${questId}/statistics`}
+          className="text-primary shrink-0 text-sm underline underline-offset-4"
+        >
+          Рейтинг
+        </Link>
       </div>
 
       {effectiveStatus === "WAITING" && (
