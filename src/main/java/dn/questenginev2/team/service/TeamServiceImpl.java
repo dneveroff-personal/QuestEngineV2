@@ -181,6 +181,22 @@ public class TeamServiceImpl implements TeamService {
   }
 
   @Override
+  @Transactional
+  public TeamResponse renameTeam(Long teamId, CreateTeamRequest request, Authentication auth) {
+    User currentUser = userService.getCurrentUser(auth);
+    Team team = getTeam(teamId);
+    validateCaptain(team, currentUser);
+
+    String newName = request.name();
+    if (!team.getName().equals(newName)) {
+      validateTeamNameUnique(newName);
+      team.setName(newName);
+      team = teamRepository.save(team);
+    }
+    return buildTeamResponse(team);
+  }
+
+  @Override
   public TeamResponse getTeamById(Long teamId) {
     return buildTeamResponse(getTeam(teamId));
   }
