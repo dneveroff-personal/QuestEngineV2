@@ -13,21 +13,20 @@ import { ProfilePage } from "@/pages/profile/ProfilePage";
 import { HomePage } from "@/pages/quests/HomePage";
 import { MyQuestsPage } from "@/pages/quests/MyQuestsPage";
 import { QuestDetailPage } from "@/pages/quests/QuestDetailPage";
+import { StatisticsPage } from "@/pages/quests/StatisticsPage";
 import { TeamPage } from "@/pages/team/TeamPage";
 
 /**
- * Маршруты соответствуют architecture.md §4.
+ * Маршруты соответствуют architecture.md §4 / information-architecture.md.
  *
  * /author/** не проверяет роль на уровне роутера (только скрывает пункт
  * навигации, RootLayout.tsx) — реальное ограничение доступа всегда на
- * backend (validateAuthorOrAdmin/validateQuestAuthor), роутер только
- * прячет лишнее из UI, не является границей безопасности.
+ * backend (validateAuthorOrAdmin/validateQuestAuthor).
  *
  * /quests/:questId/play — Game Mode, намеренно вне RootLayout (без общей
- * навигации, architecture.md §16).
+ * навигации).
  *
- * Ещё не добавлен: /quests/:questId/statistics — зависит от backend
- * statistics/ (не реализован, см. roadmap/backlog.md).
+ * /quests/:questId/statistics — ranking table (snapshot + SSE при RUNNING).
  */
 export const router = createBrowserRouter([
   {
@@ -56,6 +55,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: "quests/:questId", element: <QuestDetailPage /> },
+      { path: "quests/:questId/statistics", element: <StatisticsPage /> },
       { path: "my-quests", element: <MyQuestsPage /> },
       { path: "team", element: <TeamPage /> },
       { path: "profile", element: <ProfilePage /> },
