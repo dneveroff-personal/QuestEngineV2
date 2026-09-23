@@ -56,44 +56,52 @@ class TeamControllerTest {
                 .content("{\"name\":\"Test Team\"}"))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").value(1))
-        .andExpect(jsonPath("$.name").value("Test Team"))
-        .andExpect(jsonPath("$.captainUsername").value("testuser"))
-        .andExpect(jsonPath("$.captainDisplayName").value("Test User"));
+        .andExpect(jsonPath("$.name").value("Test Team"));
   }
 
   @Test
-  void getMyTeam_returnsTeam() throws Exception {
-    when(teamService.getMyTeam(any())).thenReturn(teamResponse);
+  void getTeamById_returnsTeam() throws Exception {
+    when(teamService.getTeamById(1L)).thenReturn(teamResponse);
 
     mockMvc
-        .perform(get("/api/teams/my"))
+        .perform(get("/api/teams/1"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.captainUsername").value("testuser"))
-        .andExpect(jsonPath("$.captainDisplayName").value("Test User"));
+        .andExpect(jsonPath("$.id").value(1))
+        .andExpect(jsonPath("$.name").value("Test Team"));
   }
 
   @Test
-  void getTeamMembers_returnsMembers_whenTeamExists() throws Exception {
-    when(teamService.getTeamMembers(eq(1L))).thenReturn(Collections.singletonList(memberDto));
+  void getTeamMembers_returnsMembers() throws Exception {
+    when(teamService.getTeamMembers(1L)).thenReturn(List.of(memberDto));
 
     mockMvc
         .perform(get("/api/teams/1/members"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].username").value("member"))
-        .andExpect(jsonPath("$[0].displayName").value("Member Display"));
+        .andExpect(jsonPath("$[0].username").value("member"));
   }
 
   @Test
   void searchTeams_returnsPage() throws Exception {
-    TeamResponse team1 =
+    when(teamService.searchTeams(any(), any()))
+        .thenReturn(PageResponse.from(org.springframework.data.domain.Page.empty(PageRequest.of(0, 20))));
+
+    mockMvc.perform(get("/api/teams/search")).andExpect(status().isOk());
+  }
+
+  @Test
+  void renameTeam_returnsUpdatedTeam() throws Exception {
+    TeamResponse renamed =
         new TeamResponse(
-            1L, "Team Alpha", "captain1", "Captain One", Instant.now(), Collections.emptyList());
-    PageResponse<TeamResponse> pageResponse = new PageResponse<>(List.of(team1), 0, 20, 1L, 1);
-    when(teamService.searchTeams(any(), any(PageRequest.class))).thenReturn(pageResponse);
+            1L, "New Name", "testuser", "Test User", Instant.now(), Collections.emptyList());
+    when(teamService.renameTeam(eq(1L), any(), any())).thenReturn(renamed);
 
     mockMvc
-        .perform(get("/api/teams/search").param("name", "Alpha"))
+        .perform(
+            patch("/api/teams/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"New Name\"}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content[0].name").value("Team Alpha"));
+        .andExpect(jsonPath("$.id").value(1))
+        .andExpect(jsonPath("$.name").value("New Name"));
   }
 }

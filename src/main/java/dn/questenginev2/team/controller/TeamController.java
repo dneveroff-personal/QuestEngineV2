@@ -35,6 +35,18 @@ public class TeamController {
     return ResponseEntity.status(HttpStatus.CREATED).body(teamService.createTeam(request, auth));
   }
 
+  @Operation(
+      summary = "Rename team",
+      description =
+          "Captain-only: change team name. Team.id identity is preserved (01-domain/team.md).")
+  @PatchMapping(Routes.TEAM_ID)
+  public ResponseEntity<TeamResponse> rename(
+      @PathVariable Long teamId,
+      @Valid @RequestBody CreateTeamRequest request,
+      Authentication auth) {
+    return ResponseEntity.ok(teamService.renameTeam(teamId, request, auth));
+  }
+
   @Operation(summary = "Send join request", description = "Send a request to join a team")
   @PostMapping(Routes.TEAM_ID_JOIN_REQUEST)
   public ResponseEntity<Boolean> sendJoinRequest(
@@ -65,7 +77,8 @@ public class TeamController {
 
   @Operation(summary = "Transfer captain", description = "Transfer captain role to another member")
   @PostMapping(Routes.TRANSFER_CAPTAIN)
-  public ResponseEntity<Boolean> transferCaptain(@PathVariable Long userId, Authentication auth) {
+  public ResponseEntity<Boolean> transferCaptain(
+      @PathVariable Long userId, Authentication auth) {
     return ResponseEntity.status(HttpStatus.OK).body(teamService.transferCaptain(userId, auth));
   }
 
