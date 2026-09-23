@@ -1,13 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatDurationSeconds } from "@/lib/format";
 
 describe("formatDateTime", () => {
   it("возвращает «не указано» для null, а не молчаливую эпоху 1970 года", () => {
-    // Регрессия: new Date(null) в JS не бросает исключение, а тихо
-    // возвращает 1 января 1970 — выглядит как настоящая дата. Quest.startTime
-    // (api/quests.ts) реально может быть null (QuestResponse.java без
-    // @NotNull, наша же QuestForm.tsx отправляет null для незаполненного поля).
     expect(formatDateTime(null)).toBe("не указано");
   });
 
@@ -16,5 +12,20 @@ describe("formatDateTime", () => {
 
     expect(result).not.toBe("не указано");
     expect(result).toContain("2026");
+  });
+});
+
+describe("formatDurationSeconds", () => {
+  it("null → em dash", () => {
+    expect(formatDurationSeconds(null)).toBe("—");
+    expect(formatDurationSeconds(undefined)).toBe("—");
+  });
+
+  it("formats minutes and seconds", () => {
+    expect(formatDurationSeconds(65)).toBe("1:05");
+  });
+
+  it("formats hours", () => {
+    expect(formatDurationSeconds(3661)).toBe("1:01:01");
   });
 });
