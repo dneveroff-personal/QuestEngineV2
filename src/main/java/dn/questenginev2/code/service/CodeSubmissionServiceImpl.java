@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -98,8 +99,9 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
     Code matchedCode = matchCode(levelCodes, request.value());
     CodeSubmissionResult result = resolveResult(matchedCode);
 
-    // Одноразовое применение BONUS/PENALTY-кода (bonus-penalty.md):
-    // один и тот же код не должен засчитываться повторно в рамках одного прохождения
+    // Одноразовое применение BONUS/PENALTY-кода (bonus-penalty.md, Сценарий 3):
+    // soft-check до INSERT даёт понятный 409; атомарность при гонке обеспечивает
+    // partial UNIQUE (V18) + перехват DataIntegrityViolationException ниже.
     if (result == CodeSubmissionResult.CORRECT_BONUS
         || result == CodeSubmissionResult.CORRECT_PENALTY) {
       if (codeSubmissionRepository.existsByQuestProgressIdAndMatchedCodeIdAndResult(
@@ -120,7 +122,16 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
             .result(result)
             .submittedAt(now)
             .build();
-    codeSubmissionRepository.save(submission);
+    try {
+      codeSubmissionRepository.saveAndFlush(submission);
+    } catch (DataIntegrityViolationException concurrentBonusPenalty) {
+      if (result == CodeSubmissionResult.CORRECT_BONUS
+          || result == CodeSubmissionResult.CORRECT_PENALTY) {
+        throw new ConflictException(
+            "BONUS/PENALTY-код уже был использован на этом уровне: " + matchedCode.getValue());
+      }
+      throw concurrentBonusPenalty;
+    }
 
     Integer remainingMainCodes =
         computeRemainingMainCodes(level, levelCodes, levelProgress.getId());
