@@ -47,15 +47,33 @@ export function deleteHint(hintId: number): Promise<void> {
   return apiFetch<void>(`/api/hints/${hintId}`, { method: "DELETE" });
 }
 
-/** Получить уже показанные подсказки для команды (игровой API). */
+/**
+ * Видимые подсказки команды на активном уровне (HintProgressResponse).
+ * - REGULAR / уже взятые BONUS|PENALTY: content + shownAt (+ cost)
+ * - BONUS|PENALTY доступны, но не взяты: type only (content/cost/shownAt = null) — ADR-0021
+ */
 export interface ShownHint {
   hintId: number;
   type: HintType;
-  content: string;
-  shownAt: string;
   orderIndex: number;
+  content?: string | null;
+  bonusPenaltySeconds?: number | null;
+  shownAt?: string | null;
 }
 
+/** GET /api/quests/progress/{questId}/{teamId}/hints (Routes.QUEST_PROGRESS_HINTS). */
 export function getShownHints(questId: number, teamId: number): Promise<ShownHint[]> {
-  return apiFetch<ShownHint[]>(`/api/quests/${questId}/teams/${teamId}/hints`);
+  return apiFetch<ShownHint[]>(`/api/quests/progress/${questId}/${teamId}/hints`);
+}
+
+/** POST /api/quests/progress/{questId}/{teamId}/hints/{hintId}/take — ADR-0021. */
+export function takeHint(
+  questId: number,
+  teamId: number,
+  hintId: number,
+): Promise<ShownHint> {
+  return apiFetch<ShownHint>(
+    `/api/quests/progress/${questId}/${teamId}/hints/${hintId}/take`,
+    { method: "POST" },
+  );
 }

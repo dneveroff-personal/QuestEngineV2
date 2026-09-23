@@ -1,7 +1,14 @@
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { ApiError } from "@/api/errors";
-import { CodeSubmitForm, ShownHintsList, useEnterQuest, useQuestProgress } from "@/features/gameplay";
+import {
+  CodeSubmitForm,
+  ShownHintsList,
+  useCurrentLevel,
+  useEnterQuest,
+  useQuestProgress,
+} from "@/features/gameplay";
 import { useMyTeam } from "@/features/teams";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/format";
@@ -14,16 +21,16 @@ const STATUS_LABEL: Record<string, string> = {
   DNF: "Не завершено (DNF)",
 };
 
-/**
- * ВАЖНО: backend не отдаёт ни через один эндпоинт название/содержимое
- * текущего уровня команды, ни таймер автоперехода (LevelProgressResponse
- * существует, но ни один контроллер её не возвращает — см.
- * docs/roadmap/backlog.md). Поэтому этот экран не показывает "легенду"
- * уровня — единственная обратная связь: результат ввода кода
- * (remainingMainCodes/levelCompleted) и список уже показанных подсказок.
- * Это честное ограничение текущего backend-контракта, не недосмотр
- * фронта — исправится само, когда появится нужный эндпоинт.
- */
+function formatCountdown(autoTransitionAt: string | null, nowMs: number): string | null {
+  if (!autoTransitionAt) return null;
+  const target = Date.parse(autoTransitionAt);
+  if (Number.isNaN(target)) return null;
+  const remainingSec = Math.max(0, Math.floor((target - nowMs) / 1000));
+  const m = Math.floor(remainingSec / 60);
+  const s = remainingSec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 export function GamePage() {
   const { questId: questIdParam } = useParams<{ questId: string }>();
   const questId = Number(questIdParam);
@@ -55,6 +62,12 @@ function GamePageContent({
 }) {
   const progressQuery = useQuestProgress(questId, teamId);
   const enterMutation = useEnterQuest(questId);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   if (progressQuery.isLoading) {
     return <p className="text-muted-foreground p-4 text-sm">Загрузка...</p>;
@@ -71,15 +84,11 @@ function GamePageContent({
   const progress = progressQuery.data;
 
   /**
-   * Гонка (roadmap.md §3, Сценарий 2 в concurrency-scenarios.md):
-   * POST .../enter не защищён от повторного вызова на backend. Наивный
-   * `disabled={enterMutation.isPending}` оставляет окно между "мутация
-   * завершилась" (isPending=false) и "рефетч progress подтянул новый
-   * статус" — за это время повторный клик снова уйдёт в WAITING-ветку.
-   * Решение: как только мутация СЕБЕ вернула успешный ответ, доверяем
-   * его статусу немедленно, не дожидаясь инвалидации кэша.
+   * Гонка (Сценарий 2): после успешного enter доверяем статусу из ответа мутации
+   * сразу, не дожидаясь рефетча progress.
    */
   const effectiveStatus = enterMutation.data?.status ?? progress.status;
+  const isRunning = effectiveStatus === "RUNNING";
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
@@ -106,8 +115,9 @@ function GamePageContent({
         </div>
       )}
 
-      {effectiveStatus === "RUNNING" && (
+      {isRunning && (
         <>
+          <CurrentLevelPanel questId={questId} teamId={teamId} nowMs={nowMs} />
           <CodeSubmitForm questId={questId} teamId={teamId} />
           <ShownHintsList questId={questId} teamId={teamId} />
         </>
@@ -128,6 +138,76 @@ function GamePageContent({
         <div className="rounded-lg border border-border p-4">
           <p className="text-destructive text-sm font-medium">Квест не был завершён (DNF).</p>
         </div>
+      )}
+    </div>
+  );
+}
+
+function CurrentLevelPanel({
+  questId,
+  teamId,
+  nowMs,
+}: {
+  questId: number;
+  teamId: number;
+  nowMs: number;
+}) {
+  const levelQuery = useCurrentLevel(questId, teamId, true);
+
+  if (levelQuery.isLoading) {
+    return <p className="text-muted-foreground text-sm">Загрузка уровня...</p>;
+  }
+
+  if (levelQuery.isError || !levelQuery.data) {
+    // 404 = нет ACTIVE level (между уровнями / завершение)
+    const is404 =
+      levelQuery.error instanceof ApiError && levelQuery.error.status === 404;
+    if (is404) {
+      return (
+        <div className="rounded-lg border border-border p-4">
+          <p className="text-muted-foreground text-sm">Нет активного уровня.</p>
+        </div>
+      );
+    }
+    const message =
+      levelQuery.error instanceof ApiError
+        ? levelQuery.error.message
+        : "Не удалось загрузить текущий уровень.";
+    return <p className="text-destructive text-sm">{message}</p>;
+  }
+
+  const level = levelQuery.data;
+  const countdown = formatCountdown(level.autoTransitionAt, nowMs);
+  const required =
+    level.requiredMainCodesCount != null
+      ? level.requiredMainCodesCount
+      : null;
+
+  return (
+    <div className="space-y-2 rounded-lg border border-border p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-muted-foreground text-xs">
+            Уровень {level.orderIndex}
+          </p>
+          <h2 className="text-base font-semibold">{level.title}</h2>
+        </div>
+        {countdown != null && (
+          <div className="text-right">
+            <p className="text-muted-foreground text-xs">Автопереход</p>
+            <p className="font-mono text-sm tabular-nums">{countdown}</p>
+          </div>
+        )}
+      </div>
+      {level.content && (
+        <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-sm">
+          {level.content}
+        </div>
+      )}
+      {required != null && (
+        <p className="text-muted-foreground text-xs">
+          Основных кодов: {level.mainCodesSolved} / {required}
+        </p>
       )}
     </div>
   );
