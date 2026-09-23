@@ -1,6 +1,9 @@
 package dn.questenginev2.code.service;
 
 import dn.questenginev2.code.dto.CodeSubmissionResponse;
+import dn.questenginev2.code.dto.CodeSubmissionAttemptResponse;
+import dn.questenginev2.user.entity.UserRole;
+import dn.questenginev2.quest.service.QuestService;
 import dn.questenginev2.code.dto.SubmitCodeRequest;
 import dn.questenginev2.code.entity.Code;
 import dn.questenginev2.code.entity.CodeSubmission;
@@ -52,6 +55,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
   private final LevelProgressRepository levelProgressRepository;
   private final TeamMemberRepository teamMemberRepository;
   private final QuestProgressService questProgressService;
+  private final QuestService questService;
   private final UserService userService;
   private final Clock clock;
 
@@ -63,6 +67,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
       LevelProgressRepository levelProgressRepository,
       TeamMemberRepository teamMemberRepository,
       QuestProgressService questProgressService,
+      QuestService questService,
       UserService userService) {
     this(
         codeSubmissionRepository,
@@ -71,6 +76,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
         levelProgressRepository,
         teamMemberRepository,
         questProgressService,
+        questService,
         userService,
         Clock.systemUTC());
   }
@@ -238,5 +244,71 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
         .map(Code::getCodeIndex)
         .distinct()
         .count();
+  }
+
+  @Override
+  public List<CodeSubmissionAttemptResponse> listAttemptsForTeamActiveLevel(
+      Long questId, Long teamId, Authentication auth) {
+    User currentUser = userService.getCurrentUser(auth);
+    QuestProgress questProgress = validateQuestProgressExist(questId, teamId);
+    validateTeamMemberOrAdmin(currentUser, questProgress.getTeam());
+
+    return levelProgressRepository
+        .findByQuestProgressIdAndStatus(questProgress.getId(), LevelProgressStatus.ACTIVE)
+        .map(
+            lp ->
+                codeSubmissionRepository
+                    .findDetailedByLevelProgressIdOrderBySubmittedAtDesc(lp.getId())
+                    .stream()
+                    .map(cs -> toAttemptResponse(cs, questProgress.getTeam(), lp))
+                    .toList())
+        .orElse(List.of());
+  }
+
+  @Override
+  public List<CodeSubmissionAttemptResponse> listAttemptsForQuestAuthor(
+      Long questId, Authentication auth) {
+    User currentUser = userService.getCurrentUser(auth);
+    questService.validateQuestExist(questId);
+    questService.validateQuestAuthor(currentUser, questId);
+
+    return codeSubmissionRepository.findDetailedByQuestIdOrderBySubmittedAtDesc(questId).stream()
+        .map(
+            cs -> {
+              LevelProgress lp = cs.getLevelProgress();
+              return toAttemptResponse(cs, lp.getQuestProgress().getTeam(), lp);
+            })
+        .toList();
+  }
+
+  private CodeSubmissionAttemptResponse toAttemptResponse(
+      CodeSubmission cs, Team team, LevelProgress levelProgress) {
+    Code matched = cs.getMatchedCode();
+    Level level = levelProgress.getLevel();
+    return CodeSubmissionAttemptResponse.builder()
+        .id(cs.getId())
+        .rawValue(cs.getRawValue())
+        .result(cs.getResult())
+        .submittedAt(cs.getSubmittedAt())
+        .submittedById(cs.getSubmittedBy().getId())
+        .submittedByUsername(cs.getSubmittedBy().getUsername())
+        .teamId(team.getId())
+        .teamName(team.getName())
+        .levelId(level.getId())
+        .levelOrderIndex(level.getOrderIndex())
+        .levelProgressId(levelProgress.getId())
+        .matchedCodeId(matched != null ? matched.getId() : null)
+        .matchedCodeIndex(matched != null ? matched.getCodeIndex() : null)
+        .matchedCodeType(matched != null ? matched.getType() : null)
+        .build();
+  }
+
+  private void validateTeamMemberOrAdmin(User user, Team team) {
+    if (user.getRole() == UserRole.ADMIN) {
+      return;
+    }
+    if (teamMemberRepository.findByUserAndTeam(user, team).isEmpty()) {
+      throw new ForbiddenOperationException("Только участник команды или ADMIN");
+    }
   }
 }
