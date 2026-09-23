@@ -8,6 +8,7 @@ import dn.questenginev2.auth.repository.RefreshTokenRepository;
 import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.entity.Code;
 import dn.questenginev2.code.entity.CodeSubmission;
+import dn.questenginev2.code.entity.CodeSubmissionResult;
 import dn.questenginev2.code.entity.CodeType;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
@@ -341,7 +342,6 @@ class CodeSubmissionControllerIT {
         setUpActiveLevelWithCodes(
             0, Code.builder().value("bonus1").type(CodeType.BONUS).bonusPenaltySeconds(50).build());
 
-    // Первое применение BONUS-кода — должно пройти успешно
     mockMvc
         .perform(
             post("/api/quests/progress/" + quest.getId() + "/" + team.getId() + "/codes")
@@ -351,7 +351,6 @@ class CodeSubmissionControllerIT {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result").value("CORRECT_BONUS"));
 
-    // Повторное применение того же BONUS-кода — должно вернуть 409 Conflict
     mockMvc
         .perform(
             post("/api/quests/progress/" + quest.getId() + "/" + team.getId() + "/codes")
@@ -360,6 +359,77 @@ class CodeSubmissionControllerIT {
                 .content("{\"value\":\"bonus1\"}"))
         .andExpect(status().isConflict())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+  }
+
+  /**
+   * Реальный конкурентный тест на Сценарий 3 (concurrency-scenarios.md): несколько потоков
+   * одновременно вводят один и тот же BONUS-код. Должен засчитаться ровно один раз; остальные
+   * получают 409. Защита — partial UNIQUE (V18) + перехват DataIntegrityViolationException.
+   */
+  @Test
+  void submitCode_bonusCodeAppliedExactlyOnce_underConcurrentSubmissions() throws Exception {
+    levelProgress =
+        setUpActiveLevelWithCodes(
+            0, Code.builder().value("bonus1").type(CodeType.BONUS).bonusPenaltySeconds(50).build());
+
+    int threadCount = 20;
+    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+    CountDownLatch startLatch = new CountDownLatch(1);
+    CountDownLatch doneLatch = new CountDownLatch(threadCount);
+    AtomicInteger successCount = new AtomicInteger(0);
+    AtomicInteger conflictCount = new AtomicInteger(0);
+
+    for (int i = 0; i < threadCount; i++) {
+      executor.submit(
+          () -> {
+            try {
+              startLatch.await();
+              int status =
+                  mockMvc
+                      .perform(
+                          post("/api/quests/progress/"
+                                  + quest.getId()
+                                  + "/"
+                                  + team.getId()
+                                  + "/codes")
+                              .header("Authorization", "Bearer " + teamMemberToken)
+                              .contentType(MediaType.APPLICATION_JSON)
+                              .content("{\"value\":\"bonus1\"}"))
+                      .andReturn()
+                      .getResponse()
+                      .getStatus();
+              if (status == 200) {
+                successCount.incrementAndGet();
+              } else if (status == 409) {
+                conflictCount.incrementAndGet();
+              }
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            } finally {
+              doneLatch.countDown();
+            }
+          });
+    }
+
+    startLatch.countDown();
+    boolean finished = doneLatch.await(30, TimeUnit.SECONDS);
+    executor.shutdown();
+
+    assertThat(finished).isTrue();
+    assertThat(successCount.get())
+        .as("Ровно один конкурентный запрос должен засчитать BONUS-код")
+        .isEqualTo(1);
+    assertThat(conflictCount.get())
+        .as("Остальные запросы должны получить 409 Conflict")
+        .isEqualTo(threadCount - 1);
+
+    List<CodeSubmission> submissions =
+        codeSubmissionRepository.findByLevelProgressIdOrderBySubmittedAtDesc(levelProgress.getId());
+    long bonusApplied =
+        submissions.stream()
+            .filter(s -> s.getResult() == CodeSubmissionResult.CORRECT_BONUS)
+            .count();
+    assertThat(bonusApplied).isEqualTo(1);
   }
 
   @Test
