@@ -17,6 +17,7 @@ import dn.questenginev2.user.entity.UserRole;
 import dn.questenginev2.user.service.UserService;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -83,5 +84,83 @@ class TeamServiceImplTest {
         .isInstanceOf(TeamAlreadyExistsException.class);
 
     verify(teamRepository, never()).save(any());
+  }
+
+  @Test
+  void renameTeam_updatesName_whenCallerIsCaptain() {
+    when(userService.getCurrentUser(authentication)).thenReturn(testUser);
+    Team team =
+        Team.builder().id(1L).name("Old Name").captain(testUser).createdAt(Instant.now()).build();
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+    when(teamRepository.existsByName("New Name")).thenReturn(false);
+    when(teamRepository.save(any(Team.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(teamMemberRepository.findAllByTeam(team)).thenReturn(Collections.emptyList());
+
+    TeamResponse response =
+        teamService.renameTeam(1L, new CreateTeamRequest("New Name"), authentication);
+
+    assertThat(response.name()).isEqualTo("New Name");
+    assertThat(response.id()).isEqualTo(1L);
+    verify(teamRepository).save(team);
+  }
+
+  @Test
+  void renameTeam_isIdempotent_whenNameUnchanged() {
+    when(userService.getCurrentUser(authentication)).thenReturn(testUser);
+    Team team =
+        Team.builder().id(1L).name("Same").captain(testUser).createdAt(Instant.now()).build();
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+    when(teamMemberRepository.findAllByTeam(team)).thenReturn(Collections.emptyList());
+
+    TeamResponse response =
+        teamService.renameTeam(1L, new CreateTeamRequest("Same"), authentication);
+
+    assertThat(response.name()).isEqualTo("Same");
+    verify(teamRepository, never()).existsByName(any());
+    verify(teamRepository, never()).save(any());
+  }
+
+  @Test
+  void renameTeam_throwsTeamAlreadyExists_whenNameTaken() {
+    when(userService.getCurrentUser(authentication)).thenReturn(testUser);
+    Team team =
+        Team.builder().id(1L).name("Old").captain(testUser).createdAt(Instant.now()).build();
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+    when(teamRepository.existsByName("Taken")).thenReturn(true);
+
+    assertThatThrownBy(
+            () -> teamService.renameTeam(1L, new CreateTeamRequest("Taken"), authentication))
+        .isInstanceOf(TeamAlreadyExistsException.class);
+
+    verify(teamRepository, never()).save(any());
+  }
+
+  @Test
+  void renameTeam_throwsForbidden_whenCallerIsNotCaptain() {
+    User other = new User();
+    other.setId(99L);
+    other.setUsername("other");
+    other.setRole(UserRole.PLAYER);
+    when(userService.getCurrentUser(authentication)).thenReturn(other);
+    Team team =
+        Team.builder().id(1L).name("Old").captain(testUser).createdAt(Instant.now()).build();
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+
+    assertThatThrownBy(
+            () -> teamService.renameTeam(1L, new CreateTeamRequest("New"), authentication))
+        .isInstanceOf(ForbiddenOperationException.class)
+        .hasMessageContaining("капитан");
+
+    verify(teamRepository, never()).save(any());
+  }
+
+  @Test
+  void renameTeam_throwsNotFound_whenTeamMissing() {
+    when(userService.getCurrentUser(authentication)).thenReturn(testUser);
+    when(teamRepository.findById(999L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(
+            () -> teamService.renameTeam(999L, new CreateTeamRequest("X"), authentication))
+        .isInstanceOf(TeamNotFoundException.class);
   }
 }
