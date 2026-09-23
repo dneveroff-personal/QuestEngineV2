@@ -19,3 +19,17 @@ export function formatDateTime(iso: string | null): string {
     minute: "2-digit",
   });
 }
+
+/** Секунды → `+H:MM:SS` / `H:MM:SS` (для ranking totalTime / level cells). */
+export function formatDurationSeconds(totalSeconds: number | null | undefined): string {
+  if (totalSeconds == null || Number.isNaN(totalSeconds)) return "—";
+  const sign = totalSeconds < 0 ? "-" : "";
+  const abs = Math.abs(Math.floor(totalSeconds));
+  const h = Math.floor(abs / 3600);
+  const m = Math.floor((abs % 3600) / 60);
+  const s = abs % 60;
+  if (h > 0) {
+    return `${sign}${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }
+  return `${sign}${m}:${s.toString().padStart(2, "0")}`;
+}

@@ -19,22 +19,27 @@
 
 ## Текущие задачи
 
-### Качество (не блокеры)
+### Frontend (gaps vs backend)
 
-5. 🔵 Runtime Bonus/Penalty — агрегат Code + Hint + Manual: unit (три источника) + IT `bonusPenaltySeconds_aggregatesAllThreeSources`; one-shot кода — V18.
-6. 🔵 Повтор CodeSubmission после потери соединения — контракт в `code-submission.md`; IT: retry MAIN на ACTIVE (без double-complete) и 409 после levelCompleted.
-7. 🔵 Тесты ranking/SSE / CurrentLevel — unit-тесты `StatisticsServiceImpl` (runtime/final ranking, hide 0 completed, AUTO_TRANSITIONED), `StatisticsSseHub` (subscribe/publish), `CurrentLevelServiceImpl` (member/admin/forbidden/not-found).
-8. 🔵 Переименование команды — `PATCH /api/teams/{teamId}` (капитан, уникальность имени, identity по `Team.id`).
-9. 🔵 Статистика попыток ввода кода как API: `GET .../progress/{questId}/{teamId}/codes` (команда, ACTIVE) и `GET /api/quests/{questId}/code-submissions` (автор). Контракт в `code-submission.md`.
-10. 🔵 `Level.requiredMainCodesCount` валидируется относительно числа MAIN-кодов (по `codeIndex`) при `updateLevel` и при `validateQuestPublishable` — недостижимый порог отклоняется как Conflict (ADR-0005).
-11. 🔵 `GlobalExceptionHandler.timestamp` — `Instant.now()`; расхождение с conventions устранено.
+1. 🔵 **Codes contract** — FE `points` → `bonusPenaltySeconds` (`codes.ts`, `CodesPanel`), как в `CreateCodeRequest` / `CodeResponse`.
+2. 🔵 **Страница ranking / statistics** — `/quests/:questId/statistics`: таблица команд (snapshot + SSE при RUNNING); ссылки с detail и Game Mode. «Рейтинг» = ranking из `statistics-ranking.md`, не Elo.
+3. ⚪ **Team rename UI** — backend `PATCH /api/teams/{teamId}` есть; FE нет формы для капитана.
+4. ⚪ **Transfer captain UI** — backend `POST .../transfer-captain` есть; FE нет.
+5. ⚪ **Code attempts UI** — backend GET team ACTIVE + author full; FE клиент/экран нет.
+6. ⚪ **Manual time adjustments UI** — backend create/list/revoke; FE нет.
+7. ⚪ **My quests history** — показывать FINISHED / историю, не только upcoming; backend team/my quests шире UI.
+8. ⚪ **Устаревшие комментарии FE** — router/MyQuests/Profile про «backend не готов» (частично снято вместе с #1–2).
+
+### Качество (backend — закрыто)
+
+5–11. 🔵 см. историю: BP three sources, CodeSubmission retry, ranking/SSE/CurrentLevel tests, team rename API, code attempt stats API, requiredMainCodesCount, Instant timestamp.
 
 ### Отложено
 
 - 💤 WebSocket игрового процесса (ADR-022).
 - 💤 Unarchive / персональные подсказки.
-- 💤 Расширенная аналитика попыток (агрегаты, фильтры по уровню/команде) — базовая выдача списка уже есть (п. 9).
+- 💤 Расширенная аналитика попыток (агрегаты, фильтры) — базовый список API есть.
 
 ## Итог
 
-**Доменный backlog MVP и критичные frontend-баги Game Mode закрыты.** Quality #5–11 закрыты.
+**Backend MVP + quality закрыты.** Frontend: codes-контракт и экран ranking закрыты; остаются team rename/transfer, attempts UI, manual BP UI, history my-quests.

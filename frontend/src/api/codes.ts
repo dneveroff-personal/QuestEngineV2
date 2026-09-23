@@ -9,8 +9,9 @@ export interface Code {
   levelId: number;
   value: string;
   type: CodeType;
-  points: number;
-  codeIndex: number;
+  /** Секунды ± к итоговому времени для BONUS/PENALTY; для MAIN null/undefined. */
+  bonusPenaltySeconds: number | null;
+  codeIndex: number | null;
   createdAt: string;
 }
 
@@ -18,7 +19,7 @@ export interface CreateCodeRequest {
   value: string;
   type: CodeType;
   codeIndex?: number;
-  points?: number;
+  bonusPenaltySeconds?: number | null;
 }
 
 export function getCodesByLevel(questId: number, levelId: number): Promise<Code[]> {

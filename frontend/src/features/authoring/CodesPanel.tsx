@@ -9,12 +9,21 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-/** Сверено с CreateCodeRequest.java. */
-const codeSchema = z.object({
-  value: z.string().min(1, "Значение не может быть пустым").max(255),
-  type: z.enum(["MAIN", "BONUS", "PENALTY"]),
-  points: z.string(),
-});
+/** Сверено с CreateCodeRequest.java (bonusPenaltySeconds, не points). */
+const codeSchema = z
+  .object({
+    value: z.string().min(1, "Значение не может быть пустым").max(255),
+    type: z.enum(["MAIN", "BONUS", "PENALTY"]),
+    bonusPenaltySeconds: z.string(),
+  })
+  .refine((v) => v.type === "MAIN" || v.bonusPenaltySeconds !== "", {
+    message: "Для BONUS/PENALTY укажите секунды",
+    path: ["bonusPenaltySeconds"],
+  })
+  .refine((v) => v.type !== "MAIN" || v.bonusPenaltySeconds === "", {
+    message: "Для MAIN секунды не задаются",
+    path: ["bonusPenaltySeconds"],
+  });
 type CodeFormValues = z.infer<typeof codeSchema>;
 
 const TYPE_LABEL: Record<string, string> = {
@@ -24,9 +33,8 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 /**
- * ИЗВЕСТНАЯ ГОНКА (roadmap.md §3): backend — проблема глобальной
- * уникальности значения кода (code-submission.md). 409 здесь означает
- * "такое значение уже используется в другом уровне", а не поломку.
+ * Уникальность code_value — в пределах Level (ADR-0004), не глобально.
+ * 409 при создании = значение уже есть на этом уровне.
  */
 export function CodesPanel({ questId, levelId }: { questId: number; levelId: number }) {
   const queryClient = useQueryClient();
@@ -37,18 +45,25 @@ export function CodesPanel({ questId, levelId }: { questId: number; levelId: num
 
   const form = useForm<CodeFormValues>({
     resolver: zodResolver(codeSchema),
-    defaultValues: { value: "", type: "MAIN", points: "" },
+    defaultValues: { value: "", type: "MAIN", bonusPenaltySeconds: "" },
   });
+
+  const watchedType = form.watch("type");
 
   const createMutation = useMutation({
     mutationFn: (values: CodeFormValues) =>
       createCode(questId, levelId, {
         value: values.value,
         type: values.type,
-        points: values.points ? Number(values.points) : undefined,
+        bonusPenaltySeconds:
+          values.type === "MAIN"
+            ? null
+            : values.bonusPenaltySeconds
+              ? Number(values.bonusPenaltySeconds)
+              : null,
       }),
     onSuccess: () => {
-      form.reset();
+      form.reset({ value: "", type: "MAIN", bonusPenaltySeconds: "" });
       queryClient.invalidateQueries({ queryKey: ["levels", levelId, "codes"] });
     },
   });
@@ -83,7 +98,10 @@ export function CodesPanel({ questId, levelId }: { questId: number; levelId: num
                 <span className="font-mono">{code.value}</span>{" "}
                 <span className="text-muted-foreground">
                   ({TYPE_LABEL[code.type] ?? code.type}
-                  {code.points ? `, ${code.points} очк.` : ""})
+                  {code.bonusPenaltySeconds != null
+                    ? `, ${code.bonusPenaltySeconds > 0 ? "+" : ""}${code.bonusPenaltySeconds}с`
+                    : ""}
+                  {code.codeIndex != null ? `, idx ${code.codeIndex}` : ""})
                 </span>
               </span>
               <Button
@@ -127,6 +145,12 @@ export function CodesPanel({ questId, levelId }: { questId: number; levelId: num
                   <select
                     {...field}
                     className="border-input flex h-8 rounded-lg border bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    onChange={(e) => {
+                      field.onChange(e);
+                      if (e.target.value === "MAIN") {
+                        form.setValue("bonusPenaltySeconds", "");
+                      }
+                    }}
                   >
                     <option value="MAIN">Основной</option>
                     <option value="BONUS">Бонус</option>
@@ -138,12 +162,19 @@ export function CodesPanel({ questId, levelId }: { questId: number; levelId: num
           />
           <FormField
             control={form.control}
-            name="points"
+            name="bonusPenaltySeconds"
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input type="number" placeholder="очки" className="w-20" {...field} />
+                  <Input
+                    type="number"
+                    placeholder="сек ±"
+                    className="w-24"
+                    disabled={watchedType === "MAIN"}
+                    {...field}
+                  />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
