@@ -5,6 +5,7 @@ import { ApiError } from "@/api/errors";
 import {
   CodeSubmitForm,
   ShownHintsList,
+  TeamCodeAttemptsList,
   useCurrentLevel,
   useEnterQuest,
   useQuestProgress,
@@ -127,6 +128,7 @@ function GamePageContent({
         <>
           <CurrentLevelPanel questId={questId} teamId={teamId} nowMs={nowMs} />
           <CodeSubmitForm questId={questId} teamId={teamId} />
+          <TeamCodeAttemptsList questId={questId} teamId={teamId} />
           <ShownHintsList questId={questId} teamId={teamId} />
         </>
       )}

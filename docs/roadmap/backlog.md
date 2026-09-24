@@ -24,8 +24,8 @@
 1. 🔵 **Codes contract** — FE `points` → `bonusPenaltySeconds` (`codes.ts`, `CodesPanel`), как в `CreateCodeRequest` / `CodeResponse`.
 2. 🔵 **Страница ranking / statistics** — `/quests/:questId/statistics`: таблица команд (snapshot + SSE при RUNNING); ссылки с detail и Game Mode. «Рейтинг» = ranking из `statistics-ranking.md`, не Elo.
 3. 🔵 **Team rename UI** — форма капитана на `/team` (`TeamManagementPanel` + `renameTeam` PATCH).
-4. ⚪ **Transfer captain UI** — backend `POST .../transfer-captain` есть; FE нет.
-5. ⚪ **Code attempts UI** — backend GET team ACTIVE + author full; FE клиент/экран нет.
+4. 🔵 **Transfer captain UI** — уже в `TeamMembersList` («Сделать капитаном» + unit tests).
+5. 🔵 **Code attempts UI** — team: Game Mode `TeamCodeAttemptsList`; author: Quest detail `AuthorCodeAttemptsList`.
 6. ⚪ **Manual time adjustments UI** — backend create/list/revoke; FE нет.
 7. ⚪ **My quests history** — показывать FINISHED / историю, не только upcoming; backend team/my quests шире UI.
 8. ⚪ **Устаревшие комментарии FE** — router/MyQuests/Profile про «backend не готов» (частично снято вместе с #1–2).
@@ -42,4 +42,4 @@
 
 ## Итог
 
-**Backend MVP + quality закрыты.** Frontend: codes, ranking, team rename закрыты; остаются transfer captain, attempts UI, manual BP UI, history my-quests.
+**Backend MVP + quality закрыты.** Frontend: codes, ranking, team rename/transfer, code attempts закрыты; остаются manual BP UI, history my-quests, stale FE comments.

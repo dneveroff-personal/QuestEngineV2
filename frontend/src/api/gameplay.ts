@@ -84,3 +84,39 @@ export function submitCode(
     body: { value },
   });
 }
+
+/** Сверено с CodeSubmissionAttemptResponse.java */
+export type MatchedCodeType = "MAIN" | "BONUS" | "PENALTY";
+
+export interface CodeSubmissionAttempt {
+  id: number;
+  rawValue: string;
+  result: CodeSubmissionResult;
+  submittedAt: string;
+  submittedById: number;
+  submittedByUsername: string;
+  teamId: number;
+  teamName: string;
+  levelId: number;
+  levelOrderIndex: number;
+  levelProgressId: number;
+  /** null when INCORRECT */
+  matchedCodeId: number | null;
+  matchedCodeIndex: number | null;
+  matchedCodeType: MatchedCodeType | null;
+}
+
+/** Team: own attempts on currently ACTIVE LevelProgress (empty if none). */
+export function listTeamAttempts(
+  questId: number,
+  teamId: number,
+): Promise<CodeSubmissionAttempt[]> {
+  return apiFetch<CodeSubmissionAttempt[]>(
+    `/api/quests/progress/${questId}/${teamId}/codes`,
+  );
+}
+
+/** Author/ADMIN: full attempt audit across all teams and levels. */
+export function listAuthorAttempts(questId: number): Promise<CodeSubmissionAttempt[]> {
+  return apiFetch<CodeSubmissionAttempt[]>(`/api/quests/${questId}/code-submissions`);
+}
