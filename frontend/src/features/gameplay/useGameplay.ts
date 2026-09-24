@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { enterQuest, getCurrentLevel, getQuestProgress, submitCode } from "@/api/gameplay";
+import {
+  enterQuest,
+  getCurrentLevel,
+  getQuestProgress,
+  listAuthorAttempts,
+  listTeamAttempts,
+  submitCode,
+} from "@/api/gameplay";
 import { getShownHints, takeHint } from "@/api/hints";
 
 export function useQuestProgress(questId: number, teamId: number) {
@@ -78,5 +85,25 @@ export function useTakeHint(questId: number, teamId: number) {
       queryClient.invalidateQueries({ queryKey: ["gameplay", questId, teamId, "hints"] });
       queryClient.invalidateQueries({ queryKey: ["gameplay", questId, teamId, "current-level"] });
     },
+  });
+}
+
+/** Own team attempts on the currently ACTIVE level (GET .../codes). */
+export function useTeamAttempts(questId: number, teamId: number, enabled = true) {
+  return useQuery({
+    queryKey: ["gameplay", questId, teamId, "attempts"],
+    queryFn: () => listTeamAttempts(questId, teamId),
+    enabled,
+    // Same cadence as progress: new attempts appear after submit (invalidate) or teammate submit.
+    refetchInterval: 5000,
+  });
+}
+
+/** Author/ADMIN full attempt audit for the quest. */
+export function useAuthorAttempts(questId: number, enabled = true) {
+  return useQuery({
+    queryKey: ["quests", questId, "code-submissions"],
+    queryFn: () => listAuthorAttempts(questId),
+    enabled,
   });
 }
