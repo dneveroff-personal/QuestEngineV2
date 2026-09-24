@@ -63,6 +63,11 @@ export function createTeam(request: CreateTeamRequest): Promise<Team> {
   return apiFetch<Team>("/api/teams", { method: "POST", body: request });
 }
 
+/** Captain-only: PATCH /api/teams/{teamId}. Same body as create (name 1–255). */
+export function renameTeam(teamId: number, request: CreateTeamRequest): Promise<Team> {
+  return apiFetch<Team>(`/api/teams/${teamId}`, { method: "PATCH", body: request });
+}
+
 export function searchTeams(name: string): Promise<Team[]> {
   const params = new URLSearchParams({ name });
   return apiFetch<Team[]>(`/api/teams/search?${params.toString()}`);

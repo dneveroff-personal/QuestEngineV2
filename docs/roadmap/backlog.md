@@ -1,6 +1,6 @@
 # Roadmap / Backlog
 
-Статусы: 🔵 Done · 🟡 In Progress · ⚪ Planned · 🟣 Decision · 💤 Deferred · 🔴 Bug
+Статусы: 🔵 Done · 🟡 In Progress · ⚪ Planned · 🟪 Decision · 💤 Deferred · 🔴 Bug
 
 ## Состояние
 
@@ -23,7 +23,7 @@
 
 1. 🔵 **Codes contract** — FE `points` → `bonusPenaltySeconds` (`codes.ts`, `CodesPanel`), как в `CreateCodeRequest` / `CodeResponse`.
 2. 🔵 **Страница ranking / statistics** — `/quests/:questId/statistics`: таблица команд (snapshot + SSE при RUNNING); ссылки с detail и Game Mode. «Рейтинг» = ranking из `statistics-ranking.md`, не Elo.
-3. ⚪ **Team rename UI** — backend `PATCH /api/teams/{teamId}` есть; FE нет формы для капитана.
+3. 🔵 **Team rename UI** — форма капитана на `/team` (`TeamManagementPanel` + `renameTeam` PATCH).
 4. ⚪ **Transfer captain UI** — backend `POST .../transfer-captain` есть; FE нет.
 5. ⚪ **Code attempts UI** — backend GET team ACTIVE + author full; FE клиент/экран нет.
 6. ⚪ **Manual time adjustments UI** — backend create/list/revoke; FE нет.
@@ -42,4 +42,4 @@
 
 ## Итог
 
-**Backend MVP + quality закрыты.** Frontend: codes-контракт и экран ranking закрыты; остаются team rename/transfer, attempts UI, manual BP UI, history my-quests.
+**Backend MVP + quality закрыты.** Frontend: codes, ranking, team rename закрыты; остаются transfer captain, attempts UI, manual BP UI, history my-quests.
