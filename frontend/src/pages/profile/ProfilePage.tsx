@@ -11,12 +11,9 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 /**
- * Профиль игрока (screens.md §5). Полная спецификация экрана шире, чем
- * реализовано здесь — "история участия", "результаты", "статистика"
- * упираются в полностью не реализованный Statistics (roadmap.md §4.1) и
- * в отсутствие endpoint'а истории завершённых квестов (тот же пробел,
- * что и в MyQuestsPage.tsx §4.4 — /upcoming не отдаёт FINISHED квесты).
- * Личная информация и авторские квесты — реализованы полностью.
+ * Профиль: публичное имя, username, роль, дата регистрации.
+ * История участия команды — на «Мои квесты» (GET /api/teams/my/quests).
+ * Ranking — /quests/:id/statistics. Авторские квесты — блок ниже.
  */
 export function ProfilePage() {
   const { publicName, username, role } = useAuth();
@@ -45,7 +42,7 @@ export function ProfilePage() {
           <dd>
             {isProfileLoading ? (
               "Загрузка..."
-            ) : profile ? (
+            ) : profile?.email ? (
               profile.email
             ) : (
               <span className="text-muted-foreground italic">недоступно</span>
@@ -56,7 +53,7 @@ export function ProfilePage() {
           <dd>
             {isProfileLoading ? (
               "Загрузка..."
-            ) : profile ? (
+            ) : profile?.createdAt ? (
               formatDateTime(profile.createdAt)
             ) : (
               <span className="text-muted-foreground italic">недоступно</span>
@@ -65,10 +62,7 @@ export function ProfilePage() {
         </dl>
         {!isProfileLoading && !profile && (
           <p className="text-muted-foreground text-xs">
-            Email и дата регистрации недоступны напрямую — backend не
-            предоставляет способ получить полный профиль текущего
-            пользователя (нет <code>GET /api/users/me</code>, см.
-            docs/roadmap/backlog.md).
+            Не удалось загрузить профиль. Обновите страницу или войдите снова.
           </p>
         )}
       </div>
@@ -93,11 +87,13 @@ export function ProfilePage() {
       )}
 
       <div className="rounded-lg border border-border p-4">
-        <h2 className="text-sm font-medium">История и статистика</h2>
+        <h2 className="text-sm font-medium">История участия</h2>
         <p className="text-muted-foreground text-sm">
-          Пока недоступно — раздел статистики не реализован на backend
-          (docs/frontend/roadmap.md §4.1), а история завершённых квестов
-          требует эндпоинта, которого пока тоже нет (§4.4).
+          Регистрации и завершённые квесты команды — на странице{" "}
+          <Link to="/my-quests" className="text-primary underline underline-offset-4">
+            Мои квесты
+          </Link>
+          . Рейтинг во время/после игры — на странице статистики квеста.
         </p>
       </div>
     </div>
