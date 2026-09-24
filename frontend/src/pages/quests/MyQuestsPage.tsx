@@ -1,42 +1,75 @@
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 
-import { getQuestRegistrations, getUpcomingQuests } from "@/api/quests";
-import { QuestCard } from "@/features/quests";
+import { getMyTeamQuests, type TeamQuestItem } from "@/api/teams";
 import { useMyTeam } from "@/features/teams";
+import { formatDateTime } from "@/lib/format";
 
-/**
- * ВАЖНО: backend не даёт "квесты, на которые зарегистрирована моя
- * команда" напрямую — есть только GET /api/quests/register/{questId}
- * (по конкретному квесту), обратного эндпоинта нет (найдено при
- * реализации, см. docs/frontend/roadmap.md §4.3 и docs/roadmap/backlog.md).
- *
- * Временный обходной путь: берём upcoming-квесты и для каждого спрашиваем
- * его регистрации (N+1 запросов), фильтруем по своей команде на клиенте.
- * Это осознанный компромисс для небольшого pet-проекта (квестов немного),
- * НЕ паттерн для копирования в других местах. Ограничение: показывает
- * только "предстоящие" квесты — прошедшие (FINISHED), в которых команда
- * участвовала, сюда не попадут, т.к. /upcoming их не отдаёт.
- *
- * Удалить этот workaround, как только на backend появится
- * GET /api/teams/{teamId}/quests (или аналог).
- */
+const QUEST_STATUS_LABEL: Record<string, string> = {
+  DRAFT: "Черновик",
+  REGISTRATION: "Регистрация",
+  RUNNING: "Идёт",
+  FINISHED: "Завершён",
+};
+
+const REG_STATUS_LABEL: Record<string, string> = {
+  PENDING: "Заявка на рассмотрении",
+  APPROVED: "Заявка одобрена",
+  REJECTED: "Заявка отклонена",
+};
+
+function TeamQuestCard({ item }: { item: TeamQuestItem }) {
+  const canPlay = item.questStatus === "RUNNING" && item.registrationStatus === "APPROVED";
+
+  return (
+    <div className="space-y-2 rounded-lg border border-border p-4">
+      <Link
+        to={`/quests/${item.questId}`}
+        className="block transition-colors hover:opacity-80"
+      >
+        <h3 className="font-medium">{item.title}</h3>
+        <p className="text-muted-foreground text-sm">
+          {QUEST_STATUS_LABEL[item.questStatus] ?? item.questStatus}
+          {" · "}
+          {REG_STATUS_LABEL[item.registrationStatus] ?? item.registrationStatus}
+        </p>
+        <p className="text-muted-foreground text-sm">
+          Старт: {formatDateTime(item.startTime)}
+        </p>
+      </Link>
+      <div className="flex flex-wrap gap-3 text-sm">
+        {(item.questStatus === "RUNNING" || item.questStatus === "FINISHED") && (
+          <Link
+            to={`/quests/${item.questId}/statistics`}
+            className="text-primary underline underline-offset-4"
+          >
+            Рейтинг
+          </Link>
+        )}
+        {canPlay && (
+          <Link
+            to={`/quests/${item.questId}/play`}
+            className="text-primary underline underline-offset-4"
+          >
+            Играть
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** История регистраций команды: GET /api/teams/my/quests (включая FINISHED). */
 export function MyQuestsPage() {
   const { data: myTeam, isLoading: isTeamLoading } = useMyTeam();
 
   const questsQuery = useQuery({
-    queryKey: ["quests", "upcoming"],
-    queryFn: getUpcomingQuests,
+    queryKey: ["teams", "my", "quests"],
+    queryFn: getMyTeamQuests,
+    enabled: !!myTeam,
   });
 
-  const registrationQueries = useQueries({
-    queries: (questsQuery.data ?? []).map((quest) => ({
-      queryKey: ["quests", quest.id, "registrations"],
-      queryFn: () => getQuestRegistrations(quest.id),
-      enabled: !!myTeam,
-    })),
-  });
-
-  if (isTeamLoading || questsQuery.isLoading) {
+  if (isTeamLoading) {
     return <p className="text-muted-foreground text-sm">Загрузка...</p>;
   }
 
@@ -49,6 +82,10 @@ export function MyQuestsPage() {
     );
   }
 
+  if (questsQuery.isLoading) {
+    return <p className="text-muted-foreground text-sm">Загрузка...</p>;
+  }
+
   if (questsQuery.isError) {
     return (
       <p className="text-destructive text-sm">
@@ -57,35 +94,53 @@ export function MyQuestsPage() {
     );
   }
 
-  const isRegistrationsLoading = registrationQueries.some((q) => q.isLoading);
-  const myQuests = (questsQuery.data ?? []).filter((_, index) =>
-    registrationQueries[index]?.data?.some((r) => r.teamId === myTeam.id),
-  );
+  const items = questsQuery.data ?? [];
+  const sorted = [...items].sort((a, b) => {
+    const statusOrder = (s: string) =>
+      s === "RUNNING" ? 0 : s === "REGISTRATION" ? 1 : s === "FINISHED" ? 2 : 3;
+    const d = statusOrder(a.questStatus) - statusOrder(b.questStatus);
+    if (d !== 0) return d;
+    return Date.parse(b.startTime ?? "") - Date.parse(a.startTime ?? "");
+  });
+
+  const active = sorted.filter((i) => i.questStatus !== "FINISHED");
+  const history = sorted.filter((i) => i.questStatus === "FINISHED");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Мои квесты</h1>
         <p className="text-muted-foreground text-sm">
-          Только предстоящие квесты, на которые подана заявка. История
-          прошедших квестов появится вместе с соответствующим backend-эндпоинтом.
+          Регистрации вашей команды: текущие и история завершённых.
         </p>
       </div>
 
-      {isRegistrationsLoading && <p className="text-muted-foreground text-sm">Загрузка...</p>}
-
-      {!isRegistrationsLoading && myQuests.length === 0 && (
+      {items.length === 0 && (
         <p className="text-muted-foreground text-sm">
-          Ваша команда пока не подавала заявок на предстоящие квесты.
+          Команда ещё не подавала заявок на квесты.
         </p>
       )}
 
-      {myQuests.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {myQuests.map((quest) => (
-            <QuestCard key={quest.id} quest={quest} />
-          ))}
-        </div>
+      {active.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium">Текущие</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {active.map((item) => (
+              <TeamQuestCard key={item.registrationId} item={item} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {history.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium">История</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {history.map((item) => (
+              <TeamQuestCard key={item.registrationId} item={item} />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

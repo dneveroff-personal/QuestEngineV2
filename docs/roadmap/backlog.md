@@ -26,9 +26,9 @@
 3. 🔵 **Team rename UI** — форма капитана на `/team` (`TeamManagementPanel` + `renameTeam` PATCH).
 4. 🔵 **Transfer captain UI** — уже в `TeamMembersList` («Сделать капитаном» + unit tests).
 5. 🔵 **Code attempts UI** — team: Game Mode `TeamCodeAttemptsList`; author: Quest detail `AuthorCodeAttemptsList`.
-6. ⚪ **Manual time adjustments UI** — backend create/list/revoke; FE нет.
-7. ⚪ **My quests history** — показывать FINISHED / историю, не только upcoming; backend team/my quests шире UI.
-8. ⚪ **Устаревшие комментарии FE** — router/MyQuests/Profile про «backend не готов» (частично снято вместе с #1–2).
+6. 🔵 **Manual time adjustments UI** — Statistics (AUTHOR/ADMIN): create/list/revoke per team progress.
+7. 🔵 **My quests history** — `GET /api/teams/my/quests`: текущие + FINISHED.
+8. 🔵 **Устаревшие комментарии FE** — MyQuests/Profile/useMyResolvedUser на актуальные API (`/users/me`, team quests).
 
 ### Качество (backend — закрыто)
 
@@ -42,4 +42,4 @@
 
 ## Итог
 
-**Backend MVP + quality закрыты.** Frontend: codes, ranking, team rename/transfer, code attempts закрыты; остаются manual BP UI, history my-quests, stale FE comments.
+**Backend MVP + quality закрыты.** Frontend gaps vs backend (#1–8) закрыты.

@@ -8,6 +8,8 @@ import {
   type QuestStatistics,
   type StatisticsTeamRow,
 } from "@/api/statistics";
+import { ManualAdjustmentsPanel } from "@/features/adjustments";
+import { useAuth } from "@/features/auth";
 import { formatDateTime, formatDurationSeconds } from "@/lib/format";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -32,10 +34,13 @@ const PROGRESS_LABEL: Record<string, string> = {
  * - команды с 0 completed levels не в таблице (правило 3).
  *
  * Live: SSE при questStatus === RUNNING (ADR-0014).
+ * AUTHOR/ADMIN: ручные корректировки времени под таблицей.
  */
 export function StatisticsPage() {
   const { questId: questIdParam } = useParams<{ questId: string }>();
   const questId = Number(questIdParam);
+  const { role } = useAuth();
+  const canAdjust = role === "AUTHOR" || role === "ADMIN";
 
   const [stats, setStats] = useState<QuestStatistics | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -173,6 +178,27 @@ export function StatisticsPage() {
         Ranking: больше пройденных уровней выше; при равенстве — кто раньше закончил предыдущий.
         После FINISHED — по полному времени (wall ± bonus/penalty). DNF внизу.
       </p>
+
+      {canAdjust && rows.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium">Ручные корректировки времени</h2>
+          <p className="text-muted-foreground text-xs">
+            Только автор квеста / ADMIN. BONUS уменьшает итоговое время, PENALTY — увеличивает.
+            После FINISHED начисление и отзыв запрещены на backend.
+          </p>
+          <div className="space-y-3">
+            {rows.map((row) => (
+              <ManualAdjustmentsPanel
+                key={row.teamId}
+                questId={questId}
+                teamId={row.teamId}
+                teamName={row.teamName}
+                questFinished={stats.questStatus === "FINISHED"}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
