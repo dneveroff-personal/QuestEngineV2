@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 
+import { AuthorCodeAttemptsList } from "@/features/gameplay";
 import { useQuest, useQuestRegistrations, RegistrationPanel } from "@/features/quests";
 import { useAuth } from "@/features/auth";
 import { formatDateTime } from "@/lib/format";
@@ -96,6 +97,11 @@ export function QuestDetailPage() {
         {registrationsQuery.data && (
             <RegistrationPanel quest={quest} registrations={registrationsQuery.data} />
         )}
+
+        {(role === "AUTHOR" || role === "ADMIN") &&
+          (quest.status === "RUNNING" || quest.status === "FINISHED") && (
+            <AuthorCodeAttemptsList questId={quest.id} />
+          )}
       </div>
   );
 }
