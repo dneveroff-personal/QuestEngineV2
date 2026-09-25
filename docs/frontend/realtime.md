@@ -75,6 +75,9 @@ Production WebSocket endpoint:
 Используется STOMP поверх WebSocket. Spring поддерживает STOMP как
 sub-protocol для WebSocket и application/broker destinations.
 
+**Статус реализации:** endpoint и simple broker подключены; handshake
+`/ws/**` permitAll в SecurityConfig, аутентификация на STOMP CONNECT.
+
 ### 4.2 Destinations
 
 На текущем этапе фиксируем следующие destinations:
@@ -84,6 +87,11 @@ SUBSCRIBE /topic/quests/{questId}/gameplay
 SUBSCRIBE /topic/quest-progress/{questProgressId}/gameplay
 SUBSCRIBE /user/queue/gameplay
 ```
+
+**Реализовано (slice 1–2):** только
+`/topic/quest-progress/{questProgressId}/gameplay` — team-scoped events из
+`CodeSubmissionServiceImpl`. Остальные destinations зарезервированы;
+подписка на неизвестный `/topic/*` отклоняется interceptor-ом.
 
 Назначение:
 
@@ -105,12 +113,12 @@ Frontend не выбирает destination исходя только из UI-р�
 Минимальный production-набор:
 
 ```text
-CODE_ACCEPTED
-CODE_REJECTED
-LEVEL_COMPLETED
-LEVEL_AUTO_TRANSITIONED
-HINT_REVEALED
-QUEST_FINISHED
+CODE_ACCEPTED          🔵 published from CodeSubmission
+CODE_REJECTED          🔵 published from CodeSubmission
+LEVEL_COMPLETED        🔵 published when tryComplete succeeds
+LEVEL_AUTO_TRANSITIONED ⚪ planned (Job 2)
+HINT_REVEALED          ⚪ planned (Job 3 / takeHint)
+QUEST_FINISHED         🔵 published when advance → FINISHED
 ```
 
 События являются уведомлениями об изменении состояния. Payload должен быть
@@ -241,6 +249,9 @@ Event ordering не используется как источник истин�
 Если события пришли в другом порядке или часть событий была потеряна,
 REST refetch восстанавливает актуальное состояние.
 
+**Реализация FE:** `useGameplaySocket` + `@stomp/stompjs`; при `connected`
+polling в `useGameplay` отключается (`live` flag).
+
 ## 7. TanStack Query Integration
 
 Realtime-события должны обновлять тот же server state, который используется
@@ -253,7 +264,7 @@ WebSocket LEVEL_COMPLETED
         │
         ▼
 invalidate
-["gameplay", questProgressId]
+["gameplay", questId, teamId]
         │
         ▼
 GET current gameplay state
@@ -314,7 +325,7 @@ SSE для statistics использует отдельный lifecycle и не 
 `CodeSubmissionOperation`-сущности.
 
 `Idempotency-Key` остаётся возможным инструментом для будущих операций, где
-повторное выполнение действительно опасно или дорого, например финансовых
+повторное действие действительно опасно или дорого, например финансовых
 операций, импорта или создания внешнего ресурса. Для code submission он
 сейчас не используется.
 
@@ -350,7 +361,10 @@ Backend авторизует:
 * server-side event visibility.
 
 Spring Security предоставляет механизм авторизации STOMP-сообщений через
-message-channel interception.
+message-channel interception (`StompAuthChannelInterceptor`):
+
+* CONNECT — JWT (`Authorization: Bearer` или `access_token`);
+* SUBSCRIBE `/topic/quest-progress/{id}/gameplay` — member of team or ADMIN.
 
 Frontend не считает наличие realtime connection доказательством доступа.
 
@@ -363,8 +377,5 @@ Frontend не считает наличие realtime connection доказате
 * REST остаётся основным API и authoritative state transport;
 * WebSocket используется только для server → client gameplay events;
 * code submission не использует отдельный HTTP idempotency ledger;
-* точные event payloads уточняются при реализации соответствующего backend
-  use case.
-
-Production implementation WebSocket выполняется после фиксации backend
-contract и соответствующих ADR.
+* slice 1–2: CODE_ACCEPTED/REJECTED, LEVEL_COMPLETED, QUEST_FINISHED + FE client;
+* slice 3: HINT_REVEALED, LEVEL_AUTO_TRANSITIONED.

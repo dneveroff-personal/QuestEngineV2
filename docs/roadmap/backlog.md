@@ -16,6 +16,7 @@
 | Удалён unsafe `autoTransitionLevel` | 🔵 | только `tryAutoTransition` (Job 2) |
 | `progress.md` / `runtime.md` | 🔵 | runtime = обзор, progress = детали |
 | BONUS/PENALTY code one-shot (Scenario 3) | 🔵 | V18 partial UNIQUE + concurrent IT |
+| Gameplay WebSocket STOMP (ADR-022) slice 1–2 | 🟡 | CODE_ACCEPTED/REJECTED, LEVEL_COMPLETED, QUEST_FINISHED; FE socket + live flag |
 
 ## Текущие задачи
 
@@ -34,12 +35,17 @@
 
 5–11. 🔵 см. историю: BP three sources, CodeSubmission retry, ranking/SSE/CurrentLevel tests, team rename API, code attempt stats API, requiredMainCodesCount, Instant timestamp.
 
+### Realtime gameplay (ADR-022)
+
+- 🟡 **Slice 1–2** — STOMP `/ws`, destination `/topic/quest-progress/{id}/gameplay`, events CODE_*, LEVEL_COMPLETED, QUEST_FINISHED; FE `@stomp/stompjs` + invalidate queries; polling fallback when offline.
+- ⚪ **Slice 3** — `HINT_REVEALED` (Job 3 / takeHint) + `LEVEL_AUTO_TRANSITIONED` (Job 2).
+- ⚪ Production nginx `location /ws` upgrade (если ещё нет в deployment).
+
 ### Отложено
 
-- 💤 WebSocket игрового процесса (ADR-022).
 - 💤 Unarchive / персональные подсказки.
 - 💤 Расширенная аналитика попыток (агрегаты, фильтры) — базовый список API есть.
 
 ## Итог
 
-**Backend MVP + quality закрыты.** Frontend gaps vs backend (#1–8) закрыты.
+**Backend MVP + quality закрыты.** Frontend gaps vs backend (#1–8) закрыты. Gameplay WebSocket — slice 1–2 in progress.

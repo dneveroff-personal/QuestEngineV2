@@ -61,12 +61,14 @@ export function TeamCodeAttemptsList({
   questId,
   teamId,
   enabled = true,
+  live = false,
 }: {
   questId: number;
   teamId: number;
   enabled?: boolean;
+  live?: boolean;
 }) {
-  const query = useTeamAttempts(questId, teamId, enabled);
+  const query = useTeamAttempts(questId, teamId, enabled, live);
 
   if (query.isLoading) {
     return <p className="text-muted-foreground text-sm">Загрузка попыток...</p>;
