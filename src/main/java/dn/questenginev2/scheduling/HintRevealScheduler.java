@@ -1,5 +1,7 @@
 package dn.questenginev2.scheduling;
 
+import dn.questenginev2.gameplay.event.GameplayEventPublisher;
+import dn.questenginev2.gameplay.event.GameplayEventType;
 import dn.questenginev2.hint.entity.Hint;
 import dn.questenginev2.hint.entity.HintProgress;
 import dn.questenginev2.hint.entity.HintType;
@@ -12,6 +14,7 @@ import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -25,19 +28,11 @@ import org.springframework.stereotype.Component;
  * LevelProgress и каждой подсказки его уровня — если {@code openedAt + delaySeconds <= now} и
  * подсказка ещё не показана — создаёт {@code HintProgress}.
  *
- * <p>В отличие от Job 1/Job 2, здесь нет конкурирующего пути (подсказка не может быть "показана"
- * никаким другим способом, кроме этого планировщика) — идемпотентность обеспечивается уникальным
- * индексом (level_progress_id, hint_id) и перехватом нарушения как defense-in-depth, а не как
- * разрешение гонки между двумя разными путями (сравни со Сценарием 5).
- *
- * <p>Начисление эффекта BONUS/PENALTY-подсказки к итоговому времени команды — вне scope: здесь
- * только фиксируется факт показа, агрегация — отдельная фича (см. roadmap/backlog.md, п. 6,
- * ADR-0007).
- *
  * <p>ADR-0021: этот планировщик показывает только подсказки типа {@code REGULAR}. Подсказки
  * {@code BONUS}/{@code PENALTY} не показываются автоматически — команда должна явно "взять" их
- * (см. {@code HintProgressServiceImpl#takeHint}), т.к. взятие такой подсказки — осознанный выбор
- * (жертвовать временем ради помощи или нет), а не то, что можно навязать против воли команды.
+ * (см. {@code HintProgressServiceImpl#takeHint}).
+ *
+ * <p>ADR-022: после успешного показа публикует {@code HINT_REVEALED} (notify + REST refetch).
  */
 @Component
 @AllArgsConstructor
@@ -46,14 +41,21 @@ public class HintRevealScheduler {
   private final LevelProgressRepository levelProgressRepository;
   private final HintRepository hintRepository;
   private final HintProgressRepository hintProgressRepository;
+  private final GameplayEventPublisher gameplayEventPublisher;
   private final Clock clock;
 
   @Autowired
   public HintRevealScheduler(
       LevelProgressRepository levelProgressRepository,
       HintRepository hintRepository,
-      HintProgressRepository hintProgressRepository) {
-    this(levelProgressRepository, hintRepository, hintProgressRepository, Clock.systemUTC());
+      HintProgressRepository hintProgressRepository,
+      GameplayEventPublisher gameplayEventPublisher) {
+    this(
+        levelProgressRepository,
+        hintRepository,
+        hintProgressRepository,
+        gameplayEventPublisher,
+        Clock.systemUTC());
   }
 
   @Scheduled(fixedDelay = 1000)
@@ -80,6 +82,10 @@ public class HintRevealScheduler {
             .map(hintProgress -> hintProgress.getHint().getId())
             .collect(Collectors.toSet());
 
+    Long questProgressId = levelProgress.getQuestProgress().getId();
+    Long questId = levelProgress.getQuestProgress().getQuest().getId();
+    Long levelId = levelProgress.getLevel().getId();
+
     for (Hint hint : hints) {
       if (hint.getType() != HintType.REGULAR) {
         // ADR-0021: BONUS/PENALTY показываются только по явному взятию командой, не Job 3.
@@ -97,6 +103,15 @@ public class HintRevealScheduler {
       try {
         hintProgressRepository.saveAndFlush(
             HintProgress.builder().levelProgress(levelProgress).hint(hint).shownAt(now).build());
+        gameplayEventPublisher.publish(
+            GameplayEventType.HINT_REVEALED,
+            questId,
+            questProgressId,
+            levelProgress.getId(),
+            Map.of(
+                "hintId", hint.getId(),
+                "hintType", HintType.REGULAR.name(),
+                "levelId", levelId));
       } catch (DataIntegrityViolationException alreadyShownConcurrently) {
         // Идемпотентно: подсказка уже показана параллельным выполнением job — defense-in-depth.
       }

@@ -32,7 +32,7 @@
           ┌─────────────┼─────────────┐
           │                            │
    отдаёт статику              proxy_pass
-   (index.html, /assets/)      /api/* (включая /api/auth/*)
+   (index.html, /assets/)      /api/* + /ws
           │                            │
           ▼                            ▼
    собранный React SPA          app:8080 (Spring Boot)
@@ -68,13 +68,13 @@ Frontend и backend — **два независимых Docker-образа**, �
 (`localhost:8080`, отдельно) технически разные origin, даже на одной
 машине. Same-origin из `threat-model.md` действует только за общим nginx
 в проде — в dev-режиме это решено иначе: `vite.config.ts` содержит
-`server.proxy` для `/api` (auth-эндпоинты живут внутри `/api/auth/*`, не
-требуют отдельного правила), зеркалирующий маршрутизацию
-`nginx.conf`. С точки зрения браузера запросы всё равно идут на
-`localhost:5173`, Vite сам проксирует их на backend — CORS не нужен ни в
-dev, ни в проде, ни на одном из двух уровней (Vite proxy и prod nginx)
-конфигурация не должна расходиться, если у backend появится новый
-префикс маршрутов — надо поправить оба файла.
+`server.proxy` для `/api` и `/ws` (auth-эндпоинты живут внутри
+`/api/auth/*`, не требуют отдельного правила), зеркалирующий
+маршрутизацию `nginx.conf`. С точки зрения браузера запросы всё равно
+идут на `localhost:5173`, Vite сам проксирует их на backend — CORS не
+нужен ни в dev, ни в проде, ни на одном из двух уровней (Vite proxy и
+prod nginx) конфигурация не должна расходиться, если у backend появится
+новый префикс маршрутов — надо поправить оба файла.
 
 Полный docker-compose стек (nginx + app + postgres, собранные как в
 проде) также доступен локально:
@@ -93,6 +93,12 @@ docker compose -f docker-compose.local.yml up -d --build
 который ADR-0014 прямо запрещает ("без искусственной задержки"). Это
 единственный location с таким переопределением — везде больше buffering
 по умолчанию корректен и даже полезен (обычные HTTP request/response).
+
+## WebSocket (ADR-022)
+
+`nginx.conf` содержит `location /ws` с `proxy_http_version 1.1`,
+`Upgrade` / `Connection "upgrade"` и длинными read/send timeout — иначе
+STOMP-соединение Game Mode не пройдёт через reverse proxy.
 
 ## Прод
 

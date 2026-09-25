@@ -77,6 +77,7 @@ sub-protocol для WebSocket и application/broker destinations.
 
 **Статус реализации:** endpoint и simple broker подключены; handshake
 `/ws/**` permitAll в SecurityConfig, аутентификация на STOMP CONNECT.
+Prod nginx: `location /ws` с `Upgrade` / `Connection` upgrade.
 
 ### 4.2 Destinations
 
@@ -88,10 +89,10 @@ SUBSCRIBE /topic/quest-progress/{questProgressId}/gameplay
 SUBSCRIBE /user/queue/gameplay
 ```
 
-**Реализовано (slice 1–2):** только
-`/topic/quest-progress/{questProgressId}/gameplay` — team-scoped events из
-`CodeSubmissionServiceImpl`. Остальные destinations зарезервированы;
-подписка на неизвестный `/topic/*` отклоняется interceptor-ом.
+**Реализовано:** `/topic/quest-progress/{questProgressId}/gameplay` —
+team-scoped events (code submission, hints, auto-transition). Остальные
+destinations зарезервированы; подписка на неизвестный `/topic/*`
+отклоняется interceptor-ом.
 
 Назначение:
 
@@ -113,12 +114,12 @@ Frontend не выбирает destination исходя только из UI-р�
 Минимальный production-набор:
 
 ```text
-CODE_ACCEPTED          🔵 published from CodeSubmission
-CODE_REJECTED          🔵 published from CodeSubmission
-LEVEL_COMPLETED        🔵 published when tryComplete succeeds
-LEVEL_AUTO_TRANSITIONED ⚪ planned (Job 2)
-HINT_REVEALED          ⚪ planned (Job 3 / takeHint)
-QUEST_FINISHED         🔵 published when advance → FINISHED
+CODE_ACCEPTED           🔵 CodeSubmissionServiceImpl
+CODE_REJECTED           🔵 CodeSubmissionServiceImpl
+LEVEL_COMPLETED         🔵 CodeSubmissionServiceImpl (tryComplete)
+LEVEL_AUTO_TRANSITIONED 🔵 LevelAutoTransitionScheduler (Job 2)
+HINT_REVEALED           🔵 HintRevealScheduler (Job 3) + takeHint
+QUEST_FINISHED          🔵 CodeSubmission / Job 2 advance → FINISHED
 ```
 
 События являются уведомлениями об изменении состояния. Payload должен быть
@@ -377,5 +378,6 @@ Frontend не считает наличие realtime connection доказате
 * REST остаётся основным API и authoritative state transport;
 * WebSocket используется только для server → client gameplay events;
 * code submission не использует отдельный HTTP idempotency ledger;
-* slice 1–2: CODE_ACCEPTED/REJECTED, LEVEL_COMPLETED, QUEST_FINISHED + FE client;
-* slice 3: HINT_REVEALED, LEVEL_AUTO_TRANSITIONED.
+* полный production-набор events: CODE_*, LEVEL_COMPLETED,
+  LEVEL_AUTO_TRANSITIONED, HINT_REVEALED, QUEST_FINISHED;
+* FE client + nginx `/ws` upgrade.
