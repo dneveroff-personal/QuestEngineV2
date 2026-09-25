@@ -36,6 +36,9 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/actuator/**")
                     .permitAll()
+                    // WebSocket handshake; STOMP CONNECT auth is in StompAuthChannelInterceptor
+                    .requestMatchers("/ws", "/ws/**")
+                    .permitAll()
                     .anyRequest()
                     .authenticated())
         // Rate limit login before JWT filter (ADR-0016)
