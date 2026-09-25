@@ -23,8 +23,16 @@ function isAvailableNotTaken(hint: ShownHint): boolean {
  * - REGULAR / взятые BONUS|PENALTY — полный текст (auto-reveal Job 3 / take)
  * - BONUS|PENALTY доступны, но не взяты — кнопка «Взять» (ADR-0021)
  */
-export function ShownHintsList({ questId, teamId }: { questId: number; teamId: number }) {
-  const { data: hints, isLoading } = useShownHints(questId, teamId);
+export function ShownHintsList({
+  questId,
+  teamId,
+  live = false,
+}: {
+  questId: number;
+  teamId: number;
+  live?: boolean;
+}) {
+  const { data: hints, isLoading } = useShownHints(questId, teamId, true, live);
   const takeMutation = useTakeHint(questId, teamId);
 
   if (isLoading) {

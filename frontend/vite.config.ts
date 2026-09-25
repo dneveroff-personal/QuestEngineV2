@@ -25,16 +25,16 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': BACKEND_URL,
+      // STOMP WebSocket (ADR-022) — same-origin in dev
+      '/ws': {
+        target: BACKEND_URL,
+        ws: true,
+      },
     },
   },
   test: {
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
-    // testing-strategy.md §"Definition of Done" — --passWithNoTests в CI
-    // временный, пока тестов было 0. Теперь они есть — CI (build.yml)
-    // можно (и нужно) вернуть к строгому "падать при 0 тестов", когда
-    // накопится больше файлов; пока оставляем флаг, чтобы не блокировать
-    // будущие PR, где меняется только код без сопутствующего теста.
   },
 })
