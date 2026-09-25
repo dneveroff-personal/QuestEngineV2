@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import dn.questenginev2.code.dto.CodeSubmissionResponse;
@@ -19,6 +20,8 @@ import dn.questenginev2.code.repository.CodeSubmissionRepository;
 import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.ResourceNotFoundException;
+import dn.questenginev2.gameplay.event.GameplayEventPublisher;
+import dn.questenginev2.gameplay.event.GameplayEventType;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
 import dn.questenginev2.level.entity.LevelProgressStatus;
@@ -39,6 +42,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,6 +67,7 @@ class CodeSubmissionServiceImplTest {
   @Mock private QuestProgressService questProgressService;
   @Mock private QuestService questService;
   @Mock private dn.questenginev2.user.service.UserService userService;
+  @Mock private GameplayEventPublisher gameplayEventPublisher;
   @Mock private Clock clock;
   @Mock private Authentication authentication;
 
@@ -139,6 +144,13 @@ class CodeSubmissionServiceImplTest {
     assertThat(response.isLevelCompleted()).isFalse();
     verify(levelProgressRepository, never())
         .tryCompleteByCodesThreshold(anyLong(), anyLong(), any());
+    verify(gameplayEventPublisher)
+        .publish(
+            eq(GameplayEventType.CODE_REJECTED),
+            eq(100L),
+            eq(500L),
+            eq(2000L),
+            any(Map.class));
   }
 
   @Test
@@ -158,6 +170,20 @@ class CodeSubmissionServiceImplTest {
 
     assertThat(response.getResult()).isEqualTo(CodeSubmissionResult.CORRECT_MAIN);
     assertThat(response.isLevelCompleted()).isTrue();
+    verify(gameplayEventPublisher)
+        .publish(
+            eq(GameplayEventType.CODE_ACCEPTED),
+            eq(100L),
+            eq(500L),
+            eq(2000L),
+            any(Map.class));
+    verify(gameplayEventPublisher)
+        .publish(
+            eq(GameplayEventType.LEVEL_COMPLETED),
+            eq(100L),
+            eq(500L),
+            eq(2000L),
+            any(Map.class));
   }
 
   @Test
@@ -175,6 +201,8 @@ class CodeSubmissionServiceImplTest {
     assertThat(response.isLevelCompleted()).isFalse();
     assertThat(response.getRemainingMainCodes()).isEqualTo(1);
     verify(questProgressService, never()).advanceAfterLevelCompleted(any());
+    verify(gameplayEventPublisher, never())
+        .publish(eq(GameplayEventType.LEVEL_COMPLETED), any(), any(), any(), any());
   }
 
   @Test
@@ -194,6 +222,13 @@ class CodeSubmissionServiceImplTest {
     assertThat(response.isLevelCompleted()).isTrue();
     assertThat(response.isQuestFinished()).isTrue();
     assertThat(response.getRemainingMainCodes()).isZero();
+    verify(gameplayEventPublisher)
+        .publish(
+            eq(GameplayEventType.QUEST_FINISHED),
+            eq(100L),
+            eq(500L),
+            eq(2000L),
+            any(Map.class));
   }
 
   @Test
@@ -208,6 +243,13 @@ class CodeSubmissionServiceImplTest {
     assertThat(response.isLevelCompleted()).isFalse();
     verify(levelProgressRepository, never())
         .tryCompleteByCodesThreshold(anyLong(), anyLong(), any());
+    verify(gameplayEventPublisher)
+        .publish(
+            eq(GameplayEventType.CODE_ACCEPTED),
+            eq(100L),
+            eq(500L),
+            eq(2000L),
+            any(Map.class));
   }
 
   @Test
@@ -233,6 +275,7 @@ class CodeSubmissionServiceImplTest {
                     100L, 10L, new SubmitCodeRequest("siniy"), authentication))
         .isInstanceOf(ForbiddenOperationException.class)
         .hasMessageContaining("участник");
+    verify(gameplayEventPublisher, never()).publish(any(), any(), any(), any(), any());
   }
 
   @Test

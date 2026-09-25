@@ -14,6 +14,8 @@ import dn.questenginev2.code.repository.CodeSubmissionRepository;
 import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.ResourceNotFoundException;
+import dn.questenginev2.gameplay.event.GameplayEventPublisher;
+import dn.questenginev2.gameplay.event.GameplayEventType;
 import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
 import dn.questenginev2.level.entity.LevelProgressStatus;
@@ -32,6 +34,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -43,6 +46,8 @@ import org.springframework.stereotype.Service;
  *
  * <p>Rate limiting здесь намеренно НЕ применяется (ADR-0016, 05-security/threat-model.md) —
  * скорость ввода кодов является частью игровой механики, а не признаком атаки.
+ *
+ * <p>После успешного save публикуются gameplay realtime-события (ADR-022).
  */
 @Service
 @Transactional
@@ -57,6 +62,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
   private final QuestProgressService questProgressService;
   private final QuestService questService;
   private final UserService userService;
+  private final GameplayEventPublisher gameplayEventPublisher;
   private final Clock clock;
 
   @Autowired
@@ -68,7 +74,8 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
       TeamMemberRepository teamMemberRepository,
       QuestProgressService questProgressService,
       QuestService questService,
-      UserService userService) {
+      UserService userService,
+      GameplayEventPublisher gameplayEventPublisher) {
     this(
         codeSubmissionRepository,
         codeRepository,
@@ -78,6 +85,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
         questProgressService,
         questService,
         userService,
+        gameplayEventPublisher,
         Clock.systemUTC());
   }
 
@@ -165,6 +173,15 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
       }
     }
 
+    publishGameplayEvents(
+        questId,
+        questProgress.getId(),
+        levelProgress.getId(),
+        level.getId(),
+        result,
+        levelCompleted,
+        questFinished);
+
     return CodeSubmissionResponse.builder()
         .result(result)
         .remainingMainCodes(remainingMainCodes)
@@ -172,6 +189,45 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
         .questFinished(questFinished)
         .submittedAt(now)
         .build();
+  }
+
+  private void publishGameplayEvents(
+      Long questId,
+      Long questProgressId,
+      Long levelProgressId,
+      Long levelId,
+      CodeSubmissionResult result,
+      boolean levelCompleted,
+      boolean questFinished) {
+    GameplayEventType codeType =
+        result == CodeSubmissionResult.INCORRECT
+            ? GameplayEventType.CODE_REJECTED
+            : GameplayEventType.CODE_ACCEPTED;
+    gameplayEventPublisher.publish(
+        codeType,
+        questId,
+        questProgressId,
+        levelProgressId,
+        Map.of(
+            "result", result.name(),
+            "levelId", levelId));
+
+    if (levelCompleted) {
+      gameplayEventPublisher.publish(
+          GameplayEventType.LEVEL_COMPLETED,
+          questId,
+          questProgressId,
+          levelProgressId,
+          Map.of("levelId", levelId));
+    }
+    if (questFinished) {
+      gameplayEventPublisher.publish(
+          GameplayEventType.QUEST_FINISHED,
+          questId,
+          questProgressId,
+          levelProgressId,
+          Map.of());
+    }
   }
 
   private QuestProgress validateQuestProgressExist(Long questId, Long teamId) {
