@@ -8,6 +8,7 @@ import {
   TeamCodeAttemptsList,
   useCurrentLevel,
   useEnterQuest,
+  useGameplaySocket,
   useQuestProgress,
 } from "@/features/gameplay";
 import { useMyTeam } from "@/features/teams";
@@ -61,7 +62,7 @@ function GamePageContent({
   teamId: number;
   teamName: string;
 }) {
-  const progressQuery = useQuestProgress(questId, teamId);
+  const progressQuery = useQuestProgress(questId, teamId, false);
   const enterMutation = useEnterQuest(questId);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -125,12 +126,12 @@ function GamePageContent({
       )}
 
       {isRunning && (
-        <>
-          <CurrentLevelPanel questId={questId} teamId={teamId} nowMs={nowMs} />
-          <CodeSubmitForm questId={questId} teamId={teamId} />
-          <TeamCodeAttemptsList questId={questId} teamId={teamId} />
-          <ShownHintsList questId={questId} teamId={teamId} />
-        </>
+        <RunningGameplay
+          questId={questId}
+          teamId={teamId}
+          questProgressId={progress.id}
+          nowMs={nowMs}
+        />
       )}
 
       {effectiveStatus === "FINISHED" && (
@@ -153,23 +154,59 @@ function GamePageContent({
   );
 }
 
-function CurrentLevelPanel({
+function RunningGameplay({
   questId,
   teamId,
+  questProgressId,
   nowMs,
 }: {
   questId: number;
   teamId: number;
+  questProgressId: number;
   nowMs: number;
 }) {
-  const levelQuery = useCurrentLevel(questId, teamId, true);
+  const socketStatus = useGameplaySocket(questId, teamId, questProgressId, true);
+  const live = socketStatus === "connected";
+
+  // Re-bind progress with live flag so polling stops when WS is up
+  useQuestProgress(questId, teamId, live);
+
+  return (
+    <>
+      {socketStatus === "connecting" && (
+        <p className="text-muted-foreground text-xs">Подключение realtime…</p>
+      )}
+      {socketStatus === "error" && (
+        <p className="text-muted-foreground text-xs">
+          Realtime недоступен — обновление по опросу (5 с).
+        </p>
+      )}
+      <CurrentLevelPanel questId={questId} teamId={teamId} nowMs={nowMs} live={live} />
+      <CodeSubmitForm questId={questId} teamId={teamId} />
+      <TeamCodeAttemptsList questId={questId} teamId={teamId} live={live} />
+      <ShownHintsList questId={questId} teamId={teamId} live={live} />
+    </>
+  );
+}
+
+function CurrentLevelPanel({
+  questId,
+  teamId,
+  nowMs,
+  live = false,
+}: {
+  questId: number;
+  teamId: number;
+  nowMs: number;
+  live?: boolean;
+}) {
+  const levelQuery = useCurrentLevel(questId, teamId, true, live);
 
   if (levelQuery.isLoading) {
     return <p className="text-muted-foreground text-sm">Загрузка уровня...</p>;
   }
 
   if (levelQuery.isError || !levelQuery.data) {
-    // 404 = нет ACTIVE level (между уровнями / завершение)
     const is404 =
       levelQuery.error instanceof ApiError && levelQuery.error.status === 404;
     if (is404) {

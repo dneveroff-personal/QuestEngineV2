@@ -10,14 +10,16 @@ import {
 } from "@/api/gameplay";
 import { getShownHints, takeHint } from "@/api/hints";
 
-export function useQuestProgress(questId: number, teamId: number) {
+/**
+ * @param live when true (WebSocket connected), disable polling — push + invalidate.
+ */
+export function useQuestProgress(questId: number, teamId: number, live = false) {
   return useQuery({
     queryKey: ["gameplay", questId, teamId, "progress"],
     queryFn: () => getQuestProgress(questId, teamId),
-    // Опрос вместо push — на backend нет SSE/WS для прогресса (ADR-0014
-    // касается только статистики, не игрового прогресса). 5с — компромисс
-    // между отзывчивостью и нагрузкой. Останавливаем опрос на FINISHED/DNF.
+    // Fallback polling when WS unavailable (ADR-022). Stop on FINISHED/DNF.
     refetchInterval: (query) => {
+      if (live) return false;
       const status = query.state.data?.status;
       return status === "FINISHED" || status === "DNF" ? false : 5000;
     },
@@ -28,14 +30,18 @@ export function useQuestProgress(questId: number, teamId: number) {
  * Агрегированный текущий уровень: title/content/autoTransitionAt/hints/mainCodes.
  * 404 (нет ACTIVE level) обрабатывается вызывающим кодом.
  */
-export function useCurrentLevel(questId: number, teamId: number, enabled: boolean) {
+export function useCurrentLevel(
+  questId: number,
+  teamId: number,
+  enabled: boolean,
+  live = false,
+) {
   return useQuery({
     queryKey: ["gameplay", questId, teamId, "current-level"],
     queryFn: () => getCurrentLevel(questId, teamId),
     enabled,
-    refetchInterval: 5000,
+    refetchInterval: live ? false : 5000,
     retry: (failureCount, error) => {
-      // 404 = нет активного уровня — не ретраим
       if (error && typeof error === "object" && "status" in error && error.status === 404) {
         return false;
       }
@@ -66,14 +72,19 @@ export function useSubmitCode(questId: number, teamId: number) {
 
 /**
  * Видимые подсказки (REGULAR показанные + BONUS/PENALTY доступные/взятые).
- * Polling — auto-reveal REGULAR на backend (Job 3, ADR-0020).
+ * Polling — auto-reveal REGULAR on backend (Job 3) until HINT_REVEALED WS slice.
  */
-export function useShownHints(questId: number, teamId: number, enabled = true) {
+export function useShownHints(
+  questId: number,
+  teamId: number,
+  enabled = true,
+  live = false,
+) {
   return useQuery({
     queryKey: ["gameplay", questId, teamId, "hints"],
     queryFn: () => getShownHints(questId, teamId),
     enabled,
-    refetchInterval: 5000,
+    refetchInterval: live ? false : 5000,
   });
 }
 
@@ -89,13 +100,17 @@ export function useTakeHint(questId: number, teamId: number) {
 }
 
 /** Own team attempts on the currently ACTIVE level (GET .../codes). */
-export function useTeamAttempts(questId: number, teamId: number, enabled = true) {
+export function useTeamAttempts(
+  questId: number,
+  teamId: number,
+  enabled = true,
+  live = false,
+) {
   return useQuery({
     queryKey: ["gameplay", questId, teamId, "attempts"],
     queryFn: () => listTeamAttempts(questId, teamId),
     enabled,
-    // Same cadence as progress: new attempts appear after submit (invalidate) or teammate submit.
-    refetchInterval: 5000,
+    refetchInterval: live ? false : 5000,
   });
 }
 
