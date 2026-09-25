@@ -42,8 +42,7 @@ class BonusPenaltyServiceImplTest {
     when(codeSubmissionRepository.sumEffectSecondsByQuestProgressIdAndResult(
             100L, CodeSubmissionResult.CORRECT_BONUS))
         .thenReturn(200L);
-    when(hintProgressRepository.sumEffectSecondsByQuestProgressIdAndHintType(
-            100L, HintType.BONUS))
+    when(hintProgressRepository.sumEffectSecondsByQuestProgressIdAndHintType(100L, HintType.BONUS))
         .thenReturn(50L);
 
     long result = service.getAdjustmentSeconds(questProgress, TimeAdjustmentType.BONUS);
@@ -76,8 +75,7 @@ class BonusPenaltyServiceImplTest {
     when(codeSubmissionRepository.sumEffectSecondsByQuestProgressIdAndResult(
             100L, CodeSubmissionResult.CORRECT_BONUS))
         .thenReturn(200L);
-    when(hintProgressRepository.sumEffectSecondsByQuestProgressIdAndHintType(
-            100L, HintType.BONUS))
+    when(hintProgressRepository.sumEffectSecondsByQuestProgressIdAndHintType(100L, HintType.BONUS))
         .thenReturn(50L);
     when(manualTimeAdjustmentRepository.sumActiveSecondsByQuestProgressIdAndType(
             100L, TimeAdjustmentType.PENALTY))
@@ -100,8 +98,7 @@ class BonusPenaltyServiceImplTest {
     when(codeSubmissionRepository.sumEffectSecondsByQuestProgressIdAndResult(
             100L, CodeSubmissionResult.CORRECT_BONUS))
         .thenReturn(0L);
-    when(hintProgressRepository.sumEffectSecondsByQuestProgressIdAndHintType(
-            100L, HintType.BONUS))
+    when(hintProgressRepository.sumEffectSecondsByQuestProgressIdAndHintType(100L, HintType.BONUS))
         .thenReturn(0L);
     when(manualTimeAdjustmentRepository.sumActiveSecondsByQuestProgressIdAndType(
             100L, TimeAdjustmentType.PENALTY))

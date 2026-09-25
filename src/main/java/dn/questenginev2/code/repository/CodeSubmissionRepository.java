@@ -69,6 +69,5 @@ public interface CodeSubmissionRepository extends JpaRepository<CodeSubmission, 
           + "JOIN FETCH qp.team "
           + "WHERE qp.quest.id = :questId "
           + "ORDER BY cs.submittedAt DESC")
-  List<CodeSubmission> findDetailedByQuestIdOrderBySubmittedAtDesc(
-      @Param("questId") Long questId);
+  List<CodeSubmission> findDetailedByQuestIdOrderBySubmittedAtDesc(@Param("questId") Long questId);
 }

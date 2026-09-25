@@ -131,8 +131,7 @@ class CurrentLevelServiceImplTest {
     List<HintProgressResponse> hints = List.of();
     when(hintProgressService.getVisibleHints(100L, 10L, authentication)).thenReturn(hints);
 
-    CurrentLevelResponse response =
-        currentLevelService.getCurrentLevel(100L, 10L, authentication);
+    CurrentLevelResponse response = currentLevelService.getCurrentLevel(100L, 10L, authentication);
 
     assertThat(response.getLevelProgressId()).isEqualTo(30L);
     assertThat(response.getLevelProgressStatus()).isEqualTo(LevelProgressStatus.ACTIVE);
@@ -159,8 +158,7 @@ class CurrentLevelServiceImplTest {
     when(codeSubmissionRepository.countDistinctSolvedCodeIndexes(30L)).thenReturn(0L);
     when(hintProgressService.getVisibleHints(100L, 10L, authentication)).thenReturn(List.of());
 
-    CurrentLevelResponse response =
-        currentLevelService.getCurrentLevel(100L, 10L, authentication);
+    CurrentLevelResponse response = currentLevelService.getCurrentLevel(100L, 10L, authentication);
 
     assertThat(response.getLevelId()).isEqualTo(20L);
     assertThat(response.getMainCodesSolved()).isEqualTo(0L);

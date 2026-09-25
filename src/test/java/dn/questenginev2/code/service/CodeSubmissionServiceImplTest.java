@@ -7,9 +7,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-import dn.questenginev2.code.dto.CodeSubmissionResponse;
 import dn.questenginev2.code.dto.CodeSubmissionAttemptResponse;
-import dn.questenginev2.quest.service.QuestService;
+import dn.questenginev2.code.dto.CodeSubmissionResponse;
 import dn.questenginev2.code.dto.SubmitCodeRequest;
 import dn.questenginev2.code.entity.Code;
 import dn.questenginev2.code.entity.CodeSubmission;
@@ -33,6 +32,7 @@ import dn.questenginev2.quest.entity.QuestProgressStatus;
 import dn.questenginev2.quest.entity.QuestType;
 import dn.questenginev2.quest.repository.QuestProgressRepository;
 import dn.questenginev2.quest.service.QuestProgressService;
+import dn.questenginev2.quest.service.QuestService;
 import dn.questenginev2.team.entity.Team;
 import dn.questenginev2.team.entity.TeamMember;
 import dn.questenginev2.team.repository.TeamMemberRepository;
@@ -370,8 +370,7 @@ class CodeSubmissionServiceImplTest {
     when(teamMemberRepository.findByUserAndTeam(currentUser, team)).thenReturn(Optional.empty());
 
     assertThatThrownBy(
-            () ->
-                codeSubmissionService.listAttemptsForTeamActiveLevel(100L, 10L, authentication))
+            () -> codeSubmissionService.listAttemptsForTeamActiveLevel(100L, 10L, authentication))
         .isInstanceOf(ForbiddenOperationException.class);
   }
 
@@ -406,8 +405,7 @@ class CodeSubmissionServiceImplTest {
         .when(questService)
         .validateQuestAuthor(currentUser, 100L);
 
-    assertThatThrownBy(
-            () -> codeSubmissionService.listAttemptsForQuestAuthor(100L, authentication))
+    assertThatThrownBy(() -> codeSubmissionService.listAttemptsForQuestAuthor(100L, authentication))
         .isInstanceOf(ForbiddenOperationException.class);
   }
 }

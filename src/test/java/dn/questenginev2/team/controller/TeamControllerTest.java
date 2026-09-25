@@ -83,7 +83,8 @@ class TeamControllerTest {
   @Test
   void searchTeams_returnsPage() throws Exception {
     when(teamService.searchTeams(any(), any()))
-        .thenReturn(PageResponse.from(org.springframework.data.domain.Page.empty(PageRequest.of(0, 20))));
+        .thenReturn(
+            PageResponse.from(org.springframework.data.domain.Page.empty(PageRequest.of(0, 20))));
 
     mockMvc.perform(get("/api/teams/search")).andExpect(status().isOk());
   }

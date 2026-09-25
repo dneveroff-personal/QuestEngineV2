@@ -38,6 +38,7 @@ public class CodeSubmissionAttemptResponse {
 
   /** null при INCORRECT. */
   private Long matchedCodeId;
+
   private Integer matchedCodeIndex;
   private CodeType matchedCodeType;
 }

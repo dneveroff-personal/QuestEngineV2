@@ -77,8 +77,7 @@ public class TeamController {
 
   @Operation(summary = "Transfer captain", description = "Transfer captain role to another member")
   @PostMapping(Routes.TRANSFER_CAPTAIN)
-  public ResponseEntity<Boolean> transferCaptain(
-      @PathVariable Long userId, Authentication auth) {
+  public ResponseEntity<Boolean> transferCaptain(@PathVariable Long userId, Authentication auth) {
     return ResponseEntity.status(HttpStatus.OK).body(teamService.transferCaptain(userId, auth));
   }
 

@@ -24,6 +24,5 @@ public interface CodeSubmissionService {
    * Полная статистика попыток всех команд по квесту.
    * Видимость: автор квеста или ADMIN (statistics-ranking.md).
    */
-  List<CodeSubmissionAttemptResponse> listAttemptsForQuestAuthor(
-      Long questId, Authentication auth);
+  List<CodeSubmissionAttemptResponse> listAttemptsForQuestAuthor(Long questId, Authentication auth);
 }

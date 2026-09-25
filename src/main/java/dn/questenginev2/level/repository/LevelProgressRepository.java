@@ -2,10 +2,12 @@ package dn.questenginev2.level.repository;
 
 import dn.questenginev2.level.entity.LevelProgress;
 import dn.questenginev2.level.entity.LevelProgressStatus;
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,7 +19,18 @@ public interface LevelProgressRepository extends JpaRepository<LevelProgress, Lo
   Optional<LevelProgress> findByQuestProgressIdAndStatus(
       Long questProgressId, LevelProgressStatus status);
 
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query(
+      "SELECT lp FROM LevelProgress lp WHERE lp.questProgress.id = :questProgressId"
+          + " AND lp.status = :status")
+  Optional<LevelProgress> findByQuestProgressIdAndStatusForUpdate(
+      @Param("questProgressId") Long questProgressId, @Param("status") LevelProgressStatus status);
+
   Optional<LevelProgress> findTopByQuestProgressIdOrderByIdDesc(Long questProgressId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT lp FROM LevelProgress lp WHERE lp.id = :id")
+  Optional<LevelProgress> findByIdForUpdate(@Param("id") Long id);
 
   List<LevelProgress> findByStatus(LevelProgressStatus status);
 

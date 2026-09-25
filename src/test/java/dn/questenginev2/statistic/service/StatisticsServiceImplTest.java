@@ -206,24 +206,18 @@ class StatisticsServiceImplTest {
             .build();
 
     // A: 2 levels, last at t2
-    LevelProgress aL1 =
-        completedLp(30L, qpA, level1, t0, t1);
-    LevelProgress aL2 =
-        completedLp(31L, qpA, level2, t1, t2);
+    LevelProgress aL1 = completedLp(30L, qpA, level1, t0, t1);
+    LevelProgress aL2 = completedLp(31L, qpA, level2, t1, t2);
     // B: 2 levels, last at t3 (later → worse)
-    LevelProgress bL1 =
-        completedLp(32L, qpB, level1, t0, t1);
-    LevelProgress bL2 =
-        completedLp(33L, qpB, level2, t1, t3);
+    LevelProgress bL1 = completedLp(32L, qpB, level1, t0, t1);
+    LevelProgress bL2 = completedLp(33L, qpB, level2, t1, t3);
     // C: 1 level only
-    LevelProgress cL1 =
-        completedLp(34L, qpC, level1, t0, t1);
+    LevelProgress cL1 = completedLp(34L, qpC, level1, t0, t1);
 
     when(questRepository.findById(1L)).thenReturn(Optional.of(runningQuest));
     when(levelRepository.findByQuestIdOrderByOrderIndex(1L)).thenReturn(List.of(level1, level2));
     when(questProgressRepository.findByQuestId(1L)).thenReturn(List.of(qpA, qpB, qpC));
-    when(levelProgressRepository.findAllByQuestId(1L))
-        .thenReturn(List.of(aL1, aL2, bL1, bL2, cL1));
+    when(levelProgressRepository.findAllByQuestId(1L)).thenReturn(List.of(aL1, aL2, bL1, bL2, cL1));
     when(bonusPenaltyService.getTotalAdjustmentSeconds(qpA)).thenReturn(0L);
     when(bonusPenaltyService.getTotalAdjustmentSeconds(qpB)).thenReturn(0L);
     when(bonusPenaltyService.getTotalAdjustmentSeconds(qpC)).thenReturn(0L);
@@ -280,8 +274,7 @@ class StatisticsServiceImplTest {
     when(questRepository.findById(2L)).thenReturn(Optional.of(finishedQuest));
     when(levelRepository.findByQuestIdOrderByOrderIndex(2L)).thenReturn(List.of(l1, l2));
     when(questProgressRepository.findByQuestId(2L)).thenReturn(List.of(qpA, qpB, qpC));
-    when(levelProgressRepository.findAllByQuestId(2L))
-        .thenReturn(List.of(aL1, aL2, bL1, bL2, cL1));
+    when(levelProgressRepository.findAllByQuestId(2L)).thenReturn(List.of(aL1, aL2, bL1, bL2, cL1));
     when(bonusPenaltyService.getTotalAdjustmentSeconds(qpA)).thenReturn(-60L); // total 1140
     when(bonusPenaltyService.getTotalAdjustmentSeconds(qpB)).thenReturn(0L); // total 1800
     when(bonusPenaltyService.getTotalAdjustmentSeconds(qpC)).thenReturn(0L);
