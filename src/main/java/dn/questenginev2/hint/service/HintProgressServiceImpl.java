@@ -3,6 +3,8 @@ package dn.questenginev2.hint.service;
 import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.ResourceNotFoundException;
+import dn.questenginev2.gameplay.event.GameplayEventPublisher;
+import dn.questenginev2.gameplay.event.GameplayEventType;
 import dn.questenginev2.hint.dto.HintProgressResponse;
 import dn.questenginev2.hint.entity.Hint;
 import dn.questenginev2.hint.entity.HintProgress;
@@ -46,6 +48,7 @@ public class HintProgressServiceImpl implements HintProgressService {
   private final LevelProgressRepository levelProgressRepository;
   private final TeamMemberRepository teamMemberRepository;
   private final UserService userService;
+  private final GameplayEventPublisher gameplayEventPublisher;
   private final Clock clock;
 
   @Autowired
@@ -55,7 +58,8 @@ public class HintProgressServiceImpl implements HintProgressService {
       QuestProgressRepository questProgressRepository,
       LevelProgressRepository levelProgressRepository,
       TeamMemberRepository teamMemberRepository,
-      UserService userService) {
+      UserService userService,
+      GameplayEventPublisher gameplayEventPublisher) {
     this(
         hintProgressRepository,
         hintRepository,
@@ -63,6 +67,7 @@ public class HintProgressServiceImpl implements HintProgressService {
         levelProgressRepository,
         teamMemberRepository,
         userService,
+        gameplayEventPublisher,
         Clock.systemUTC());
   }
 
@@ -136,6 +141,7 @@ public class HintProgressServiceImpl implements HintProgressService {
       HintProgress saved =
           hintProgressRepository.saveAndFlush(
               HintProgress.builder().levelProgress(levelProgress).hint(hint).shownAt(now).build());
+      publishHintRevealed(questProgress, levelProgress, hint);
       return buildRevealedResponse(saved);
     } catch (DataIntegrityViolationException alreadyTakenConcurrently) {
       HintProgress raceWinner =
@@ -144,6 +150,20 @@ public class HintProgressServiceImpl implements HintProgressService {
               .orElseThrow(() -> alreadyTakenConcurrently);
       return buildRevealedResponse(raceWinner);
     }
+  }
+
+  private void publishHintRevealed(
+      QuestProgress questProgress, LevelProgress levelProgress, Hint hint) {
+    Long questId = questProgress.getQuest().getId();
+    gameplayEventPublisher.publish(
+        GameplayEventType.HINT_REVEALED,
+        questId,
+        questProgress.getId(),
+        levelProgress.getId(),
+        Map.of(
+            "hintId", hint.getId(),
+            "hintType", hint.getType().name(),
+            "levelId", levelProgress.getLevel().getId()));
   }
 
   private QuestProgress validateQuestProgressExist(Long questId, Long teamId) {
