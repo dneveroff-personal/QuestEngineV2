@@ -9,6 +9,7 @@ import dn.questenginev2.auth.repository.RefreshTokenRepository;
 import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.config.containers.BaseIntegrationTest;
 import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
 import dn.questenginev2.level.repository.LevelProgressRepository;
@@ -40,8 +41,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -51,9 +50,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * конкурентных вызовов {@code approveTeam()} для одного и того же Quest у лимита команд не должны
  * превысить {@code Quest.maximumTeams}.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-class ApproveTeamRaceIT {
+class ApproveTeamRaceIT extends BaseIntegrationTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private UserRepository userRepository;

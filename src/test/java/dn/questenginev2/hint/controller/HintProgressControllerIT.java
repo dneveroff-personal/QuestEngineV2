@@ -10,6 +10,7 @@ import dn.questenginev2.auth.repository.RefreshTokenRepository;
 import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.config.containers.BaseIntegrationTest;
 import dn.questenginev2.hint.entity.Hint;
 import dn.questenginev2.hint.entity.HintType;
 import dn.questenginev2.hint.repository.HintProgressRepository;
@@ -40,8 +41,6 @@ import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -50,9 +49,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * Сквозной тест видимости подсказок (ADR-0020, ADR-0021): REGULAR auto-reveal через Job 3,
  * BONUS/PENALTY доступны, но требуют явного взятия через {@code POST .../hints/{hintId}/take}.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-class HintProgressControllerIT {
+class HintProgressControllerIT extends BaseIntegrationTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private UserRepository userRepository;

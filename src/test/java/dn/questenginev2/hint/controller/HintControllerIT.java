@@ -8,6 +8,7 @@ import dn.questenginev2.auth.repository.RefreshTokenRepository;
 import dn.questenginev2.bonuspenalty.repository.ManualTimeAdjustmentRepository;
 import dn.questenginev2.code.repository.CodeRepository;
 import dn.questenginev2.code.repository.CodeSubmissionRepository;
+import dn.questenginev2.config.containers.BaseIntegrationTest;
 import dn.questenginev2.hint.entity.Hint;
 import dn.questenginev2.hint.repository.HintProgressRepository;
 import dn.questenginev2.hint.repository.HintRepository;
@@ -32,15 +33,11 @@ import dn.questenginev2.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class HintControllerIT {
+class HintControllerIT extends BaseIntegrationTest {
 
   @Autowired private MockMvc mockMvc;
 
