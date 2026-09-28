@@ -146,11 +146,7 @@ class CodeSubmissionServiceImplTest {
         .tryCompleteByCodesThreshold(anyLong(), anyLong(), any());
     verify(gameplayEventPublisher)
         .publish(
-            eq(GameplayEventType.CODE_REJECTED),
-            eq(100L),
-            eq(500L),
-            eq(2000L),
-            any(Map.class));
+            eq(GameplayEventType.CODE_REJECTED), eq(100L), eq(500L), eq(2000L), any(Map.class));
   }
 
   @Test
@@ -172,18 +168,10 @@ class CodeSubmissionServiceImplTest {
     assertThat(response.isLevelCompleted()).isTrue();
     verify(gameplayEventPublisher)
         .publish(
-            eq(GameplayEventType.CODE_ACCEPTED),
-            eq(100L),
-            eq(500L),
-            eq(2000L),
-            any(Map.class));
+            eq(GameplayEventType.CODE_ACCEPTED), eq(100L), eq(500L), eq(2000L), any(Map.class));
     verify(gameplayEventPublisher)
         .publish(
-            eq(GameplayEventType.LEVEL_COMPLETED),
-            eq(100L),
-            eq(500L),
-            eq(2000L),
-            any(Map.class));
+            eq(GameplayEventType.LEVEL_COMPLETED), eq(100L), eq(500L), eq(2000L), any(Map.class));
   }
 
   @Test
@@ -224,11 +212,7 @@ class CodeSubmissionServiceImplTest {
     assertThat(response.getRemainingMainCodes()).isZero();
     verify(gameplayEventPublisher)
         .publish(
-            eq(GameplayEventType.QUEST_FINISHED),
-            eq(100L),
-            eq(500L),
-            eq(2000L),
-            any(Map.class));
+            eq(GameplayEventType.QUEST_FINISHED), eq(100L), eq(500L), eq(2000L), any(Map.class));
   }
 
   @Test
@@ -245,11 +229,7 @@ class CodeSubmissionServiceImplTest {
         .tryCompleteByCodesThreshold(anyLong(), anyLong(), any());
     verify(gameplayEventPublisher)
         .publish(
-            eq(GameplayEventType.CODE_ACCEPTED),
-            eq(100L),
-            eq(500L),
-            eq(2000L),
-            any(Map.class));
+            eq(GameplayEventType.CODE_ACCEPTED), eq(100L), eq(500L), eq(2000L), any(Map.class));
   }
 
   @Test

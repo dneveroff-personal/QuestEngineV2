@@ -204,9 +204,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
         questId,
         questProgressId,
         levelProgressId,
-        Map.of(
-            "result", result.name(),
-            "levelId", levelId));
+        Map.of("result", result.name(), "levelId", levelId));
 
     if (levelCompleted) {
       gameplayEventPublisher.publish(
@@ -218,11 +216,7 @@ public class CodeSubmissionServiceImpl implements CodeSubmissionService {
     }
     if (questFinished) {
       gameplayEventPublisher.publish(
-          GameplayEventType.QUEST_FINISHED,
-          questId,
-          questProgressId,
-          levelProgressId,
-          Map.of());
+          GameplayEventType.QUEST_FINISHED, questId, questProgressId, levelProgressId, Map.of());
     }
   }
 

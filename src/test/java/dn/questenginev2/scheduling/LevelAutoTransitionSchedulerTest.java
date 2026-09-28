@@ -3,9 +3,14 @@ package dn.questenginev2.scheduling;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import dn.questenginev2.gameplay.event.GameplayEventPublisher;
+import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
 import dn.questenginev2.level.entity.LevelProgressStatus;
 import dn.questenginev2.level.repository.LevelProgressRepository;
+import dn.questenginev2.quest.dto.QuestProgressResponse;
+import dn.questenginev2.quest.entity.Quest;
+import dn.questenginev2.quest.entity.QuestProgress;
 import dn.questenginev2.quest.service.QuestProgressService;
 import java.time.Clock;
 import java.time.Instant;
@@ -24,18 +29,31 @@ class LevelAutoTransitionSchedulerTest {
   @Mock private LevelProgressRepository levelProgressRepository;
   @Mock private QuestProgressService questProgressService;
   @Mock private Clock clock;
+  @Mock private GameplayEventPublisher gameplayEventPublisher;
 
   @InjectMocks private LevelAutoTransitionScheduler levelAutoTransitionScheduler;
 
   private final Instant fixedNow = Instant.parse("2026-08-24T21:00:00Z");
 
+  private Level level;
+  private Quest quest;
+  private QuestProgress questProgress;
+
   @BeforeEach
   void setUp() {
     when(clock.instant()).thenReturn(fixedNow);
+    level = Level.builder().id(1000L).title("L1").orderIndex(1).build();
+    quest = Quest.builder().id(10L).title("Q1").description("desc").build();
+    questProgress = QuestProgress.builder().id(500L).quest(quest).build();
   }
 
   private LevelProgress levelProgress(Long id) {
-    return LevelProgress.builder().id(id).status(LevelProgressStatus.ACTIVE).build();
+    return LevelProgress.builder()
+        .id(id)
+        .level(level)
+        .questProgress(questProgress)
+        .status(LevelProgressStatus.ACTIVE)
+        .build();
   }
 
   @Test
@@ -57,6 +75,8 @@ class LevelAutoTransitionSchedulerTest {
         .thenReturn(List.of(candidate));
     when(levelProgressRepository.tryAutoTransition(1L, fixedNow)).thenReturn(1);
     when(levelProgressRepository.findById(1L)).thenReturn(Optional.of(candidate));
+    when(questProgressService.advanceAfterLevelCompleted(any()))
+        .thenReturn(QuestProgressResponse.builder().build());
 
     levelAutoTransitionScheduler.autoTransitionDueLevels();
 
@@ -88,6 +108,8 @@ class LevelAutoTransitionSchedulerTest {
     when(levelProgressRepository.tryAutoTransition(1L, fixedNow)).thenReturn(1);
     when(levelProgressRepository.tryAutoTransition(2L, fixedNow)).thenReturn(0);
     when(levelProgressRepository.findById(1L)).thenReturn(Optional.of(candidateOne));
+    when(questProgressService.advanceAfterLevelCompleted(any()))
+        .thenReturn(QuestProgressResponse.builder().build());
 
     levelAutoTransitionScheduler.autoTransitionDueLevels();
 

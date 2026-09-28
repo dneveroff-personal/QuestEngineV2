@@ -162,7 +162,7 @@ function RunningGameplay({
 }: {
   questId: number;
   teamId: number;
-  questProgressId: number;
+  questProgressId: number | undefined;
   nowMs: number;
 }) {
   const socketStatus = useGameplaySocket(questId, teamId, questProgressId, true);

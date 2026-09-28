@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import dn.questenginev2.common.exceptions.ConflictException;
 import dn.questenginev2.common.exceptions.ForbiddenOperationException;
 import dn.questenginev2.common.exceptions.ResourceNotFoundException;
+import dn.questenginev2.gameplay.event.GameplayEventPublisher;
 import dn.questenginev2.hint.dto.HintProgressResponse;
 import dn.questenginev2.hint.entity.Hint;
 import dn.questenginev2.hint.entity.HintProgress;
@@ -55,6 +56,7 @@ class HintProgressServiceImplTest {
   @Mock private LevelProgressRepository levelProgressRepository;
   @Mock private TeamMemberRepository teamMemberRepository;
   @Mock private UserService userService;
+  @Mock private GameplayEventPublisher gameplayEventPublisher;
   @Mock private Clock clock;
   @Mock private Authentication authentication;
 

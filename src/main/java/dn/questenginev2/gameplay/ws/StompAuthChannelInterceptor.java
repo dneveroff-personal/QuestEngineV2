@@ -39,7 +39,7 @@ import org.springframework.stereotype.Component;
 public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
   private static final Pattern QUEST_PROGRESS_DEST =
-      Pattern.compile("^/topic/quest-progress/(\d+)/gameplay$");
+      Pattern.compile("^/topic/quest-progress/(\\d+)/gameplay$");
 
   private final JwtService jwtService;
   private final UserRepository userRepository;

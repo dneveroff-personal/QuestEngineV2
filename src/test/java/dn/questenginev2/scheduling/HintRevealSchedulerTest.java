@@ -2,6 +2,7 @@ package dn.questenginev2.scheduling;
 
 import static org.mockito.Mockito.*;
 
+import dn.questenginev2.gameplay.event.GameplayEventPublisher;
 import dn.questenginev2.hint.entity.Hint;
 import dn.questenginev2.hint.entity.HintProgress;
 import dn.questenginev2.hint.entity.HintType;
@@ -11,6 +12,8 @@ import dn.questenginev2.level.entity.Level;
 import dn.questenginev2.level.entity.LevelProgress;
 import dn.questenginev2.level.entity.LevelProgressStatus;
 import dn.questenginev2.level.repository.LevelProgressRepository;
+import dn.questenginev2.quest.entity.Quest;
+import dn.questenginev2.quest.entity.QuestProgress;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -30,6 +33,7 @@ class HintRevealSchedulerTest {
   @Mock private HintRepository hintRepository;
   @Mock private HintProgressRepository hintProgressRepository;
   @Mock private Clock clock;
+  @Mock private GameplayEventPublisher gameplayEventPublisher;
 
   @InjectMocks private HintRevealScheduler hintRevealScheduler;
 
@@ -37,16 +41,21 @@ class HintRevealSchedulerTest {
 
   private LevelProgress levelProgress;
   private Level level;
+  private Quest quest;
+  private QuestProgress questProgress;
 
   @BeforeEach
   void setUp() {
     when(clock.instant()).thenReturn(fixedNow);
 
     level = Level.builder().id(1000L).title("L1").orderIndex(1).build();
+    quest = Quest.builder().id(10L).title("Q1").description("desc").build();
+    questProgress = QuestProgress.builder().id(500L).quest(quest).build();
     levelProgress =
         LevelProgress.builder()
             .id(2000L)
             .level(level)
+            .questProgress(questProgress)
             .status(LevelProgressStatus.ACTIVE)
             .openedAt(fixedNow.minusSeconds(120))
             .build();

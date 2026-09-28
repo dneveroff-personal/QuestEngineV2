@@ -43,8 +43,7 @@ public class LevelAutoTransitionScheduler {
       LevelProgressRepository levelProgressRepository,
       QuestProgressService questProgressService,
       GameplayEventPublisher gameplayEventPublisher) {
-    this(
-        levelProgressRepository, questProgressService, gameplayEventPublisher, Clock.systemUTC());
+    this(levelProgressRepository, questProgressService, gameplayEventPublisher, Clock.systemUTC());
   }
 
   @Scheduled(fixedDelay = 1000)
