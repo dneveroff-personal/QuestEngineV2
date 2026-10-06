@@ -32,6 +32,10 @@ export interface CreateTeamRequest {
 
 export interface TeamJoinRequestItem {
   requestId: number;
+  /** Team that owns the request / sent the invite. */
+  teamId: number;
+  teamName: string;
+  /** Applicant (JOIN_REQUEST) or invitee (CAPTAIN_INVITE). */
   userName: string;
   type: JoinRequestType;
   createdAt: string;

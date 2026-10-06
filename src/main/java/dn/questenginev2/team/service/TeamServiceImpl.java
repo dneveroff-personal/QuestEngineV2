@@ -104,7 +104,7 @@ public class TeamServiceImpl implements TeamService {
     User currentUser = userService.getCurrentUser(auth);
     TeamJoinRequest request = getJoinRequest(requestId);
 
-    validateCaptain(request.getTeam(), currentUser);
+    validateCanRespondToRequest(request, currentUser);
     validateUserNotInTeam(request.getUser());
 
     TeamMember member = buildTeamMember(request.getTeam(), request.getUser(), TeamRole.MEMBER);
@@ -118,7 +118,7 @@ public class TeamServiceImpl implements TeamService {
   public Boolean rejectRequest(Long requestId, Authentication auth) {
     User currentUser = userService.getCurrentUser(auth);
     TeamJoinRequest request = getJoinRequest(requestId);
-    validateCaptain(request.getTeam(), currentUser);
+    validateCanRespondToRequest(request, currentUser);
     joinRequestRepository.delete(request);
     return true;
   }
@@ -363,10 +363,40 @@ public class TeamServiceImpl implements TeamService {
         teamMemberstoDto(teamMembers));
   }
 
+  /**
+   * Who may approve/reject:
+   * <ul>
+   *   <li>{@link JoinRequestType#JOIN_REQUEST} — only the team captain
+   *   <li>{@link JoinRequestType#CAPTAIN_INVITE} — only the invited user
+   * </ul>
+   */
+  private void validateCanRespondToRequest(TeamJoinRequest request, User currentUser) {
+    if (request.getType() == JoinRequestType.JOIN_REQUEST) {
+      validateCaptain(request.getTeam(), currentUser);
+      return;
+    }
+    if (request.getType() == JoinRequestType.CAPTAIN_INVITE) {
+      if (!request.getUser().getId().equals(currentUser.getId())) {
+        throw new ForbiddenOperationException(
+            "Только приглашённый пользователь может принять или отклонить приглашение");
+      }
+      return;
+    }
+    throw new ForbiddenOperationException("Неизвестный тип заявки");
+  }
+
   private TeamJoinResponse buildTeamJoinResponse(TeamJoinRequest request) {
+    Team team = request.getTeam();
+    User user = request.getUser();
+    String userName = user.getPublicName();
+    if (userName == null || userName.isBlank()) {
+      userName = user.getUsername();
+    }
     return new TeamJoinResponse(
         request.getId(),
-        request.getUser().getPublicName(),
+        team.getId(),
+        team.getName(),
+        userName,
         request.getType(),
         request.getCreatedAt());
   }

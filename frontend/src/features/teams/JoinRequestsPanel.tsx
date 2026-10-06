@@ -7,12 +7,10 @@ import { formatDateTime } from "@/lib/format";
 import { useJoinRequests } from "@/features/teams/useJoinRequests";
 
 /**
- * Один и тот же список с двумя разными смыслами (backend решает это сам,
- * см. api/teams.ts комментарий над TeamJoinRequestItem):
+ * Один и тот же список с двумя разными смыслами (backend решает это сам):
  * - type=JOIN_REQUEST — заявки на вступление в вашу команду (вы капитан).
- * - type=CAPTAIN_INVITE — приглашения, полученные вами от других команд.
- *   Название пригласившей команды backend не отдаёт — честно показываем
- *   это ограничение, а не выдумываем.
+ * - type=CAPTAIN_INVITE — приглашения вам от капитанов; принять/отклонить
+ *   может только приглашённый пользователь. В ответе есть teamId/teamName.
  */
 export function JoinRequestsPanel() {
   const { data: requests, isLoading } = useJoinRequests();
@@ -65,7 +63,10 @@ export function JoinRequestsPanel() {
                   <span className="font-medium">{request.userName}</span> хочет вступить в команду
                 </p>
               ) : (
-                <p>Приглашение в команду (название недоступно)</p>
+                <p>
+                  Приглашение в команду{" "}
+                  <span className="font-medium">{request.teamName}</span>
+                </p>
               )}
               <p className="text-muted-foreground text-xs">{formatDateTime(request.createdAt)}</p>
             </div>

@@ -1,6 +1,6 @@
 # Roadmap / Backlog
 
-Статусы: 🔵 Done · 🟡 In Progress · ⚪ Planned · 🟪 Decision · 💤 Deferred · 🔴 Bug
+Статусы: 🔵 Done · 🟡 In Progress · ⚪ Planned · 🟣 Decision · 💤 Deferred · 🔴 Bug
 
 ## Состояние
 
@@ -39,6 +39,10 @@
 
 - 🔵 **Slice 1–2** — STOMP `/ws`, destination `/topic/quest-progress/{id}/gameplay`, events CODE_*, LEVEL_COMPLETED, QUEST_FINISHED; FE `@stomp/stompjs` + invalidate queries; polling fallback when offline.
 - 🔵 **Slice 3** — `HINT_REVEALED` (Job 3 / takeHint) + `LEVEL_AUTO_TRANSITIONED` (Job 2) + nginx `location /ws` upgrade.
+
+### Bugs (closed)
+
+- 🔵 **Team CAPTAIN_INVITE** — invitee can approve/reject; `TeamJoinResponse` includes `teamId`/`teamName` (was captain-only + «название недоступно»).
 
 ### Отложено
 
