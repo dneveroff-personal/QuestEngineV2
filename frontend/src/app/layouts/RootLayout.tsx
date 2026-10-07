@@ -32,10 +32,13 @@ export function RootLayout() {
 
   // role — из JWT (см. lib/jwt.ts), только для UI. Реальная проверка —
   // всегда на backend (validateAuthorOrAdmin), это не граница безопасности.
-  const navItems =
-    role === "AUTHOR" || role === "ADMIN"
-      ? [...NAV_ITEMS, { to: "/author", label: "Авторская" }]
-      : NAV_ITEMS;
+  const navItems = [...NAV_ITEMS];
+  if (role === "AUTHOR" || role === "ADMIN") {
+    navItems.push({ to: "/author", label: "Авторская" });
+  }
+  if (role === "ADMIN") {
+    navItems.push({ to: "/admin/authors", label: "Управление авторами" });
+  }
 
   return (
     <div className="flex min-h-screen flex-col">

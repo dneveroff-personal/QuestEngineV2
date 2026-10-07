@@ -15,6 +15,7 @@ import { MyQuestsPage } from "@/pages/quests/MyQuestsPage";
 import { QuestDetailPage } from "@/pages/quests/QuestDetailPage";
 import { StatisticsPage } from "@/pages/quests/StatisticsPage";
 import { TeamPage } from "@/pages/team/TeamPage";
+import { ManageAuthorsPage } from "@/pages/admin/ManageAuthorsPage";
 
 /**
  * Маршруты соответствуют architecture.md §4 / information-architecture.md.
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
       { path: "author", element: <AuthorQuestsPage /> },
       { path: "author/quests/new", element: <CreateQuestPage /> },
       { path: "author/quests/:questId/edit", element: <EditQuestPage /> },
+      { path: "admin/authors", element: <ManageAuthorsPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },
