@@ -35,6 +35,7 @@ const TYPE_LABEL: Record<string, string> = {
 /**
  * Уникальность code_value — в пределах Level (ADR-0004), не глобально.
  * 409 при создании = значение уже есть на этом уровне.
+ * MAIN codeIndex: backend auto-assigns max+1 if omitted.
  */
 export function CodesPanel({ questId, levelId }: { questId: number; levelId: number }) {
   const queryClient = useQueryClient();
@@ -86,6 +87,9 @@ export function CodesPanel({ questId, levelId }: { questId: number; levelId: num
   return (
     <div className="space-y-2">
       <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Коды</h4>
+      <p className="text-muted-foreground text-xs">
+        Для MAIN индекс (codeIndex) назначается автоматически, если не указан.
+      </p>
 
       {isLoading && <p className="text-muted-foreground text-xs">Загрузка...</p>}
       {errorMessage && <p className="text-destructive text-xs">{errorMessage}</p>}
