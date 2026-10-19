@@ -22,4 +22,13 @@ public interface CodeRepository extends JpaRepository<Code, Long> {
       "SELECT COUNT(DISTINCT c.codeIndex) FROM Code c"
           + " WHERE c.level.id = :levelId AND c.type = 'MAIN' AND c.codeIndex IS NOT NULL")
   long countDistinctMainCodeIndexesByLevelId(@Param("levelId") Long levelId);
+
+  /**
+   * Максимальный codeIndex среди MAIN-кодов уровня — для автоназначения следующего
+   * индекса, когда автор не передал codeIndex в CreateCodeRequest.
+   */
+  @Query(
+      "SELECT COALESCE(MAX(c.codeIndex), 0) FROM Code c"
+          + " WHERE c.level.id = :levelId AND c.type = 'MAIN' AND c.codeIndex IS NOT NULL")
+  int maxMainCodeIndexByLevelId(@Param("levelId") Long levelId);
 }
