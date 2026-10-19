@@ -120,7 +120,7 @@ export function LevelForm({ level, onSubmit, isPending, error, submitLabel, onCa
             name="requiredMainCodesCount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Нужно MAIN-кодов</FormLabel>
+                <FormLabel>Кодов для закрытия уровня</FormLabel>
                 <FormControl>
                   <Input type="number" min={1} placeholder="необязательно" {...field} />
                 </FormControl>
