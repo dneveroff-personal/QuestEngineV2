@@ -37,9 +37,10 @@ public class CodeServiceImpl implements CodeService {
     questService.validateQuestAuthor(currentUser, level.getQuest().getId());
 
     validateCodeValueUnique(levelId, request.value());
-    validateCodeData(request);
+    Integer resolvedIndex = resolveCodeIndex(levelId, request);
+    validateCodeData(request.type(), resolvedIndex);
 
-    Code code = buildCode(request, level);
+    Code code = buildCode(request, level, resolvedIndex);
     Code savedCode = codeRepository.save(code);
 
     return buildCodeResponse(savedCode, levelId);
@@ -70,12 +71,13 @@ public class CodeServiceImpl implements CodeService {
       validateCodeValueUnique(code.getLevel().getId(), request.value());
     }
 
-    validateCodeData(request);
+    Integer resolvedIndex = resolveCodeIndex(code.getLevel().getId(), request);
+    validateCodeData(request.type(), resolvedIndex);
 
     code.setValue(request.value());
     code.setType(request.type());
     code.setBonusPenaltySeconds(request.bonusPenaltySeconds());
-    code.setCodeIndex(request.codeIndex());
+    code.setCodeIndex(resolvedIndex);
 
     Code savedCode = codeRepository.save(code);
     return buildCodeResponse(savedCode);
@@ -110,12 +112,27 @@ public class CodeServiceImpl implements CodeService {
     }
   }
 
-  private void validateCodeData(CreateCodeRequest request) {
-    if (request.type() == CodeType.MAIN && request.codeIndex() == null) {
+  /**
+   * MAIN: codeIndex обязателен для учёта distinct MAIN (ADR-0005). Если клиент не
+   * передал — назначаем max(existing)+1 на уровне (форма автора не требует поля).
+   * BONUS/PENALTY: codeIndex запрещён.
+   */
+  private Integer resolveCodeIndex(Long levelId, CreateCodeRequest request) {
+    if (request.type() != CodeType.MAIN) {
+      return null;
+    }
+    if (request.codeIndex() != null) {
+      return request.codeIndex();
+    }
+    return codeRepository.maxMainCodeIndexByLevelId(levelId) + 1;
+  }
+
+  private void validateCodeData(CodeType type, Integer codeIndex) {
+    if (type == CodeType.MAIN && codeIndex == null) {
       throw new IllegalArgumentException("Для MAIN-кода необходимо указать codeIndex");
     }
 
-    if (request.type() != CodeType.MAIN && request.codeIndex() != null) {
+    if (type != CodeType.MAIN && codeIndex != null) {
       throw new IllegalArgumentException("codeIndex допускается только для MAIN-кода");
     }
   }
@@ -145,13 +162,13 @@ public class CodeServiceImpl implements CodeService {
         .build();
   }
 
-  private Code buildCode(CreateCodeRequest request, Level level) {
+  private Code buildCode(CreateCodeRequest request, Level level, Integer codeIndex) {
     return Code.builder()
         .level(level)
         .value(request.value())
         .type(request.type())
         .bonusPenaltySeconds(request.bonusPenaltySeconds())
-        .codeIndex(request.codeIndex())
+        .codeIndex(codeIndex)
         .createdAt(Instant.now())
         .build();
   }
